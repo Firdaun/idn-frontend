@@ -1,4 +1,4 @@
-const BASE_URL = "http://192.168.1.7:3000";
+const BASE_URL = "http://192.168.1.7:8000";
 
 export const getLiveStreams = async () => {
     const response = await fetch(`${BASE_URL}/idn/streams`);

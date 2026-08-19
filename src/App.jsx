@@ -12,7 +12,7 @@ export default function App() {
 
     // State untuk komentar
     const [comments, setComments] = useState([
-        { id: 1, user: { name: "Sistem", avatar: "" }, message: "Selamat datang di live streaming!", type: "system", time: "Baru saja" },
+        { id: 1, user: { name: "Sistem", avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=system" }, message: "Selamat datang di live streaming!", type: "system", time: "Baru saja" },
     ]);
     const [inputChat, setInputChat] = useState("");
 
@@ -74,7 +74,7 @@ export default function App() {
 
         socket.onmessage = (event) => {
             const message = event.data;
-
+            
             // Balas heartbeat PING
             if (message.startsWith("PING")) {
                 socket.send(message.replace("PING", "PONG\r\n"));
@@ -102,10 +102,7 @@ export default function App() {
             // 3. Parsing pesan komentar masuk
             const parsed = parseIdnChatMessage(message);
             if (parsed && parsed.type === "chat") {
-                setComments((prev) => {
-                    const updated = [...prev, parsed];
-                    return updated.length > 100 ? updated.slice(updated.length - 100) : updated;
-                });
+                setComments((prev) => [...prev, parsed].slice(-100))
             }
         };
 
