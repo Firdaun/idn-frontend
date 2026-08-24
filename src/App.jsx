@@ -33,6 +33,7 @@ export default function App() {
                 }
             } catch (err) {
                 setError("Gagal terhubung ke backend: " + err.message);
+                console.log(err.message);
             } finally {
                 setLoading(false);
             }
@@ -44,6 +45,17 @@ export default function App() {
     // 2. Ambil detail stream saat activeSlug berganti
     useEffect(() => {
         if (!activeSlug) return;
+
+        // Reset komentar saat berganti stream/room
+        setComments([
+            {
+                id: `sys-${Date.now()}`,
+                user: { name: "Sistem", avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=system" },
+                message: "Selamat datang di live streaming!",
+                type: "system",
+                time: "Baru saja",
+            },
+        ]);
 
         const fetchDetail = async () => {
             try {
@@ -60,6 +72,7 @@ export default function App() {
     useEffect(() => {
         if (!streamData?.chat_room_id) return;
 
+        let isSubscribed = true;
         const socket = new WebSocket("wss://chat.idn.app/");
         const guestUuid = crypto.randomUUID();
 
@@ -73,6 +86,7 @@ export default function App() {
         };
 
         socket.onmessage = (event) => {
+            if (!isSubscribed) return;
             const message = event.data;
             
             // Balas heartbeat PING
@@ -102,12 +116,13 @@ export default function App() {
             // 3. Parsing pesan komentar masuk
             const parsed = parseIdnChatMessage(message);
             if (parsed && parsed.type === "chat") {
-                setComments((prev) => [...prev, parsed].slice(-100))
+                setComments((prev) => [...prev, parsed].slice(-100));
             }
         };
 
         return () => {
-            if (socket.readyState === WebSocket.OPEN) {
+            isSubscribed = false;
+            if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) {
                 socket.close();
             }
         };
@@ -164,7 +179,10 @@ export default function App() {
 
         const newComment = {
             id: Date.now(),
-            user: "Kamu",
+            user: {
+                name: "Kamu",
+                avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=you",
+            },
             message: inputChat,
             time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         };
@@ -172,33 +190,6 @@ export default function App() {
         setComments((prev) => [...prev, newComment]);
         setInputChat("");
     };
-
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-zinc-400 font-sans">
-                <div className="flex items-center gap-3">
-                    <div className="w-5 h-5 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
-                    <span>Memuat live stream...</span>
-                </div>
-            </div>
-        );
-    }
-
-    if (error && streams.length === 0) {
-        return (
-            <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-zinc-400 font-sans">
-                <div className="text-center">
-                    <p className="text-zinc-200 text-lg font-medium mb-2">{error}</p>
-                    <button
-                        onClick={() => window.location.reload()}
-                        className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 rounded-xl transition"
-                    >
-                        Coba Lagi
-                    </button>
-                </div>
-            </div>
-        );
-    }
 
     return (
         <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans selection:bg-red-500 selection:text-white">
@@ -224,6 +215,9 @@ export default function App() {
                             {s.creator?.name || s.title}
                         </button>
                     ))}
+                    {streams.length === 0 && !loading && (
+                        <span className="text-xs text-zinc-500 italic">Tidak ada live aktif</span>
+                    )}
                 </div>
             </header>
 
@@ -232,14 +226,36 @@ export default function App() {
                 {/* Kolom Kiri: Video & Stream Info */}
                 <section className="lg:col-span-8 xl:col-span-9 flex flex-col gap-4">
                     {/* Video Container */}
-                    <div className="w-full aspect-video bg-black rounded-3xl overflow-hidden shadow-2xl relative">
-                        <video
-                            ref={videoRef}
-                            controls
-                            playsInline
-                            poster={streamData?.image_url}
-                            className="w-full h-full object-contain"
-                        />
+                    <div className="w-full aspect-video bg-black rounded-3xl overflow-hidden shadow-2xl relative flex items-center justify-center">
+                        {loading ? (
+                            <div className="flex flex-col items-center justify-center gap-3 text-zinc-400">
+                                <div className="w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+                                <span className="text-sm font-medium">Memuat live stream...</span>
+                            </div>
+                        ) : error && streams.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center p-6 text-center text-zinc-400 max-w-md">
+                                <div className="w-12 h-12 rounded-2xl bg-zinc-900/80 border border-zinc-800 flex items-center justify-center mb-3 text-red-400 shadow-lg">
+                                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                </div>
+                                <p className="text-zinc-200 text-sm font-medium mb-3">{error}</p>
+                                <button
+                                    onClick={() => window.location.reload()}
+                                    className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700/60 text-zinc-200 text-xs font-semibold rounded-xl transition"
+                                >
+                                    Coba Lagi
+                                </button>
+                            </div>
+                        ) : (
+                            <video
+                                ref={videoRef}
+                                controls
+                                playsInline
+                                poster={streamData?.image_url}
+                                className="w-full h-full object-contain"
+                            />
+                        )}
                     </div>
 
                     {/* Info Banner Streamer */}
@@ -288,13 +304,15 @@ export default function App() {
                         {comments.map((c) => (
                             <div key={c.id} className="flex items-start gap-2.5 text-sm">
                                 <img
-                                    src={c.user.avatar}
-                                    alt={c.user.name}
+                                    src={c.user?.avatar || "https://cdn.idn.media/idnaccount/avatar/default.png"}
+                                    alt={typeof c.user === "object" ? c.user?.name : c.user || "User"}
                                     className="w-6 h-6 rounded-full object-cover shrink-0 mt-0.5"
                                 />
                                 <div className="min-w-0">
                                     <div className="flex items-baseline gap-2">
-                                        <span className="font-semibold text-xs text-zinc-300 truncate">{c.user.name}</span>
+                                        <span className="font-semibold text-xs text-zinc-300 truncate">
+                                            {typeof c.user === "object" ? c.user?.name : c.user || "User"}
+                                        </span>
                                         <span className="text-[10px] text-zinc-500">{c.time}</span>
                                     </div>
                                     <p className="text-zinc-100 break-words leading-relaxed">{c.message}</p>
