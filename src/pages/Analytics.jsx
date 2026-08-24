@@ -136,6 +136,11 @@ export default function Analytics() {
                                     tick={{ fill: '#a1a1aa', fontSize: 12 }}
                                     tickMargin={12}
                                     stroke="#27272a"
+                                    tickFormatter={(tick) => {
+                                        if (!tick) return "";
+                                        const parts = String(tick).split(/[:.]/);
+                                        return parts.length >= 2 ? `${parts[0]}:${parts[1]}` : tick;
+                                    }}
                                 />
                                 <YAxis
                                     tick={{ fill: '#a1a1aa', fontSize: 12 }}
@@ -155,6 +160,11 @@ export default function Analytics() {
                                     }}
                                     itemStyle={{ padding: '2px 0' }}
                                     labelStyle={{ marginBottom: '6px', color: '#a1a1aa', fontWeight: 'bold' }}
+                                    labelFormatter={(label) => {
+                                        if (!label) return "";
+                                        const cleanLabel = String(label).replace(/\./g, ":");
+                                        return `Waktu: ${cleanLabel} WIB`;
+                                    }}
                                 />
 
                                 <Legend
