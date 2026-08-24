@@ -19,23 +19,13 @@ export const parseIdnChatMessage = (rawLine) => {
             tier: data.user?.level_tier || 1,
         };
 
-        // 3. Klasifikasikan tipe payload
+        // 3. Klasifikasikan tipe payload (hanya chat & gift, abaikan pesan sistem join)
         if (data.chat) {
             return {
                 id: data.chat.id || String(Date.now()),
                 type: "chat",
                 user,
                 message: data.chat.message,
-                time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-            };
-        }
-
-        if (data.system) {
-            return {
-                id: `sys-${Date.now()}-${Math.random()}`,
-                type: "system",
-                user,
-                message: data.system.message || `${user.name} bergabung`,
                 time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
             };
         }

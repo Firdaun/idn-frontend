@@ -16,6 +16,7 @@ export default function Streaming() {
     const [error, setError] = useState(null);
 
     const [comments, setComments] = useState([]);
+    const [isChatConnected, setIsChatConnected] = useState(true);
 
     const videoRef = useRef(null);
     const chatContainerRef = useRef(null);
@@ -78,7 +79,7 @@ export default function Streaming() {
 
     // 3. IDN WebSocket IRC Chat
     useEffect(() => {
-        if (!streamData?.chat_room_id) return;
+        if (!streamData?.chat_room_id || !isChatConnected) return;
 
         let isSubscribed = true;
         const socket = new WebSocket("wss://chat.idn.app/");
@@ -117,7 +118,7 @@ export default function Streaming() {
             }
 
             const parsed = parseIdnChatMessage(message);
-            if (parsed && (parsed.type === "chat" || parsed.type === "gift" || parsed.type === "system")) {
+            if (parsed && parsed.type === "chat") {
                 setComments((prev) => [...prev, parsed].slice(-100));
             }
         };
@@ -128,7 +129,7 @@ export default function Streaming() {
                 socket.close();
             }
         };
-    }, [streamData?.chat_room_id]);
+    }, [streamData?.chat_room_id, isChatConnected]);
 
     // 4. Putar stream HLS
     useEffect(() => {
@@ -292,13 +293,46 @@ export default function Streaming() {
 
                 {/* Kolom Kanan: Live Chat (Hanya Komentar dari WebSocket) */}
                 <aside className="lg:col-span-4 xl:col-span-3 bg-zinc-900/40 rounded-3xl border border-zinc-800/40 flex flex-col h-137.5 lg:h-[calc(100vh-14rem)] max-h-212.5 overflow-hidden">
-                    <div className="px-5 py-4 border-b border-zinc-900 flex items-center justify-between">
-                        <span className="text-sm font-semibold text-zinc-200">Live Chat</span>
-                        <span className="text-xs text-zinc-400 flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                            Real-time
-                        </span>
+                    <div className="px-5 py-3.5 border-b border-zinc-900 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-zinc-200">Live Chat</span>
+                            <span className={`w-2 h-2 rounded-full ${isChatConnected ? "bg-emerald-400" : "bg-zinc-600"}`}></span>
+                        </div>
+
+                        <button
+                            onClick={() => setIsChatConnected((prev) => !prev)}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition flex items-center gap-1.5 cursor-pointer ${
+                                isChatConnected
+                                    ? "bg-zinc-900 hover:bg-zinc-850 text-zinc-400 hover:text-zinc-200 border-zinc-800"
+                                    : "bg-zinc-800 hover:bg-zinc-750 text-emerald-400 border-zinc-700"
+                            }`}
+                            title={isChatConnected ? "Hentikan koneksi live chat" : "Hubungkan kembali live chat"}
+                        >
+                            {isChatConnected ? (
+                                <>
+                                    <svg className="w-3 h-3 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span>Hentikan Chat</span>
+                                </>
+                            ) : (
+                                <>
+                                    <svg className="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span>Lanjutkan Chat</span>
+                                </>
+                            )}
+                        </button>
                     </div>
+
+                    {!isChatConnected && (
+                        <div className="bg-zinc-900/90 border-b border-zinc-800/80 px-4 py-2 text-center text-xs text-zinc-400 flex items-center justify-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-zinc-500"></span>
+                            Koneksi chat dihentikan manual
+                        </div>
+                    )}
 
                     {/* Messages Area - Full Height tanpa form chat */}
                     <div ref={chatContainerRef} className="flex-1 p-4 overflow-y-auto space-y-3.5 custom-scrollbar">

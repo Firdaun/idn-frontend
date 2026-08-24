@@ -39,9 +39,10 @@ export default function Home() {
 
     const streamersList = analyticsData?.streamers || [];
     const totalPeakViewers = streamersList.reduce((max, s) => Math.max(max, s.peakViewers || 0), 0);
-    const topStreamer = streamersList.length > 0
-        ? streamersList.reduce((prev, current) => ((prev.peakViewers || 0) > (current.peakViewers || 0) ? prev : current), streamersList[0])
+    const topStreamer = totalPeakViewers > 0
+        ? streamersList.reduce((prev, current) => ((prev.peakViewers || 0) >= (current.peakViewers || 0) ? prev : current), streamersList[0])
         : null;
+
 
     const liveStreams = streams.filter(s => s.status !== "scheduled");
     const scheduledStreams = streams.filter(s => s.status === "scheduled");
@@ -217,7 +218,7 @@ export default function Home() {
                         <span className="text-sm text-zinc-400 font-medium">Top Streamer</span>
                         <div>
                             <p className="text-lg font-semibold text-zinc-100">
-                                {topStreamer ? topStreamer.fullName : "Tidak ada data"}
+                                {topStreamer ? topStreamer.fullName : "-"}
                             </p>
                             <p className="text-sm text-zinc-400 mt-1">
                                 {topStreamer?.duration ? `Durasi: ${topStreamer.duration}` : "Durasi: -"}
