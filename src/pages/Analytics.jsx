@@ -13,7 +13,6 @@ export default function Analytics() {
     const [streamerAnalytics, setStreamerAnalytics] = useState(null);
     const [loadingDetail, setLoadingDetail] = useState(false);
     const [timeRange, setTimeRange] = useState('all');
-    const [brushRange, setBrushRange] = useState(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
@@ -35,10 +34,8 @@ export default function Analytics() {
     };
 
     useEffect(() => {
-        fetchData();
-        const interval = setInterval(() => fetchData(), 30000);
-        return () => clearInterval(interval);
-    }, []);
+        fetchData()
+    }, [])
 
     useEffect(() => {
         if (!selectedStreamer?.slug) {
@@ -256,10 +253,7 @@ export default function Analytics() {
                             ].map((tab) => (
                                 <button
                                     key={tab.id}
-                                    onClick={() => {
-                                        setTimeRange(tab.id);
-                                        setBrushRange(null);
-                                    }}
+                                    onClick={() => setTimeRange(tab.id)}
                                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
                                         timeRange === tab.id
                                             ? 'bg-zinc-800 text-white shadow-sm'
@@ -346,7 +340,7 @@ export default function Analytics() {
                                     return (
                                         <Line
                                             key={streamer.name}
-                                            type="monotone"
+                                            type="linear"
                                             dataKey={streamer.name}
                                             name={streamer.name}
                                             stroke={COLORS[index % COLORS.length]}
@@ -370,13 +364,6 @@ export default function Analytics() {
                                         height={32}
                                         stroke="#3f3f46"
                                         fill="#121214"
-                                        startIndex={brushRange?.startIndex}
-                                        endIndex={brushRange?.endIndex}
-                                        onChange={(range) => {
-                                            if (range && (range.startIndex !== undefined || range.endIndex !== undefined)) {
-                                                setBrushRange(range);
-                                            }
-                                        }}
                                         tickFormatter={(tick) => {
                                             if (!tick) return "";
                                             const parts = String(tick).split(/[:.]/);
