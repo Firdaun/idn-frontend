@@ -32,3 +32,13 @@ export const getMultiLiveData = async () => {
     const result = await response.json();
     return result.data || { chartData: [], streamers: [] };
 };
+
+export const getAnalytics = async (slug) => {
+    const response = await fetch(`${BASE_URL}/idn/analytics/${slug}`)
+    if (!response.ok) {
+        throw new Error(`HTTP Error: ${response.status}`)
+    }
+    const result = await response.json()
+    
+    return result.data
+}

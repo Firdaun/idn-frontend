@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Brush
 } from 'recharts';
-import { getMultiLiveData } from '../../utils/backend-api';
+import { getMultiLiveData, getAnalytics } from '../../utils/backend-api';
 import { formatDurationIndo } from './Home';
 
 const COLORS = ['#e4e4e7', '#38bdf8', '#34d399', '#fbbf24', '#a78bfa', '#fb7185', '#94a3b8', '#f97316'];
@@ -10,7 +10,10 @@ const COLORS = ['#e4e4e7', '#38bdf8', '#34d399', '#fbbf24', '#a78bfa', '#fb7185'
 export default function Analytics() {
     const [data, setData] = useState({ chartData: [], streamers: [] });
     const [selectedStreamer, setSelectedStreamer] = useState(null);
-    const [timeRange, setTimeRange] = useState('all'); // 'all' | '15m' | '30m' | '1h'
+    const [streamerAnalytics, setStreamerAnalytics] = useState(null);
+    const [loadingDetail, setLoadingDetail] = useState(false);
+    const [timeRange, setTimeRange] = useState('all');
+    const [brushRange, setBrushRange] = useState(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
@@ -21,7 +24,7 @@ export default function Analytics() {
             setData(liveData || { chartData: [], streamers: [] });
             if (selectedStreamer && liveData?.streamers) {
                 const updated = liveData.streamers.find(s => s.name === selectedStreamer.name);
-                if (updated) setSelectedStreamer(updated);
+                if (updated) setSelectedStreamer(prev => ({ ...updated, clickedTime: prev?.clickedTime }));
             }
         } catch (error) {
             console.error("Error fetching multi-live data:", error);
@@ -37,11 +40,73 @@ export default function Analytics() {
         return () => clearInterval(interval);
     }, []);
 
+    useEffect(() => {
+        if (!selectedStreamer?.slug) {
+            setStreamerAnalytics(null);
+            return;
+        }
+
+        let isSubscribed = true;
+        const fetchStreamerDetail = async () => {
+            setLoadingDetail(true);
+            try {
+                const res = await getAnalytics(selectedStreamer.slug);
+                if (isSubscribed) {
+                    setStreamerAnalytics(res);
+                }
+            } catch (err) {
+                console.error("Gagal mengambil detail analytics streamer:", err);
+                if (isSubscribed) setStreamerAnalytics(null);
+            } finally {
+                if (isSubscribed) setLoadingDetail(false);
+            }
+        };
+
+        fetchStreamerDetail();
+        return () => {
+            isSubscribed = false;
+        };
+    }, [selectedStreamer?.slug]);
+
     const streamers = data.streamers || [];
     const chartData = data.chartData || [];
     const maxPeak = streamers.reduce((max, s) => Math.max(max, s.peakViewers || 0), 0);
 
-    // Filter chart data berdasarkan rentang waktu yang dipilih
+    const calculateDurationAtTime = (liveAt, pointTimeLabel) => {
+        if (!liveAt || !pointTimeLabel) return null;
+        const startDate = new Date(liveAt);
+        if (isNaN(startDate.getTime())) return null;
+
+        const parts = String(pointTimeLabel).split(/[:.]/).map(Number);
+        if (parts.length < 2) return null;
+
+        const targetDate = new Date(startDate);
+        targetDate.setHours(parts[0], parts[1], parts[2] || 0, 0);
+        
+        if (targetDate.getTime() < startDate.getTime()) {
+            targetDate.setDate(targetDate.getDate() + 1);
+        }
+
+        const totalSeconds = Math.max(0, Math.floor((targetDate.getTime() - startDate.getTime()) / 1000));
+        if (totalSeconds < 60) return `${totalSeconds} Detik`;
+
+        const totalMinutes = Math.floor(totalSeconds / 60);
+        if (totalMinutes < 60) return `${totalMinutes} Menit`;
+
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        return minutes > 0 ? `${hours} Jam ${minutes} Menit` : `${hours} Jam`;
+    };
+
+    const handleDotClick = (streamer, event, dotPayload) => {
+        const dataPoint = dotPayload?.payload || event?.payload || (event?.timeLabel ? event : null);
+        const clickedTime = dataPoint?.timeLabel;
+        setSelectedStreamer({
+            ...streamer,
+            clickedTime: clickedTime || null
+        });
+    };
+
     const filteredChartData = useMemo(() => {
         if (!chartData.length || timeRange === 'all') return chartData;
 
@@ -54,7 +119,6 @@ export default function Analytics() {
             return chartData.filter(d => (d._rawTime || 0) >= threshold);
         }
 
-        // Fallback jika _rawTime tidak ada (berdasarkan snapshot 30 detik)
         const limit = timeRange === '15m' ? 30 : timeRange === '30m' ? 60 : 120;
         return chartData.slice(-limit);
     }, [chartData, timeRange]);
@@ -108,24 +172,68 @@ export default function Analytics() {
 
             {/* Selected Detail */}
             {selectedStreamer && (
-                <div className="bg-zinc-900/50 border border-zinc-800/50 p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div>
-                        <h3 className="font-semibold text-base sm:text-lg text-zinc-100">{selectedStreamer.fullName}</h3>
-                        <p className="text-zinc-400 text-sm mt-0.5">{selectedStreamer.slug}</p>
+                <div className="bg-zinc-900/50 border border-zinc-800/50 p-5 rounded-2xl flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                    <div className="min-w-0">
+                        <div className="flex items-center gap-2.5">
+                            <h3 className="font-semibold text-base sm:text-lg text-zinc-100 truncate">{selectedStreamer.fullName}</h3>
+                            <span className={`px-2 py-0.5 rounded-md text-[11px] font-medium border ${
+                                selectedStreamer.endAt
+                                    ? "bg-zinc-800 text-zinc-400 border-zinc-700"
+                                    : "bg-red-500/10 text-red-400 border-red-500/20"
+                            }`}>
+                                {selectedStreamer.endAt ? "Selesai Live" : "Sedang Live"}
+                            </span>
+                        </div>
+                        <p className="text-zinc-400 text-xs sm:text-sm mt-0.5 truncate">{selectedStreamer.slug}</p>
                     </div>
 
-                    <div className="flex items-center gap-8 text-sm">
+                    <div className="flex flex-wrap items-center gap-5 sm:gap-8 text-sm">
                         <div>
                             <span className="text-zinc-400 block text-xs">Peak Viewers</span>
-                            <span className="font-semibold text-zinc-100 text-base">{Number(selectedStreamer.peakViewers || 0).toLocaleString()}</span>
+                            <span className="font-semibold text-zinc-100 text-base">
+                                {Number(streamerAnalytics?.peakViewers ?? selectedStreamer.peakViewers ?? 0).toLocaleString()}
+                            </span>
                         </div>
                         <div>
-                            <span className="text-zinc-400 block text-xs">Durasi</span>
-                            <span className="font-semibold text-zinc-100 text-base">{formatDurationIndo(selectedStreamer.duration)}</span>
+                            <span className="text-zinc-400 block text-xs">Rata-rata (Avg)</span>
+                            <span className="font-semibold text-zinc-100 text-base">
+                                {loadingDetail ? (
+                                    <span className="text-zinc-500">...</span>
+                                ) : streamerAnalytics?.avgViewers !== undefined ? (
+                                    Math.round(streamerAnalytics.avgViewers).toLocaleString()
+                                ) : (
+                                    "-"
+                                )}
+                            </span>
+                        </div>
+                        <div>
+                            <span className="text-zinc-400 block text-xs">Total Snapshot</span>
+                            <span className="font-semibold text-zinc-100 text-base">
+                                {loadingDetail ? (
+                                    <span className="text-zinc-500">...</span>
+                                ) : streamerAnalytics?.totalSnapshots !== undefined ? (
+                                    `${streamerAnalytics.totalSnapshots}x`
+                                ) : (
+                                    "-"
+                                )}
+                            </span>
+                        </div>
+                        <div>
+                            <span className="text-zinc-400 block text-xs">
+                                {selectedStreamer.clickedTime ? `Durasi (@${String(selectedStreamer.clickedTime).replace(/\./g, ":")})` : "Durasi"}
+                            </span>
+                            <span className="font-semibold text-zinc-100 text-base">
+                                {selectedStreamer.clickedTime
+                                    ? (calculateDurationAtTime(selectedStreamer.liveAt, selectedStreamer.clickedTime) || formatDurationIndo(selectedStreamer.duration))
+                                    : formatDurationIndo(selectedStreamer.duration)}
+                            </span>
                         </div>
                         <button
-                            onClick={() => setSelectedStreamer(null)}
-                            className="text-sm text-zinc-400 hover:text-white px-3 py-1.5 rounded-lg bg-zinc-800 transition cursor-pointer"
+                            onClick={() => {
+                                setSelectedStreamer(null);
+                                setStreamerAnalytics(null);
+                            }}
+                            className="text-xs sm:text-sm text-zinc-400 hover:text-white px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 transition cursor-pointer"
                         >
                             Reset
                         </button>
@@ -148,7 +256,10 @@ export default function Analytics() {
                             ].map((tab) => (
                                 <button
                                     key={tab.id}
-                                    onClick={() => setTimeRange(tab.id)}
+                                    onClick={() => {
+                                        setTimeRange(tab.id);
+                                        setBrushRange(null);
+                                    }}
                                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
                                         timeRange === tab.id
                                             ? 'bg-zinc-800 text-white shadow-sm'
@@ -223,7 +334,7 @@ export default function Analytics() {
                                 <Legend
                                     onClick={(e) => {
                                         const streamerData = streamers.find(s => s.name === e.dataKey);
-                                        setSelectedStreamer(streamerData || null);
+                                        setSelectedStreamer(streamerData ? { ...streamerData, clickedTime: null } : null);
                                     }}
                                     wrapperStyle={{ paddingTop: '20px', cursor: 'pointer', fontSize: '13px' }}
                                 />
@@ -245,7 +356,7 @@ export default function Analytics() {
                                             connectNulls={true}
                                             activeDot={{
                                                 r: isSelected ? 6 : 4,
-                                                onClick: () => setSelectedStreamer(streamer),
+                                                onClick: (e, payload) => handleDotClick(streamer, e, payload),
                                                 cursor: 'pointer',
                                                 strokeWidth: 0
                                             }}
@@ -259,6 +370,13 @@ export default function Analytics() {
                                         height={32}
                                         stroke="#3f3f46"
                                         fill="#121214"
+                                        startIndex={brushRange?.startIndex}
+                                        endIndex={brushRange?.endIndex}
+                                        onChange={(range) => {
+                                            if (range && (range.startIndex !== undefined || range.endIndex !== undefined)) {
+                                                setBrushRange(range);
+                                            }
+                                        }}
                                         tickFormatter={(tick) => {
                                             if (!tick) return "";
                                             const parts = String(tick).split(/[:.]/);
