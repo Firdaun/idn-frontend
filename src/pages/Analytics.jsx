@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Brush
 } from 'recharts';
-import { getMultiLiveData, getAnalytics } from '../../utils/backend-api';
+import { getMultiLiveData } from '../../utils/backend-api';
 import { formatDurationIndo } from './Home';
 
 const COLORS = ['#e4e4e7', '#38bdf8', '#34d399', '#fbbf24', '#a78bfa', '#fb7185', '#94a3b8', '#f97316'];
@@ -10,8 +10,6 @@ const COLORS = ['#e4e4e7', '#38bdf8', '#34d399', '#fbbf24', '#a78bfa', '#fb7185'
 export default function Analytics() {
     const [data, setData] = useState({ chartData: [], streamers: [] });
     const [selectedStreamer, setSelectedStreamer] = useState(null);
-    const [streamerAnalytics, setStreamerAnalytics] = useState(null);
-    const [loadingDetail, setLoadingDetail] = useState(false);
     const [timeRange, setTimeRange] = useState('all');
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -37,34 +35,6 @@ export default function Analytics() {
         fetchData()
     }, [])
 
-    useEffect(() => {
-        if (!selectedStreamer?.slug) {
-            setStreamerAnalytics(null);
-            return;
-        }
-
-        let isSubscribed = true;
-        const fetchStreamerDetail = async () => {
-            setLoadingDetail(true);
-            try {
-                const res = await getAnalytics(selectedStreamer.slug);
-                if (isSubscribed) {
-                    setStreamerAnalytics(res);
-                }
-            } catch (err) {
-                console.error("Gagal mengambil detail analytics streamer:", err);
-                if (isSubscribed) setStreamerAnalytics(null);
-            } finally {
-                if (isSubscribed) setLoadingDetail(false);
-            }
-        };
-
-        fetchStreamerDetail();
-        return () => {
-            isSubscribed = false;
-        };
-    }, [selectedStreamer?.slug]);
-
     const streamers = data.streamers || [];
     const chartData = data.chartData || [];
     const maxPeak = streamers.reduce((max, s) => Math.max(max, s.peakViewers || 0), 0);
@@ -73,6 +43,7 @@ export default function Analytics() {
         if (!liveAt || !pointTimeLabel) return null;
         const startDate = new Date(liveAt);
         if (isNaN(startDate.getTime())) return null;
+        
 
         const parts = String(pointTimeLabel).split(/[:.]/).map(Number);
         if (parts.length < 2) return null;
@@ -94,13 +65,22 @@ export default function Analytics() {
         const minutes = totalMinutes % 60;
         return minutes > 0 ? `${hours} Jam ${minutes} Menit` : `${hours} Jam`;
     };
+    
+    const formatLiveTime = (dateStr) => {
+        if (!dateStr) return "-";
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return "-";
+        return d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).replace(/\./g, ":")
+    }
 
-    const handleDotClick = (streamer, event, dotPayload) => {
-        const dataPoint = dotPayload?.payload || event?.payload || (event?.timeLabel ? event : null);
+    const handleDotClick = (streamer, dotPayload) => {
+        const dataPoint = dotPayload?.payload
         const clickedTime = dataPoint?.timeLabel;
+        const clickedViewers = dataPoint && streamer?.name ? dataPoint[streamer.name] : null;
         setSelectedStreamer({
             ...streamer,
-            clickedTime: clickedTime || null
+            clickedTime: clickedTime || null,
+            clickedViewers: clickedViewers ?? null
         });
     };
 
@@ -186,33 +166,37 @@ export default function Analytics() {
 
                     <div className="flex flex-wrap items-center gap-5 sm:gap-8 text-sm">
                         <div>
+                            <span className="text-zinc-400 block text-xs">Mulai Live</span>
+                            <span className="font-semibold text-zinc-100 text-base">
+                                {formatLiveTime(selectedStreamer.liveAt)}
+                            </span>
+                        </div>
+                        {selectedStreamer.clickedViewers !== null && selectedStreamer.clickedViewers !== undefined &&(
+                        <div>
+                            <span className="text-zinc-400 block text-xs">
+                                Viewers (@{String(selectedStreamer.clickedTime).replace(/\./g, ":")})
+                            </span>
+                            <span className="font-semibold text-zinc-100 text-base">
+                                {Number(selectedStreamer.clickedViewers).toLocaleString()}
+                            </span>
+                        </div>
+                        )}
+                        <div>
                             <span className="text-zinc-400 block text-xs">Peak Viewers</span>
                             <span className="font-semibold text-zinc-100 text-base">
-                                {Number(streamerAnalytics?.peakViewers ?? selectedStreamer.peakViewers ?? 0).toLocaleString()}
+                                {Number(selectedStreamer.peakViewers ?? 0).toLocaleString()}
                             </span>
                         </div>
                         <div>
                             <span className="text-zinc-400 block text-xs">Rata-rata (Avg)</span>
                             <span className="font-semibold text-zinc-100 text-base">
-                                {loadingDetail ? (
-                                    <span className="text-zinc-500">...</span>
-                                ) : streamerAnalytics?.avgViewers !== undefined ? (
-                                    Math.round(streamerAnalytics.avgViewers).toLocaleString()
-                                ) : (
-                                    "-"
-                                )}
+                                {Math.round(selectedStreamer.avgViewers).toLocaleString()}
                             </span>
                         </div>
                         <div>
                             <span className="text-zinc-400 block text-xs">Total Snapshot</span>
                             <span className="font-semibold text-zinc-100 text-base">
-                                {loadingDetail ? (
-                                    <span className="text-zinc-500">...</span>
-                                ) : streamerAnalytics?.totalSnapshots !== undefined ? (
-                                    `${streamerAnalytics.totalSnapshots}x`
-                                ) : (
-                                    "-"
-                                )}
+                                {`${selectedStreamer.totalSnapshots}x`}
                             </span>
                         </div>
                         <div>
@@ -228,7 +212,6 @@ export default function Analytics() {
                         <button
                             onClick={() => {
                                 setSelectedStreamer(null);
-                                setStreamerAnalytics(null);
                             }}
                             className="text-xs sm:text-sm text-zinc-400 hover:text-white px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 transition cursor-pointer"
                         >
@@ -328,7 +311,7 @@ export default function Analytics() {
                                 <Legend
                                     onClick={(e) => {
                                         const streamerData = streamers.find(s => s.name === e.dataKey);
-                                        setSelectedStreamer(streamerData ? { ...streamerData, clickedTime: null } : null);
+                                        setSelectedStreamer(streamerData ? { ...streamerData, clickedTime: null, clickedViewers: null  } : null);
                                     }}
                                     wrapperStyle={{ paddingTop: '20px', cursor: 'pointer', fontSize: '13px' }}
                                 />
@@ -350,7 +333,7 @@ export default function Analytics() {
                                             connectNulls={true}
                                             activeDot={{
                                                 r: isSelected ? 6 : 4,
-                                                onClick: (e, payload) => handleDotClick(streamer, e, payload),
+                                                onClick: (e, payload) => handleDotClick(streamer, payload),
                                                 cursor: 'pointer',
                                                 strokeWidth: 0
                                             }}

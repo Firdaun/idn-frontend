@@ -83,7 +83,13 @@ export default function Streaming() {
 
         let isSubscribed = true;
         const socket = new WebSocket("wss://chat.idn.app/");
-        const guestUuid = crypto.randomUUID();
+        const guestUuid = (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function")
+            ? crypto.randomUUID()
+            : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+                const r = (Math.random() * 16) | 0;
+                const v = c === "x" ? r : (r & 0x3) | 0x8;
+                return v.toString(16);
+            });
 
         socket.onopen = () => {
             const randomGuestId = Math.random().toString(36).substring(2, 9);
@@ -188,11 +194,10 @@ export default function Streaming() {
                             <button
                                 key={s.slug}
                                 onClick={() => handleSelectStream(s.slug)}
-                                className={`px-4 py-2 rounded-xl text-sm font-medium transition flex items-center gap-2 shrink-0 cursor-pointer ${
-                                    activeSlug === s.slug
+                                className={`px-4 py-2 rounded-xl text-sm font-medium transition flex items-center gap-2 shrink-0 cursor-pointer ${activeSlug === s.slug
                                         ? "bg-zinc-800 text-white shadow-sm"
                                         : "bg-zinc-900/70 text-zinc-400 hover:text-zinc-200 border border-transparent hover:border-zinc-800"
-                                }`}
+                                    }`}
                             >
                                 <span className={`w-2 h-2 rounded-full ${isStreamScheduled ? "bg-zinc-500" : "bg-red-500"}`}></span>
                                 <span>{s.creator?.name || s.title}</span>
@@ -301,11 +306,10 @@ export default function Streaming() {
 
                         <button
                             onClick={() => setIsChatConnected((prev) => !prev)}
-                            className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition flex items-center gap-1.5 cursor-pointer ${
-                                isChatConnected
+                            className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition flex items-center gap-1.5 cursor-pointer ${isChatConnected
                                     ? "bg-zinc-900 hover:bg-zinc-850 text-zinc-400 hover:text-zinc-200 border-zinc-800"
                                     : "bg-zinc-800 hover:bg-zinc-750 text-emerald-400 border-zinc-700"
-                            }`}
+                                }`}
                             title={isChatConnected ? "Hentikan koneksi live chat" : "Hubungkan kembali live chat"}
                         >
                             {isChatConnected ? (
@@ -355,9 +359,8 @@ export default function Streaming() {
                                         </span>
                                         <span className="text-xs text-zinc-500">{c.time}</span>
                                     </div>
-                                    <p className={`text-sm wrap-break-word mt-0.5 leading-relaxed ${
-                                        c.type === "gift" ? "text-amber-300 font-medium" : c.type === "system" ? "text-zinc-400 italic text-xs" : "text-zinc-200"
-                                    }`}>
+                                    <p className={`text-sm wrap-break-word mt-0.5 leading-relaxed ${c.type === "gift" ? "text-amber-300 font-medium" : c.type === "system" ? "text-zinc-400 italic text-xs" : "text-zinc-200"
+                                        }`}>
                                         {c.message}
                                     </p>
                                 </div>
