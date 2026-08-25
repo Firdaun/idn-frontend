@@ -12,6 +12,14 @@
   *, ::before, ::after {
     border-color: #27272a;
   }
+
+  /* Hilangkan outline focus pada elemen grafik Recharts saat diklik */
+  .recharts-wrapper *:focus,
+  .recharts-wrapper *:focus-visible,
+  svg *:focus,
+  svg *:focus-visible {
+    outline: none !important;
+  }
 }
 
 /* Custom dark scrollbar */
