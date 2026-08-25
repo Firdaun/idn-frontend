@@ -178,7 +178,7 @@ export default function Analytics() {
                 ) : (
                     <div className="h-125 w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={filteredChartData} margin={{ top: 15, right: 25, left: 5, bottom: 10 }}>
+                            <LineChart data={filteredChartData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#27272a" opacity={0.4} />
 
                                 <XAxis
