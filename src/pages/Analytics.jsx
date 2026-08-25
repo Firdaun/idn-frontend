@@ -39,32 +39,25 @@ export default function Analytics() {
     const chartData = data.chartData || [];
     const maxPeak = streamers.reduce((max, s) => Math.max(max, s.peakViewers || 0), 0);
 
-    const calculateDurationAtTime = (liveAt, pointTimeLabel) => {
-        if (!liveAt || !pointTimeLabel) return null;
-        const startDate = new Date(liveAt);
-        if (isNaN(startDate.getTime())) return null;
-        
+    const calculateDurationAtTime = (liveAt, rawTime) => {
+    if (!liveAt || !rawTime) return null;
+    const startTime = new Date(liveAt).getTime();
+    if (isNaN(startTime)) return null;
 
-        const parts = String(pointTimeLabel).split(/[:.]/).map(Number);
-        if (parts.length < 2) return null;
+    const diffMs = Number(rawTime) - startTime;
+    if (diffMs <= 0) return "0 Detik";
 
-        const targetDate = new Date(startDate);
-        targetDate.setHours(parts[0], parts[1], parts[2] || 0, 0);
-        
-        if (targetDate.getTime() < startDate.getTime()) {
-            targetDate.setDate(targetDate.getDate() + 1);
-        }
+    const totalSeconds = Math.floor(diffMs / 1000);
+    if (totalSeconds < 60) return `${totalSeconds} Detik`;
 
-        const totalSeconds = Math.max(0, Math.floor((targetDate.getTime() - startDate.getTime()) / 1000));
-        if (totalSeconds < 60) return `${totalSeconds} Detik`;
+    const totalMinutes = Math.floor(totalSeconds / 60);
+    if (totalMinutes < 60) return `${totalMinutes} Menit`;
 
-        const totalMinutes = Math.floor(totalSeconds / 60);
-        if (totalMinutes < 60) return `${totalMinutes} Menit`;
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return minutes > 0 ? `${hours} Jam ${minutes} Menit` : `${hours} Jam`;
+};
 
-        const hours = Math.floor(totalMinutes / 60);
-        const minutes = totalMinutes % 60;
-        return minutes > 0 ? `${hours} Jam ${minutes} Menit` : `${hours} Jam`;
-    };
     
     const formatLiveTime = (dateStr) => {
         if (!dateStr) return "-";
@@ -76,10 +69,12 @@ export default function Analytics() {
     const handleDotClick = (streamer, dotPayload) => {
         const dataPoint = dotPayload?.payload
         const clickedTime = dataPoint?.timeLabel;
+        const clickedRawTime = dataPoint?._rawTime;
         const clickedViewers = dataPoint && streamer?.name ? dataPoint[streamer.name] : null;
         setSelectedStreamer({
             ...streamer,
             clickedTime: clickedTime || null,
+            clickedRawTime: clickedRawTime || null,
             clickedViewers: clickedViewers ?? null
         });
     };
@@ -204,9 +199,7 @@ export default function Analytics() {
                                 {selectedStreamer.clickedTime ? `Durasi (@${String(selectedStreamer.clickedTime).replace(/\./g, ":")})` : "Durasi"}
                             </span>
                             <span className="font-semibold text-zinc-100 text-base">
-                                {selectedStreamer.clickedTime
-                                    ? (calculateDurationAtTime(selectedStreamer.liveAt, selectedStreamer.clickedTime) || formatDurationIndo(selectedStreamer.duration))
-                                    : formatDurationIndo(selectedStreamer.duration)}
+                                {selectedStreamer.clickedRawTime ? calculateDurationAtTime(selectedStreamer.liveAt, selectedStreamer.clickedRawTime) : '-'}
                             </span>
                         </div>
                         <button
