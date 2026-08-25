@@ -1,6 +1,13 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 import { getLiveStreams, getMultiLiveData } from "../../utils/backend-api";
+export const formatDurationIndo = (durationStr) => {
+    if (!durationStr) return "-";
+    return durationStr
+        .replace(/Hours?/gi, "Jam")
+        .replace(/Minutes?/gi, "Menit")
+        .replace(/Seconds?/gi, "Detik");
+};
 
 export default function Home() {
     const navigate = useNavigate();
@@ -221,7 +228,7 @@ export default function Home() {
                                 {topStreamer ? topStreamer.fullName : "-"}
                             </p>
                             <p className="text-sm text-zinc-400 mt-1">
-                                {topStreamer?.duration ? `Durasi: ${topStreamer.duration}` : "Durasi: -"}
+                                Durasi: {formatDurationIndo(topStreamer?.duration)}
                             </p>
                         </div>
                     </div>
