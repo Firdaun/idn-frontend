@@ -12,6 +12,7 @@ export default function Analytics() {
     const [timeRange, setTimeRange] = useState('all');
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    console.log(selectedStreamer);
 
     const fetchData = async (isManual = false) => {
         if (isManual) setRefreshing(true);
@@ -39,25 +40,25 @@ export default function Analytics() {
     const maxPeak = streamers.reduce((max, s) => Math.max(max, s.peakViewers || 0), 0);
 
     const calculateDurationAtTime = (liveAt, rawTime) => {
-    if (!liveAt || !rawTime) return null;
-    const startTime = new Date(liveAt).getTime();
-    if (isNaN(startTime)) return null;
+        if (!liveAt || !rawTime) return null;
+        const startTime = new Date(liveAt).getTime();
+        if (isNaN(startTime)) return null;
 
-    const diffMs = Number(rawTime) - startTime;
-    if (diffMs <= 0) return "0 Detik";
+        const diffMs = Number(rawTime) - startTime;
+        if (diffMs <= 0) return "0 Detik";
 
-    const totalSeconds = Math.floor(diffMs / 1000);
-    if (totalSeconds < 60) return `${totalSeconds} Detik`;
+        const totalSeconds = Math.floor(diffMs / 1000);
+        if (totalSeconds < 60) return `${totalSeconds} Detik`;
 
-    const totalMinutes = Math.floor(totalSeconds / 60);
-    if (totalMinutes < 60) return `${totalMinutes} Menit`;
+        const totalMinutes = Math.floor(totalSeconds / 60);
+        if (totalMinutes < 60) return `${totalMinutes} Menit`;
 
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    return minutes > 0 ? `${hours} Jam ${minutes} Menit` : `${hours} Jam`;
-};
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        return minutes > 0 ? `${hours} Jam ${minutes} Menit` : `${hours} Jam`;
+    };
 
-    
+
     const formatLiveTime = (dateStr) => {
         if (!dateStr) return "-";
         const d = new Date(dateStr);
@@ -147,11 +148,10 @@ export default function Analytics() {
                     <div className="min-w-0">
                         <div className="flex items-center gap-2.5">
                             <h3 className="font-semibold text-base sm:text-lg text-zinc-100 truncate">{selectedStreamer.fullName}</h3>
-                            <span className={`px-2 py-0.5 rounded-md text-[11px] font-medium border ${
-                                selectedStreamer.endAt
+                            <span className={`px-2 py-0.5 rounded-md text-[11px] font-medium border ${selectedStreamer.endAt
                                     ? "bg-zinc-800 text-zinc-400 border-zinc-700"
                                     : "bg-red-500/10 text-red-400 border-red-500/20"
-                            }`}>
+                                }`}>
                                 {selectedStreamer.endAt ? "Selesai Live" : "Sedang Live"}
                             </span>
                         </div>
@@ -165,15 +165,15 @@ export default function Analytics() {
                                 {`${selectedStreamer.totalSnapshots}x`}
                             </span>
                         </div>
-                        {selectedStreamer.clickedViewers !== null && selectedStreamer.clickedViewers !== undefined &&(
-                        <div>
-                            <span className="text-zinc-400 block text-xs">
-                                Viewers (@{String(selectedStreamer.clickedTime).replace(/\./g, ":")})
-                            </span>
-                            <span className="font-semibold text-zinc-100 text-base">
-                                {Number(selectedStreamer.clickedViewers).toLocaleString()}
-                            </span>
-                        </div>
+                        {selectedStreamer.clickedViewers !== null && selectedStreamer.clickedViewers !== undefined && (
+                            <div>
+                                <span className="text-zinc-400 block text-xs">
+                                    Viewers (@{String(selectedStreamer.clickedTime).replace(/\./g, ":")})
+                                </span>
+                                <span className="font-semibold text-zinc-100 text-base">
+                                    {Number(selectedStreamer.clickedViewers).toLocaleString()}
+                                </span>
+                            </div>
                         )}
                         <div>
                             <span className="text-zinc-400 block text-xs">Peak Viewers</span>
@@ -193,6 +193,14 @@ export default function Analytics() {
                                 {formatLiveTime(selectedStreamer.liveAt)}
                             </span>
                         </div>
+                        {selectedStreamer.clickedTime && (
+                            <div>
+                                <span className="text-zinc-400 block text-xs">waktu di klik</span>
+                                <span className="font-semibold text-zinc-100 text-base">
+                                    {selectedStreamer.clickedTime}
+                                </span>
+                            </div>
+                        )}
                         <div>
                             <span className="text-zinc-400 block text-xs">Selesai Live</span>
                             <span className="font-semibold text-zinc-100 text-base">
@@ -235,11 +243,10 @@ export default function Analytics() {
                                 <button
                                     key={tab.id}
                                     onClick={() => setTimeRange(tab.id)}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
-                                        timeRange === tab.id
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${timeRange === tab.id
                                             ? 'bg-zinc-800 text-white shadow-sm'
                                             : 'text-zinc-400 hover:text-zinc-200'
-                                    }`}
+                                        }`}
                                 >
                                     {tab.label}
                                 </button>
@@ -309,7 +316,7 @@ export default function Analytics() {
                                 <Legend
                                     onClick={(e) => {
                                         const streamerData = streamers.find(s => s.name === e.dataKey);
-                                        setSelectedStreamer(streamerData ? { ...streamerData, clickedTime: null, clickedViewers: null  } : null);
+                                        setSelectedStreamer(streamerData ? { ...streamerData, clickedTime: null, clickedViewers: null } : null);
                                     }}
                                     wrapperStyle={{ paddingTop: '20px', cursor: 'pointer', fontSize: '13px' }}
                                 />
