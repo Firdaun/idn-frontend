@@ -160,9 +160,9 @@ export default function Analytics() {
 
                     <div className="flex flex-wrap items-center gap-5 sm:gap-8 text-sm">
                         <div>
-                            <span className="text-zinc-400 block text-xs">Mulai Live</span>
+                            <span className="text-zinc-400 block text-xs">Total Snapshot</span>
                             <span className="font-semibold text-zinc-100 text-base">
-                                {formatLiveTime(selectedStreamer.liveAt)}
+                                {`${selectedStreamer.totalSnapshots}x`}
                             </span>
                         </div>
                         {selectedStreamer.clickedViewers !== null && selectedStreamer.clickedViewers !== undefined &&(
@@ -188,9 +188,15 @@ export default function Analytics() {
                             </span>
                         </div>
                         <div>
-                            <span className="text-zinc-400 block text-xs">Total Snapshot</span>
+                            <span className="text-zinc-400 block text-xs">Mulai Live</span>
                             <span className="font-semibold text-zinc-100 text-base">
-                                {`${selectedStreamer.totalSnapshots}x`}
+                                {formatLiveTime(selectedStreamer.liveAt)}
+                            </span>
+                        </div>
+                        <div>
+                            <span className="text-zinc-400 block text-xs">Selesai Live</span>
+                            <span className="font-semibold text-zinc-100 text-base">
+                                {selectedStreamer.endAt ? formatLiveTime(selectedStreamer.endAt) : '-'}
                             </span>
                         </div>
                         <div>
