@@ -3,7 +3,6 @@ import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Brush
 } from 'recharts';
 import { getMultiLiveData } from '../../utils/backend-api';
-import { formatDurationIndo } from './Home';
 
 const COLORS = ['#e4e4e7', '#38bdf8', '#34d399', '#fbbf24', '#a78bfa', '#fb7185', '#94a3b8', '#f97316'];
 
@@ -199,7 +198,7 @@ export default function Analytics() {
                                 {selectedStreamer.clickedTime ? `Durasi (@${String(selectedStreamer.clickedTime).replace(/\./g, ":")})` : "Durasi"}
                             </span>
                             <span className="font-semibold text-zinc-100 text-base">
-                                {selectedStreamer.clickedRawTime ? calculateDurationAtTime(selectedStreamer.liveAt, selectedStreamer.clickedRawTime) : '-'}
+                                {selectedStreamer.clickedRawTime ? calculateDurationAtTime(selectedStreamer.liveAt, selectedStreamer.clickedRawTime) : selectedStreamer.duration}
                             </span>
                         </div>
                         <button

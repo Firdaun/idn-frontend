@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
-import { getLiveStreams, getMultiLiveData, getAnalytics } from "../../utils/backend-api";
+import { getLiveStreams, getMultiLiveData } from "../../utils/backend-api";
 export const formatDurationIndo = (durationStr) => {
     if (!durationStr) return "-";
     return durationStr
@@ -13,7 +13,6 @@ export default function Home() {
     const navigate = useNavigate();
     const [streams, setStreams] = useState([]);
     const [analyticsData, setAnalyticsData] = useState(null);
-    const [topAnalytics, setTopAnalytics] = useState(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
@@ -50,30 +49,6 @@ export default function Home() {
     const topStreamer = totalPeakViewers > 0
         ? streamersList.reduce((prev, current) => ((prev.peakViewers || 0) >= (current.peakViewers || 0) ? prev : current), streamersList[0])
         : null;
-
-    useEffect(() => {
-        if (!topStreamer?.slug) {
-            setTopAnalytics(null);
-            return;
-        }
-
-        let isMounted = true;
-        const fetchTopAnalytics = async () => {
-            try {
-                const res = await getAnalytics(topStreamer.slug);
-                if (isMounted) setTopAnalytics(res);
-            } catch (err) {
-                console.error("Gagal memuat analytics top streamer:", err);
-                if (isMounted) setTopAnalytics(null);
-            }
-        };
-
-        fetchTopAnalytics();
-        return () => {
-            isMounted = false;
-        };
-    }, [topStreamer?.slug]);
-
 
     const liveStreams = streams.filter(s => s.status !== "scheduled");
     const scheduledStreams = streams.filter(s => s.status === "scheduled");
@@ -273,10 +248,10 @@ export default function Home() {
                         <span className="text-sm text-zinc-400 font-medium">Rata-rata Penonton (Avg)</span>
                         <div>
                             <p className="text-lg font-semibold text-zinc-100">
-                                {topAnalytics?.avgViewers !== undefined ? `${Math.round(topAnalytics.avgViewers).toLocaleString()} penonton` : "-"}
+                                {topStreamer?.avgViewers !== undefined ? `${Math.round(topStreamer.avgViewers).toLocaleString()} penonton` : "-"}
                             </p>
                             <p className="text-sm text-zinc-400 mt-1">
-                                {topAnalytics?.totalSnapshots ? `${topAnalytics.totalSnapshots} snapshot tercatat` : "Rata-rata top streamer"}
+                                {topStreamer?.totalSnapshots ? `${topStreamer.totalSnapshots} snapshot tercatat` : "Rata-rata top streamer"}
                             </p>
                         </div>
                     </div>
