@@ -12,7 +12,6 @@ export default function Analytics() {
     const [timeRange, setTimeRange] = useState('all');
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    console.log(selectedStreamer);
 
     const fetchData = async (isManual = false) => {
         if (isManual) setRefreshing(true);

@@ -232,7 +232,7 @@ export default function Streaming() {
                                     onClick={() => window.location.reload()}
                                     className="px-4 py-2 bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 text-zinc-200 text-sm font-medium rounded-xl transition"
                                 >
-                                    Coba Lagi
+                                    Refresh
                                 </button>
                             </div>
                         ) : isScheduled ? (
