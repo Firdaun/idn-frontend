@@ -3,13 +3,12 @@ import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Brush
 } from 'recharts';
 import { getMultiLiveData } from '../../utils/backend-api';
-
-const COLORS = ['#e4e4e7', '#38bdf8', '#34d399', '#fbbf24', '#a78bfa', '#fb7185', '#94a3b8', '#f97316'];
+import { getMemberColor } from '../../utils/color';
 
 export default function Analytics() {
     const [data, setData] = useState({ chartData: [], streamers: [] });
     const [selectedStreamer, setSelectedStreamer] = useState(null);
-    const [timeRange, setTimeRange] = useState('all');
+    const [timeRange, setTimeRange] = useState('today');
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
@@ -38,12 +37,12 @@ export default function Analytics() {
     const chartData = data.chartData || [];
     const maxPeak = streamers.reduce((max, s) => Math.max(max, s.peakViewers || 0), 0);
 
-    const calculateDurationAtTime = (liveAt, rawTime) => {
-        if (!liveAt || !rawTime) return null;
+    const calculateDurationAtTime = (liveAt, timestamp) => {
+        if (!liveAt || !timestamp) return null;
         const startTime = new Date(liveAt).getTime();
         if (isNaN(startTime)) return null;
 
-        const diffMs = Number(rawTime) - startTime;
+        const diffMs = Number(timestamp) - startTime;
         if (diffMs <= 0) return "0 Detik";
 
         const totalSeconds = Math.floor(diffMs / 1000);
@@ -57,23 +56,31 @@ export default function Analytics() {
         return minutes > 0 ? `${hours} Jam ${minutes} Menit` : `${hours} Jam`;
     };
 
-
-    const formatLiveTime = (dateStr) => {
-        if (!dateStr) return "-";
-        const d = new Date(dateStr);
+    const formatLiveTime = (dateStrOrMs) => {
+        if (!dateStrOrMs) return "-";
+        const d = new Date(Number(dateStrOrMs) || dateStrOrMs);
         if (isNaN(d.getTime())) return "-";
-        return d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).replace(/\./g, ":")
-    }
+        const time = d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).replace(/\./g, ":");
+        const date = d.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
+        return `${time} (${date})`;
+    };
+
+    const formatAxisTime = (rawTime) => {
+        if (!rawTime) return "";
+        const d = new Date(Number(rawTime) || rawTime);
+        if (isNaN(d.getTime())) return "";
+        const time = d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }).replace(/\./g, ":");
+        const date = d.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
+        return `${time} ${date}`;
+    };
 
     const handleDotClick = (streamer, dotPayload) => {
         const dataPoint = dotPayload?.payload
         const clickedTime = dataPoint?.timeLabel;
-        const clickedRawTime = dataPoint?._rawTime;
         const clickedViewers = dataPoint && streamer?.name ? dataPoint[streamer.name] : null;
         setSelectedStreamer({
             ...streamer,
             clickedTime: clickedTime || null,
-            clickedRawTime: clickedRawTime || null,
             clickedViewers: clickedViewers ?? null
         });
     };
@@ -81,13 +88,20 @@ export default function Analytics() {
     const filteredChartData = useMemo(() => {
         if (!chartData.length || timeRange === 'all') return chartData;
 
+        if (timeRange === 'today') {
+            const startOfToday = new Date();
+            startOfToday.setHours(0, 0, 0, 0);
+            const todayData = chartData.filter(d => (Number(d.timeLabel) || 0) >= startOfToday.getTime());
+            return todayData.length > 0 ? todayData : chartData;
+        }
+
         const lastItem = chartData[chartData.length - 1];
-        const lastTime = lastItem?._rawTime;
+        const lastTime = Number(lastItem?.timeLabel);
 
         if (lastTime) {
             const minutes = timeRange === '15m' ? 15 : timeRange === '30m' ? 30 : 60;
             const threshold = lastTime - minutes * 60 * 1000;
-            return chartData.filter(d => (d._rawTime || 0) >= threshold);
+            return chartData.filter(d => (Number(d.timeLabel) || 0) >= threshold);
         }
 
         const limit = timeRange === '15m' ? 30 : timeRange === '30m' ? 60 : 120;
@@ -136,7 +150,7 @@ export default function Analytics() {
                 <div className="bg-zinc-900/30 border border-zinc-800/40 rounded-2xl p-5">
                     <span className="text-sm text-zinc-400 font-medium">Total Snapshot Waktu</span>
                     <p className="text-2xl sm:text-3xl font-semibold text-zinc-100 mt-1">
-                        {filteredChartData.length} <span className="text-sm font-normal text-zinc-400">titik ({timeRange === 'all' ? 'Semua' : timeRange})</span>
+                        {filteredChartData.length} <span className="text-sm font-normal text-zinc-400">titik ({timeRange === 'all' ? 'Semua' : timeRange === 'today' ? 'Hari Ini' : timeRange})</span>
                     </p>
                 </div>
             </div>
@@ -167,7 +181,7 @@ export default function Analytics() {
                         {selectedStreamer.clickedViewers !== null && selectedStreamer.clickedViewers !== undefined && (
                             <div>
                                 <span className="text-zinc-400 block text-xs">
-                                    Viewers (@{String(selectedStreamer.clickedTime).replace(/\./g, ":")})
+                                    Viewers (@{formatLiveTime(selectedStreamer.clickedTime)})
                                 </span>
                                 <span className="font-semibold text-zinc-100 text-base">
                                     {Number(selectedStreamer.clickedViewers).toLocaleString()}
@@ -196,7 +210,7 @@ export default function Analytics() {
                             <div>
                                 <span className="text-zinc-400 block text-xs">waktu di klik</span>
                                 <span className="font-semibold text-zinc-100 text-base">
-                                    {selectedStreamer.clickedTime}
+                                    {formatLiveTime(selectedStreamer.clickedTime)}
                                 </span>
                             </div>
                         )}
@@ -208,10 +222,12 @@ export default function Analytics() {
                         </div>
                         <div>
                             <span className="text-zinc-400 block text-xs">
-                                {selectedStreamer.clickedTime ? `Durasi (@${String(selectedStreamer.clickedTime).replace(/\./g, ":")})` : "Durasi"}
+                                {selectedStreamer.clickedTime ? `Durasi (@${formatLiveTime(selectedStreamer.clickedTime)})` : "Durasi"}
                             </span>
                             <span className="font-semibold text-zinc-100 text-base">
-                                {selectedStreamer.clickedRawTime ? calculateDurationAtTime(selectedStreamer.liveAt, selectedStreamer.clickedRawTime) : selectedStreamer.duration}
+                                {selectedStreamer.clickedTime
+                                    ? (calculateDurationAtTime(selectedStreamer.liveAt, selectedStreamer.clickedTime) || selectedStreamer.duration)
+                                    : selectedStreamer.duration}
                             </span>
                         </div>
                         <button
@@ -234,10 +250,11 @@ export default function Analytics() {
                         <span className="text-xs sm:text-sm font-medium text-zinc-400">Rentang Waktu:</span>
                         <div className="inline-flex p-1 rounded-xl bg-zinc-900/80 border border-zinc-800/80">
                             {[
+                                { id: 'today', label: 'Hari Ini' },
                                 { id: 'all', label: 'Semua' },
-                                { id: '15m', label: '15 Menit' },
+                                { id: '1h', label: '1 Jam' },
                                 { id: '30m', label: '30 Menit' },
-                                { id: '1h', label: '1 Jam' }
+                                { id: '15m', label: '15 Menit' }
                             ].map((tab) => (
                                 <button
                                     key={tab.id}
@@ -276,14 +293,10 @@ export default function Analytics() {
 
                                 <XAxis
                                     dataKey="timeLabel"
-                                    tick={{ fill: '#a1a1aa', fontSize: 12 }}
+                                    tick={{ fill: '#a1a1aa', fontSize: 11 }}
                                     tickMargin={12}
                                     stroke="#27272a"
-                                    tickFormatter={(tick) => {
-                                        if (!tick) return "";
-                                        const parts = String(tick).split(/[:.]/);
-                                        return parts.length >= 2 ? `${parts[0]}:${parts[1]}` : tick;
-                                    }}
+                                    tickFormatter={formatAxisTime}
                                 />
                                 <YAxis
                                     tick={{ fill: '#a1a1aa', fontSize: 12 }}
@@ -307,8 +320,11 @@ export default function Analytics() {
                                     labelStyle={{ marginBottom: '6px', color: '#a1a1aa', fontWeight: 'bold' }}
                                     labelFormatter={(label) => {
                                         if (!label) return "";
-                                        const cleanLabel = String(label).replace(/\./g, ":");
-                                        return `Waktu: ${cleanLabel} WIB`;
+                                        const d = new Date(Number(label));
+                                        if (isNaN(d.getTime())) return "";
+                                        const timeStr = d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).replace(/\./g, ":");
+                                        const dateStr = d.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
+                                        return `Waktu: ${timeStr} WIB (${dateStr})`;
                                     }}
                                 />
 
@@ -330,11 +346,11 @@ export default function Analytics() {
                                             type="linear"
                                             dataKey={streamer.name}
                                             name={streamer.name}
-                                            stroke={COLORS[index % COLORS.length]}
+                                            stroke={getMemberColor(streamer.name, index)}
                                             strokeWidth={isSelected ? 3 : 1.75}
                                             strokeOpacity={isDimmed ? 0.2 : 1}
                                             dot={false}
-                                            connectNulls={true}
+                                            connectNulls={false}
                                             activeDot={{
                                                 r: isSelected ? 6 : 4,
                                                 onClick: (e, payload) => handleDotClick(streamer, payload),
@@ -351,11 +367,7 @@ export default function Analytics() {
                                         height={32}
                                         stroke="#3f3f46"
                                         fill="#121214"
-                                        tickFormatter={(tick) => {
-                                            if (!tick) return "";
-                                            const parts = String(tick).split(/[:.]/);
-                                            return parts.length >= 2 ? `${parts[0]}:${parts[1]}` : tick;
-                                        }}
+                                        tickFormatter={formatAxisTime}
                                         travellerWidth={10}
                                         className="text-xs"
                                     />
