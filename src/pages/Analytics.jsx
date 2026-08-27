@@ -20,6 +20,20 @@ export default function Analytics() {
         return start.toISOString();
     };
 
+    const getDaysAgoIsoRange = (daysAgo) => {
+        const start = new Date();
+        start.setDate(start.getDate() - daysAgo);
+        start.setHours(0, 0, 0, 0);
+
+        const end = new Date();
+        end.setDate(end.getDate() - daysAgo)
+        end.setHours(23, 59, 59, 999);
+        return {
+            start: start.toISOString(),
+            end: end.toISOString()
+        };
+    };
+
     const fetchData = async (isManual = false, start = null, end = null) => {
         if (isManual) setRefreshing(true);
         try {
@@ -108,19 +122,17 @@ export default function Analytics() {
     };
 
     const filteredChartData = useMemo(() => {
-        if (!chartData.length || timeRange === 'all' || timeRange === 'today' || timeRange === 'custom') return chartData;
+        if (!chartData.length || timeRange !== '1h') return chartData;
 
         const lastItem = chartData[chartData.length - 1];
         const lastTime = Number(lastItem?.timeLabel);
 
-        if (lastTime) {
-            const minutes = timeRange === '15m' ? 15 : timeRange === '30m' ? 30 : 60;
-            const threshold = lastTime - minutes * 60 * 1000;
-            return chartData.filter(d => (Number(d.timeLabel) || 0) >= threshold);
+        if (!lastTime || isNaN(lastTime)) {
+            console.error("Format waktu pada data snapshot terakhir tidak valid:", lastItem);
+            throw new Error("Gagal memfilter 1 jam: Nilai timeLabel pada data terakhir tidak valid atau kosong.");
         }
-
-        const limit = timeRange === '15m' ? 30 : timeRange === '30m' ? 60 : 120;
-        return chartData.slice(-limit);
+        const threshold = lastTime - 60 * 60 * 1000;
+        return chartData.filter(d => (Number(d.timeLabel) || 0) >= threshold);
     }, [chartData, timeRange]);
 
 
@@ -163,10 +175,16 @@ export default function Analytics() {
 
                 <button
                     onClick={() => {
-                        if (timeRange === 'today' || timeRange === '15m' || timeRange === '30m' || timeRange === '1h') {
+                        if (timeRange === 'today' || timeRange === '1h') {
                             fetchData(true, getTodayStartIso());
+                        } else if (timeRange === '1d') {
+                            const { start, end } = getDaysAgoIsoRange(1);
+                            fetchData(true, start, end);
+                        } else if (timeRange === '2d') {
+                            const { start, end } = getDaysAgoIsoRange(2);
+                            fetchData(true, start, end);
                         } else if (timeRange === 'custom' && customStart && customEnd) {
-                            fetchData(true, new Date(customStart).toISOString(), new Date(customEnd).toISOString());
+                            fetchData(true, new Date(customStart).toISOString(), new Date(customEnd).toISOString())
                         } else {
                             fetchData(true, null, null)
                         }
@@ -295,16 +313,16 @@ export default function Analytics() {
             {/* Chart Area */}
             <div className="bg-zinc-900/30 border border-zinc-800/40 rounded-3xl p-5 sm:p-6 space-y-4">
                 {/* Time Range Filter Bar */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-900 pb-4">
+                <div className="flex relative flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-900 pb-4">
                     <div className="flex items-center gap-2.5 flex-wrap">
                         <span className="text-xs sm:text-sm font-medium text-zinc-400">Rentang Waktu:</span>
                         <div className="inline-flex p-1 rounded-xl bg-zinc-900/80 border border-zinc-800/80">
                             {[
                                 { id: 'today', label: 'Hari Ini' },
-                                { id: 'all', label: 'Semua' },
+                                { id: '1d', label: '1 Hari Lalu' },
+                                { id: '2d', label: '2 Hari Lalu' },
                                 { id: '1h', label: '1 Jam' },
-                                { id: '30m', label: '30 Menit' },
-                                { id: '15m', label: '15 Menit' },
+                                { id: 'all', label: 'Semua' },
                                 { id: 'custom', label: '⚙️ Kustom' }
                             ].map((tab) => (
                                 <button
@@ -312,12 +330,19 @@ export default function Analytics() {
                                     onClick={() => {
                                         const prevRange = timeRange;
                                         setTimeRange(tab.id);
+
                                         if (tab.id === 'today') {
                                             fetchData(true, getTodayStartIso());
+                                        } else if (tab.id === '1d') {
+                                            const { start, end } = getDaysAgoIsoRange(1);
+                                            fetchData(true, start, end)
+                                        } else if (tab.id === '2d') {
+                                            const { start, end } = getDaysAgoIsoRange(2);
+                                            fetchData(true, start, end);
                                         } else if (tab.id === 'all') {
                                             fetchData(true, null, null);
-                                        } else if (tab.id === '1h' || tab.id === '30m' || tab.id === '15m') {
-                                            if (prevRange === 'all' || prevRange === 'custom') {
+                                        } else if (tab.id === '1h') {
+                                            if (prevRange !== 'today') {
                                                 fetchData(true, getTodayStartIso());
                                             }
                                         }
@@ -362,7 +387,7 @@ export default function Analytics() {
                         )}
                     </div>
 
-                    <span className="text-xs text-zinc-500 hidden sm:inline-block">
+                    <span className="absolute right-0 text-xs text-zinc-500 hidden sm:inline-block">
                         Tarik slider di bawah untuk zoom & geser riwayat
                     </span>
                 </div>
