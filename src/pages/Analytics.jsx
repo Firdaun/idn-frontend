@@ -42,7 +42,7 @@ export default function Analytics() {
             if (selectedStreamer && liveData?.streamers) {
                 const updated = liveData.streamers.find(s => s.name === selectedStreamer.name);
                 if (updated) {
-                    setSelectedStreamer(prev => ({ ...updated, clickedTime: prev?.clickedTime }));
+                    setSelectedStreamer(prev => ({ ...updated, clickedTime: prev?.clickedTime ?? null, clickedViewers: prev?.clickedViewers ?? null }));
                 } else {
                     setSelectedStreamer(null);
                 }
@@ -239,7 +239,7 @@ export default function Analytics() {
                         <p className="text-zinc-400 text-xs sm:text-sm mt-0.5 truncate">{selectedStreamer.slug}</p>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-5 sm:gap-8 text-sm">
+                    <div className="flex flex-wrap items-center gap-5">
                         <div>
                             <span className="text-zinc-400 block text-xs">Total Snapshot</span>
                             <span className="font-semibold text-zinc-100 text-base">
@@ -274,14 +274,6 @@ export default function Analytics() {
                                 {formatLiveTime(selectedStreamer.liveAt)}
                             </span>
                         </div>
-                        {selectedStreamer.clickedTime && (
-                            <div>
-                                <span className="text-zinc-400 block text-xs">waktu di klik</span>
-                                <span className="font-semibold text-zinc-100 text-base">
-                                    {formatLiveTime(selectedStreamer.clickedTime)}
-                                </span>
-                            </div>
-                        )}
                         <div>
                             <span className="text-zinc-400 block text-xs">Selesai Live</span>
                             <span className="font-semibold text-zinc-100 text-base">
@@ -357,14 +349,14 @@ export default function Analytics() {
                             ))}
                         </div>
                         {timeRange === 'custom' && (
-                            <div className="flex flex-wrap items-center gap-3 pt-2 bg-zinc-950/40 p-3 rounded-xl border border-zinc-800/60">
+                            <div className="flex flex-wrap items-center gap-3 bg-zinc-900/80 p-2 py-1 rounded-xl border border-zinc-800/80">
                                 <div className="flex items-center gap-2 text-xs text-zinc-300">
                                     <span>Dari:</span>
                                     <input
                                         type="datetime-local"
                                         value={customStart}
                                         onChange={(e) => setCustomStart(e.target.value)}
-                                        className="bg-zinc-900 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-zinc-100 focus:outline-none focus:ring-zinc-500"
+                                        className="bg-zinc-900 border border-zinc-800/80 rounded-lg px-1 py-1 text-xs text-zinc-100 focus:outline-none focus:ring-zinc-500"
                                     />
                                 </div>
                                 <div className="flex items-center gap-2 text-xs text-zinc-300">
@@ -373,7 +365,7 @@ export default function Analytics() {
                                         type="datetime-local"
                                         value={customEnd}
                                         onChange={(e) => setCustomEnd(e.target.value)}
-                                        className="bg-zinc-900 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-zinc-100 focus:outline-none focus:ring-zinc-500"
+                                        className="bg-zinc-900 border border-zinc-800/80 rounded-lg px-1 py-1 text-xs text-zinc-100 focus:outline-none focus:ring-zinc-500"
                                     />
                                 </div>
                                 <button
@@ -447,7 +439,7 @@ export default function Analytics() {
 
                                 <Legend
                                     content={() => (
-                                        <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 pt-5 text-xs sm:text-[13px]">
+                                        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 pt-5 text-xs">
                                             {activeStreamers.map((streamer, index) => {
                                                 const color = getMemberColor(streamer.name, index);
                                                 const isSelected = selectedStreamer?.name === streamer.name;
