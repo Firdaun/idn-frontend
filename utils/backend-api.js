@@ -24,8 +24,13 @@ export const getStreamDetail = async (slug) => {
     return data;
 };
 
-export const getMultiLiveData = async () => {
-    const response = await fetch(`${BASE_URL}/idn/multi-live`);
+export const getMultiLiveData = async (startDate = null, endDate = null) => {
+    const params = new URLSearchParams()
+    if (startDate) params.append('startDate', startDate)
+    if (endDate) params.append('endDate', endDate)
+    
+    const queryString = params.toString() ? `?${params.toString()}` : ''
+    const response = await fetch(`${BASE_URL}/idn/multi-live${queryString}`);
     if (!response.ok) {
         throw new Error(`HTTP Error: ${response.status}`);
     }
