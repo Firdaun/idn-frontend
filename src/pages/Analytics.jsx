@@ -153,7 +153,6 @@ export default function Analytics() {
             name: streamer.name,
             clickedTime: clickedTime || null,
             clickedViewers: clickedViewers ?? null,
-            clickedSlug: clickedSlug || null
         });
     };
     
@@ -172,8 +171,6 @@ export default function Analytics() {
         return chartData.filter(d => (Number(d.timeLabel) || 0) >= threshold);
     }, [chartData, timeRange]);
 
-
-    // Downsampling data maksimum 400 titik untuk menjaga render SVG tetap super ringan (< 50MB RAM)
     const sampledChartData = useMemo(() => {
         const raw = filteredChartData;
         if (!raw || raw.length <= 400) return raw;
@@ -189,19 +186,13 @@ export default function Analytics() {
         }
         return sampled;
     }, [filteredChartData]);
-    console.log('sampledChartData', sampledChartData);
-    
 
-    // Hanya render garis member yang memiliki data penonton pada rentang waktu ini
     const activeStreamers = useMemo(() => {
         if (!streamers.length || !sampledChartData.length) return streamers;
         const present = streamers.filter(s => sampledChartData.some(d => d[s.name] !== undefined && d[s.name] !== null));
         const list = present.length > 0 ? present : streamers;
-        // 🔥 Sortir dari penonton tertinggi ke terendah (paling banyak di paling kiri)
         return [...list].sort((a, b) => (b.peakViewers || 0) - (a.peakViewers || 0));
     }, [streamers, sampledChartData]);
-    console.log(activeStreamers);
-    
 
     return (
         <div className="space-y-6 pb-20">
@@ -456,7 +447,7 @@ export default function Analytics() {
                                                     <div
                                                         key={streamer.name}
                                                         onClick={() => {
-                                                            setSelectedStreamer(isSelected ? null : { ...streamer, clickedTime: null, clickedViewers: null, clickedSlug: null });
+                                                            setSelectedStreamer(isSelected ? null : { ...streamer, clickedTime: null, clickedViewers: null });
                                                         }}
                                                         className={`inline-flex items-center gap-2 cursor-pointer transition select-none ${isDimmed ? 'opacity-30 hover:opacity-75' : 'opacity-100'
                                                             }`}
@@ -479,16 +470,12 @@ export default function Analytics() {
 
 
                                 {activeStreamers.flatMap((streamer, streamerIndex) => {
-                                    const sessions = streamer.sessions && streamer.sessions.length > 0
-                                        ? streamer.sessions
-                                        : [{ slug: streamer.slug, liveAt: streamer.liveAt }];
-
-                                    return sessions.map((session, sessionIndex) => {
-                                        const isSameMember = selectedStreamer && selectedStreamer.name === streamer.name;
-                                        const isExactSessionSelected = selectedStreamer && selectedStreamer.slug === session.slug;
+                                    return streamer.sessions.map((session, sessionIndex) => {
+                                        const isSameMember = selectedStreamer?.name === streamer.name;
+                                        const isExactSessionSelected = selectedStreamer?.slug === session.slug;
 
                                         // Cek apakah yang diklik adalah nama di Legend (bukan titik dot pada grafik)
-                                        const isLegendClick = isSameMember && !selectedStreamer.clickedTime && !selectedStreamer.clickedSlug;
+                                        const isLegendClick = isSameMember && !selectedStreamer.clickedTime
                                         let strokeOpacity = 1;
                                         let strokeWidth = 1.75;
                                         if (selectedStreamer) {
@@ -499,10 +486,10 @@ export default function Analytics() {
                                                 strokeOpacity = 1;
                                                 strokeWidth = 3.5;
                                             } else if (isSameMember) {
-                                                strokeOpacity = 0.45;
-                                                strokeWidth = 1.75;
+                                                strokeOpacity = 0.60;
+                                                strokeWidth = 3;
                                             } else {
-                                                strokeOpacity = 0.1;
+                                                strokeOpacity = 0.10;
                                                 strokeWidth = 1.25;
                                             }
                                         }
