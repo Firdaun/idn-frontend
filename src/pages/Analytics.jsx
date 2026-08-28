@@ -1,18 +1,31 @@
 import { useState, useEffect, useMemo } from 'react';
-import {
-    LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Brush
-} from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Brush } from 'recharts';
 import { getMultiLiveData } from '../../utils/backend-api';
 import { getMemberColor } from '../../utils/color';
+import { useQuery } from '@tanstack/react-query';
 
 export default function Analytics() {
-    const [data, setData] = useState({ chartData: [], streamers: [] });
     const [selectedStreamer, setSelectedStreamer] = useState(null);
-    const [timeRange, setTimeRange] = useState('today');
-    const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
-    const [customStart, setCustomStart] = useState('');
-    const [customEnd, setCustomEnd] = useState('');
+    const [timeRange, setTimeRange] = useState(() => sessionStorage.getItem('analytics_timeRange') || 'today');
+    const [customStart, setCustomStart] = useState(() => sessionStorage.getItem('analytics_customStart') || '');
+    const [customEnd, setCustomEnd] = useState(() => sessionStorage.getItem('analytics_customEnd') || '');
+    const [appliedCustom, setAppliedCustom] = useState(() => {
+        const saved = sessionStorage.getItem('analytics_appliedCustom');
+        return saved ? JSON.parse(saved) : { start: null, end: null };
+    });
+
+    useEffect(() => {
+        sessionStorage.setItem('analytics_timeRange', timeRange);
+    }, [timeRange]);
+    useEffect(() => {
+        sessionStorage.setItem('analytics_customStart', customStart);
+    }, [customStart]);
+    useEffect(() => {
+        sessionStorage.setItem('analytics_customEnd', customEnd);
+    }, [customEnd]);
+    useEffect(() => {
+        sessionStorage.setItem('analytics_appliedCustom', JSON.stringify(appliedCustom));
+    }, [appliedCustom]);
 
     const getTodayStartIso = () => {
         const start = new Date();
@@ -34,30 +47,44 @@ export default function Analytics() {
         };
     };
 
-    const fetchData = async (isManual = false, start = null, end = null) => {
-        if (isManual) setRefreshing(true);
-        try {
-            const liveData = await getMultiLiveData(start, end);
-            setData(liveData || { chartData: [], streamers: [] });
-            if (selectedStreamer && liveData?.streamers) {
-                const updated = liveData.streamers.find(s => s.name === selectedStreamer.name);
-                if (updated) {
-                    setSelectedStreamer(prev => ({ ...updated, clickedTime: prev?.clickedTime ?? null, clickedViewers: prev?.clickedViewers ?? null }));
-                } else {
-                    setSelectedStreamer(null);
-                }
-            }
-        } catch (error) {
-            console.error("Error fetching multi-live data:", error);
-        } finally {
-            setLoading(false);
-            if (isManual) setRefreshing(false);
-        }
-    };
+    const { start: activeStart, end: activeEnd } = useMemo(() => {
+        if (timeRange === 'today' || timeRange === '1h') return { start: getTodayStartIso(), end: null };
+        if (timeRange === '1d') return getDaysAgoIsoRange(1);
+        if (timeRange === '2d') return getDaysAgoIsoRange(2);
+        if (timeRange === 'custom') return appliedCustom;
+        return { start: null, end: null };
+    }, [timeRange, appliedCustom])
+
+    const {
+        data = { chartData: [], streamers: [] },
+        isLoading: isAnalyticsLoading,
+        isFetching: isAnalyticsFetching,
+        refetch
+    } = useQuery({
+        queryKey: ['multiLive', timeRange, activeStart, activeEnd],
+        queryFn: () => getMultiLiveData(activeStart, activeEnd),
+        staleTime: 1000 * 60 * 10,
+        gcTime: 1000 * 60 * 20,
+        refetchInterval: (timeRange === 'today' || timeRange === '1h') ? 30000 : false,
+    })
+
+    const loading = isAnalyticsLoading && (!data.chartData || data.chartData.length === 0);
+    const refreshing = isAnalyticsFetching
 
     useEffect(() => {
-        fetchData(false, getTodayStartIso());
-    }, []);
+        if (selectedStreamer && data?.streamers) {
+            const updated = data.streamers.find(s => s.name === selectedStreamer.name)
+            if (updated) {
+                setSelectedStreamer(prev => ({
+                    ...updated,
+                    clickedTime: prev?.clickedTime ?? null,
+                    clickedViewers: prev?.clickedViewers ?? null
+                }))
+            } else {
+                setSelectedStreamer(null)
+            }
+        }
+    }, [data])
 
     const streamers = data.streamers || [];
     const chartData = data.chartData || [];
@@ -68,9 +95,10 @@ export default function Analytics() {
             alert('Silakan pilih waktu mulai dan waktu selesai!');
             return;
         }
-        const startIso = new Date(customStart).toISOString();
-        const endIso = new Date(customEnd).toISOString();
-        fetchData(true, startIso, endIso);
+        setAppliedCustom({
+            start: new Date(customStart).toISOString(),
+            end: new Date(customEnd).toISOString()
+        })
     };
 
     const calculateDurationAtTime = (liveAt, timestamp) => {
@@ -174,21 +202,7 @@ export default function Analytics() {
                 </div>
 
                 <button
-                    onClick={() => {
-                        if (timeRange === 'today' || timeRange === '1h') {
-                            fetchData(true, getTodayStartIso());
-                        } else if (timeRange === '1d') {
-                            const { start, end } = getDaysAgoIsoRange(1);
-                            fetchData(true, start, end);
-                        } else if (timeRange === '2d') {
-                            const { start, end } = getDaysAgoIsoRange(2);
-                            fetchData(true, start, end);
-                        } else if (timeRange === 'custom' && customStart && customEnd) {
-                            fetchData(true, new Date(customStart).toISOString(), new Date(customEnd).toISOString())
-                        } else {
-                            fetchData(true, null, null)
-                        }
-                    }}
+                    onClick={() => refetch()}
                     disabled={refreshing}
                     className="self-start sm:self-auto px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-sm text-zinc-300 hover:text-white font-medium transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
                 >
@@ -319,26 +333,7 @@ export default function Analytics() {
                             ].map((tab) => (
                                 <button
                                     key={tab.id}
-                                    onClick={() => {
-                                        const prevRange = timeRange;
-                                        setTimeRange(tab.id);
-
-                                        if (tab.id === 'today') {
-                                            fetchData(true, getTodayStartIso());
-                                        } else if (tab.id === '1d') {
-                                            const { start, end } = getDaysAgoIsoRange(1);
-                                            fetchData(true, start, end)
-                                        } else if (tab.id === '2d') {
-                                            const { start, end } = getDaysAgoIsoRange(2);
-                                            fetchData(true, start, end);
-                                        } else if (tab.id === 'all') {
-                                            fetchData(true, null, null);
-                                        } else if (tab.id === '1h') {
-                                            if (prevRange !== 'today') {
-                                                fetchData(true, getTodayStartIso());
-                                            }
-                                        }
-                                    }}
+                                    onClick={() => setTimeRange(tab.id)}
                                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${timeRange === tab.id
                                         ? 'bg-zinc-800 text-white shadow-sm'
                                         : 'text-zinc-400 hover:text-zinc-200'
