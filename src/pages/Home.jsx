@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 import { getLiveStreams, getMultiLiveData } from "../../utils/backend-api";
+import { useQuery } from "@tanstack/react-query";
 export const formatDurationIndo = (durationStr) => {
     if (!durationStr) return "-";
     return durationStr
@@ -11,47 +11,46 @@ export const formatDurationIndo = (durationStr) => {
 
 export default function Home() {
     const navigate = useNavigate();
-    const [streams, setStreams] = useState([]);
-    const [analyticsData, setAnalyticsData] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
 
-    const loadData = async (isManual = false) => {
-        if (isManual) setRefreshing(true);
-        try {
-            const [streamList, multiLive] = await Promise.allSettled([
-                getLiveStreams(),
-                getMultiLiveData()
-            ]);
+    const {
+        data: streams = [],
+        isLoading: isStreamsLoading,
+        isFetching: isStreamsFetching,
+        refetch: refetchStream
+    } = useQuery({
+        queryKey: ['livestream'],
+        queryFn: getLiveStreams,
+        refetchInterval: 30000,
+    })
 
-            if (streamList.status === "fulfilled" && Array.isArray(streamList.value)) {
-                setStreams(streamList.value);
-            }
-            if (multiLive.status === "fulfilled" && multiLive.value) {
-                setAnalyticsData(multiLive.value);
-            }
-        } catch (err) {
-            console.error("Gagal memuat data home:", err);
-        } finally {
-            setLoading(false);
-            if (isManual) setRefreshing(false);
-        }
-    };
+    const {
+        data: analyticsData = null,
+        isLoading: isAnalyticsLoading,
+        isFetching: isAnalyticsFetching,
+        refetch: refetchAnalytics
+    } = useQuery({
+        queryKey: ['multiLiveSummary'],
+        queryFn: getMultiLiveData,
+        staleTime: 1000 * 60 * 10,
+        gcTime: 1000 * 60 * 20,
+    })
 
-    useEffect(() => {
-        loadData();
-        const interval = setInterval(() => loadData(), 30000);
-        return () => clearInterval(interval);
-    }, []);
+    const loading = isStreamsLoading && streams.length === 0
+    const refreshing = isStreamsFetching || isAnalyticsFetching
 
-    const streamersList = analyticsData?.streamers || [];
-    const totalPeakViewers = streamersList.reduce((max, s) => Math.max(max, s.peakViewers || 0), 0);
+    const handleRefresh = () => {
+        refetchStream()
+        refetchAnalytics()
+    }
+
+    const streamersList = analyticsData?.streamers || []
+    const totalPeakViewers = streamersList.reduce((max, s) => Math.max(max, s.peakViewers || 0), 0)
     const topStreamer = totalPeakViewers > 0
         ? streamersList.reduce((prev, current) => ((prev.peakViewers || 0) >= (current.peakViewers || 0) ? prev : current), streamersList[0])
-        : null;
+        : null
 
-    const liveStreams = streams.filter(s => s.status !== "scheduled");
-    const scheduledStreams = streams.filter(s => s.status === "scheduled");
+    const liveStreams = streams.filter(s => s.status !== "scheduled")
+    const scheduledStreams = streams.filter(s => s.status === "scheduled")
 
     return (
         <div className="space-y-14 pb-20">
@@ -64,8 +63,8 @@ export default function Home() {
                             {liveStreams.length > 0
                                 ? `${liveStreams.length} stream live${scheduledStreams.length > 0 ? ` · ${scheduledStreams.length} dijadwalkan` : ""}`
                                 : scheduledStreams.length > 0
-                                ? `${scheduledStreams.length} stream dijadwalkan`
-                                : "Tidak ada live saat ini"}
+                                    ? `${scheduledStreams.length} stream dijadwalkan`
+                                    : "Tidak ada live saat ini"}
                         </span>
                     </div>
 
@@ -103,9 +102,16 @@ export default function Home() {
                     </div>
                     <div className="p-5 rounded-2xl bg-zinc-900/40 border border-zinc-800/40">
                         <span className="text-sm text-zinc-400 font-medium">Peak Viewers Tertinggi</span>
-                        <p className="text-2xl sm:text-3xl font-semibold text-zinc-100 mt-1">
-                            {totalPeakViewers > 0 ? totalPeakViewers.toLocaleString() : "-"}
-                        </p>
+                        {isAnalyticsLoading ? (
+                            <div className="space-y-2.5 animate-pulse">
+                                <div className="h-6 w-32 bg-zinc-800/60 rounded-lg"></div>
+                                <div className="h-4 w-36 bg-zinc-800/40 rounded-md"></div>
+                            </div>
+                        ) : (
+                            <p className="text-2xl sm:text-3xl font-semibold text-zinc-100 mt-1">
+                                {totalPeakViewers > 0 ? totalPeakViewers.toLocaleString() : "-"}
+                            </p>
+                        )}
                     </div>
                     <div className="p-5 rounded-2xl bg-zinc-900/40 border border-zinc-800/40">
                         <span className="text-sm text-zinc-400 font-medium">Interval Sinkronisasi</span>
@@ -123,7 +129,7 @@ export default function Home() {
                     </div>
 
                     <button
-                        onClick={() => loadData(true)}
+                        onClick={handleRefresh}
                         disabled={refreshing}
                         className="px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-sm text-zinc-300 hover:text-white transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
                     >
@@ -222,38 +228,59 @@ export default function Home() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                     <div className="p-5 rounded-2xl bg-zinc-900/30 border border-zinc-800/40 space-y-3">
                         <span className="text-sm text-zinc-400 font-medium">Top Streamer</span>
-                        <div>
-                            <p className="text-lg font-semibold text-zinc-100">
-                                {topStreamer ? topStreamer.fullName : "-"}
-                            </p>
-                            <p className="text-sm text-zinc-400 mt-1">
-                                Durasi: {formatDurationIndo(topStreamer?.duration)}
-                            </p>
-                        </div>
+                        {isAnalyticsLoading ? (
+                            <div className="space-y-2.5 animate-pulse">
+                                <div className="h-6 w-32 bg-zinc-800/60 rounded-lg"></div>
+                                <div className="h-4 w-36 bg-zinc-800/40 rounded-md"></div>
+                            </div>
+                        ) : (
+                            <div>
+                                <p className="text-lg font-semibold text-zinc-100">
+                                    {topStreamer?.fullName || "-"}
+                                </p>
+                                <p className="text-sm text-zinc-400 mt-1">
+                                    Durasi: {formatDurationIndo(topStreamer?.duration)}
+                                </p>
+                            </div>
+                        )}
                     </div>
 
                     <div className="p-5 rounded-2xl bg-zinc-900/30 border border-zinc-800/40 space-y-3">
                         <span className="text-sm text-zinc-400 font-medium">Peak Viewers</span>
-                        <div>
-                            <p className="text-lg font-semibold text-zinc-100">
-                                {totalPeakViewers > 0 ? `${totalPeakViewers.toLocaleString()} penonton` : "-"}
-                            </p>
-                            <p className="text-sm text-zinc-400 mt-1">
-                                {streamersList.length} member tercatat
-                            </p>
-                        </div>
+                        {isAnalyticsLoading ? (
+                            <div className="space-y-2.5 animate-pulse">
+                                <div className="h-6 w-32 bg-zinc-800/60 rounded-lg"></div>
+                                <div className="h-4 w-36 bg-zinc-800/40 rounded-md"></div>
+                            </div>
+                        ) : (
+                            <div>
+                                <p className="text-lg font-semibold text-zinc-100">
+                                    {totalPeakViewers > 0 ? `${totalPeakViewers.toLocaleString()} penonton` : "-"}
+                                </p>
+                                <p className="text-sm text-zinc-400 mt-1">
+                                    {streamersList.length} member tercatat
+                                </p>
+                            </div>
+                        )}
                     </div>
 
                     <div className="p-5 rounded-2xl bg-zinc-900/30 border border-zinc-800/40 space-y-3">
                         <span className="text-sm text-zinc-400 font-medium">Rata-rata Penonton (Avg)</span>
-                        <div>
-                            <p className="text-lg font-semibold text-zinc-100">
-                                {topStreamer?.avgViewers !== undefined ? `${Math.round(topStreamer.avgViewers).toLocaleString()} penonton` : "-"}
-                            </p>
-                            <p className="text-sm text-zinc-400 mt-1">
-                                {topStreamer?.totalSnapshots ? `${topStreamer.totalSnapshots} snapshot tercatat` : "Rata-rata top streamer"}
-                            </p>
-                        </div>
+                        {isAnalyticsLoading ? (
+                            <div className="space-y-2.5 animate-pulse">
+                                <div className="h-6 w-32 bg-zinc-800/60 rounded-lg"></div>
+                                <div className="h-4 w-36 bg-zinc-800/40 rounded-md"></div>
+                            </div>
+                        ) : (
+                            <div>
+                                <p className="text-lg font-semibold text-zinc-100">
+                                    {topStreamer?.avgViewers !== undefined ? `${Math.round(topStreamer.avgViewers).toLocaleString()} penonton` : "-"}
+                                </p>
+                                <p className="text-sm text-zinc-400 mt-1">
+                                    {topStreamer?.totalSnapshots ? `${topStreamer.totalSnapshots} snapshot tercatat` : "Rata-rata top streamer"}
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </div>
             </section>
