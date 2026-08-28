@@ -65,7 +65,6 @@ export default function Analytics() {
         queryFn: () => getMultiLiveData(activeStart, activeEnd),
         staleTime: 1000 * 60 * 10,
         gcTime: 1000 * 60 * 20,
-        refetchInterval: (timeRange === 'today' || timeRange === '1h') ? 30000 : false,
     })
 
     const loading = isAnalyticsLoading && (!data.chartData || data.chartData.length === 0);
@@ -142,12 +141,22 @@ export default function Analytics() {
         const dataPoint = dotPayload?.payload
         const clickedTime = dataPoint?.timeLabel;
         const clickedViewers = dataPoint && streamer?.name ? dataPoint[streamer.name] : null;
+        const clickedSlug = dataPoint && streamer?.name ? dataPoint[`_${streamer.name}_slug`] : null;
+        let matchedSession = null;
+        if (clickedSlug && streamer.sessions) {
+            matchedSession = streamer.sessions.find(s => s.slug === clickedSlug);
+        }
+
+        const baseInfo = matchedSession || streamer;
         setSelectedStreamer({
-            ...streamer,
+            ...baseInfo,
+            name: streamer.name,
             clickedTime: clickedTime || null,
-            clickedViewers: clickedViewers ?? null
+            clickedViewers: clickedViewers ?? null,
+            clickedSlug: clickedSlug || null
         });
     };
+    
 
     const filteredChartData = useMemo(() => {
         if (!chartData.length || timeRange !== '1h') return chartData;
@@ -180,6 +189,8 @@ export default function Analytics() {
         }
         return sampled;
     }, [filteredChartData]);
+    console.log('sampledChartData', sampledChartData);
+    
 
     // Hanya render garis member yang memiliki data penonton pada rentang waktu ini
     const activeStreamers = useMemo(() => {
@@ -189,6 +200,8 @@ export default function Analytics() {
         // 🔥 Sortir dari penonton tertinggi ke terendah (paling banyak di paling kiri)
         return [...list].sort((a, b) => (b.peakViewers || 0) - (a.peakViewers || 0));
     }, [streamers, sampledChartData]);
+    console.log(activeStreamers);
+    
 
     return (
         <div className="space-y-6 pb-20">
@@ -443,7 +456,7 @@ export default function Analytics() {
                                                     <div
                                                         key={streamer.name}
                                                         onClick={() => {
-                                                            setSelectedStreamer(isSelected ? null : { ...streamer, clickedTime: null, clickedViewers: null });
+                                                            setSelectedStreamer(isSelected ? null : { ...streamer, clickedTime: null, clickedViewers: null, clickedSlug: null });
                                                         }}
                                                         className={`inline-flex items-center gap-2 cursor-pointer transition select-none ${isDimmed ? 'opacity-30 hover:opacity-75' : 'opacity-100'
                                                             }`}
@@ -465,30 +478,55 @@ export default function Analytics() {
                                 />
 
 
-                                {activeStreamers.map((streamer, index) => {
-                                    const isSelected = selectedStreamer?.name === streamer.name;
-                                    const isDimmed = selectedStreamer && !isSelected;
+                                {activeStreamers.flatMap((streamer, streamerIndex) => {
+                                    const sessions = streamer.sessions && streamer.sessions.length > 0
+                                        ? streamer.sessions
+                                        : [{ slug: streamer.slug, liveAt: streamer.liveAt }];
 
-                                    return (
-                                        <Line
-                                            key={streamer.name}
-                                            type="linear"
-                                            dataKey={streamer.name}
-                                            name={streamer.name}
-                                            stroke={getMemberColor(streamer.name, index)}
-                                            strokeWidth={isSelected ? 3 : 1.75}
-                                            strokeOpacity={isDimmed ? 0.2 : 1}
-                                            dot={false}
-                                            isAnimationActive={false}
-                                            connectNulls={false}
-                                            activeDot={{
-                                                r: isSelected ? 6 : 4,
-                                                onClick: (e, payload) => handleDotClick(streamer, payload),
-                                                cursor: 'pointer',
-                                                strokeWidth: 0
-                                            }}
-                                        />
-                                    );
+                                    return sessions.map((session, sessionIndex) => {
+                                        const isSameMember = selectedStreamer && selectedStreamer.name === streamer.name;
+                                        const isExactSessionSelected = selectedStreamer && selectedStreamer.slug === session.slug;
+
+                                        // Cek apakah yang diklik adalah nama di Legend (bukan titik dot pada grafik)
+                                        const isLegendClick = isSameMember && !selectedStreamer.clickedTime && !selectedStreamer.clickedSlug;
+                                        let strokeOpacity = 1;
+                                        let strokeWidth = 1.75;
+                                        if (selectedStreamer) {
+                                            if (isLegendClick) {
+                                                strokeOpacity = 1;
+                                                strokeWidth = 3;
+                                            } else if (isExactSessionSelected) {
+                                                strokeOpacity = 1;
+                                                strokeWidth = 3.5;
+                                            } else if (isSameMember) {
+                                                strokeOpacity = 0.45;
+                                                strokeWidth = 1.75;
+                                            } else {
+                                                strokeOpacity = 0.1;
+                                                strokeWidth = 1.25;
+                                            }
+                                        }
+                                        return (
+                                            <Line
+                                                key={`${streamer.name}-${session.slug || sessionIndex}`}
+                                                type="linear"
+                                                dataKey={(d) => (d[`_${streamer.name}_slug`] === session.slug ? d[streamer.name] : null)}
+                                                name={streamer.name}
+                                                stroke={getMemberColor(streamer.name, streamerIndex)}
+                                                strokeWidth={strokeWidth}
+                                                strokeOpacity={strokeOpacity}
+                                                dot={false}
+                                                isAnimationActive={false}
+                                                connectNulls={false}
+                                                activeDot={{
+                                                    r: isExactSessionSelected  ? 6 : 4,
+                                                    onClick: (e, payload) => handleDotClick(streamer, payload),
+                                                    cursor: 'pointer',
+                                                    strokeWidth: 0
+                                                }}
+                                            />
+                                        )
+                                    })
                                 })}
 
                                 {sampledChartData.length > 5 && (
