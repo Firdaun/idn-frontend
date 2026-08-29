@@ -32,7 +32,7 @@ export default function Home() {
         queryKey: ['multiLiveSummary'],
         queryFn: getMultiLiveData,
         staleTime: 1000 * 60 * 15,
-        gcTime: 1000 * 60 * 30,
+        gcTime: 1000 * 60 * 30
     })
 
     const loading = isStreamsLoading && streams.length === 0

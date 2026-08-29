@@ -25,7 +25,7 @@ export const MEMBERS_DATA = [
     { name: "erine", team: "passion", color: "#f59e0b" },
     { name: "oniel", team: "passion", color: "#ea580c" },
     { name: "dena", team: "passion", color: "#fbbf24" },
-    { name: "desy", team: "passion", color: "#ff7849" },
+    { name: "daisy", team: "passion", color: "#ff7849" },
     { name: "feni", team: "passion", color: "#d97706" },
     { name: "jessi", team: "passion", color: "#fdba74" },
     { name: "kathrina", team: "passion", color: "#ff6b35" },

@@ -63,8 +63,8 @@ export default function Analytics() {
     } = useQuery({
         queryKey: ['multiLive', timeRange, activeStart, activeEnd],
         queryFn: () => getMultiLiveData(activeStart, activeEnd),
-        staleTime: 1000 * 60 * 10,
-        gcTime: 1000 * 60 * 20,
+        staleTime: 1000 * 60 * 15,
+        gcTime: 1000 * 60 * 30
     })
 
     const loading = isAnalyticsLoading && (!data.chartData || data.chartData.length === 0);
