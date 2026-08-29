@@ -31,8 +31,8 @@ export default function Home() {
     } = useQuery({
         queryKey: ['multiLiveSummary'],
         queryFn: getMultiLiveData,
-        staleTime: 1000 * 60 * 10,
-        gcTime: 1000 * 60 * 20,
+        staleTime: 1000 * 60 * 15,
+        gcTime: 1000 * 60 * 30,
     })
 
     const loading = isStreamsLoading && streams.length === 0

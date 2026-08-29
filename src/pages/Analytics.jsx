@@ -151,11 +151,12 @@ export default function Analytics() {
         setSelectedStreamer({
             ...baseInfo,
             name: streamer.name,
+            isLegendClick: false,
             clickedTime: clickedTime || null,
             clickedViewers: clickedViewers ?? null,
         });
     };
-    
+
 
     const filteredChartData = useMemo(() => {
         if (!chartData.length || timeRange !== '1h') return chartData;
@@ -193,6 +194,38 @@ export default function Analytics() {
         const list = present.length > 0 ? present : streamers;
         return [...list].sort((a, b) => (b.peakViewers || 0) - (a.peakViewers || 0));
     }, [streamers, sampledChartData]);
+
+    const currentStreamerObj = streamers.find(s => s.name === selectedStreamer?.name);
+    const streamerSessions = currentStreamerObj?.sessions || [];
+    const currentSessionIndex = streamerSessions.findIndex(s => s.slug === selectedStreamer?.slug);
+    const handlePrevSession = () => {
+        if (streamerSessions.length <= 1) return;
+        const activeIdx = currentSessionIndex >= 0 ? currentSessionIndex : 0;
+        const prevIndex = (activeIdx - 1 + streamerSessions.length) % streamerSessions.length;
+        const target = streamerSessions[prevIndex];
+        setSelectedStreamer({
+            ...target,
+            name: selectedStreamer.name,
+            fullName: target.fullName || selectedStreamer.fullName,
+            isLegendClick: false,
+            clickedTime: null,
+            clickedViewers: null
+        });
+    };
+    const handleNextSession = () => {
+        if (streamerSessions.length <= 1) return;
+        const activeIdx = currentSessionIndex >= 0 ? currentSessionIndex : 0;
+        const nextIndex = (activeIdx + 1) % streamerSessions.length;
+        const target = streamerSessions[nextIndex];
+        setSelectedStreamer({
+            ...target,
+            name: selectedStreamer.name,
+            fullName: target.fullName || selectedStreamer.fullName,
+            isLegendClick: false,
+            clickedTime: null,
+            clickedViewers: null
+        });
+    };
 
     return (
         <div className="space-y-6 pb-20">
@@ -242,21 +275,46 @@ export default function Analytics() {
             </div>
 
             {/* Selected Detail */}
+            {/* Selected Detail */}
             {selectedStreamer && (
                 <div className="bg-zinc-900/50 border border-zinc-800/50 p-5 rounded-2xl flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-                    <div className="min-w-0">
-                        <div className="flex items-center gap-2.5">
-                            <h3 className="font-semibold text-base sm:text-lg text-zinc-100 truncate">{selectedStreamer.fullName}</h3>
-                            <span className={`px-2 py-0.5 rounded-md text-[11px] font-medium border ${selectedStreamer.endAt
-                                ? "bg-zinc-800 text-zinc-400 border-zinc-700"
-                                : "bg-red-500/10 text-red-400 border-red-500/20"
-                                }`}>
-                                {selectedStreamer.endAt ? "Selesai Live" : "Sedang Live"}
-                            </span>
+                    {/* Sisi Kiri: Tombol Panah Kiri (jika multi-sesi) & Info Streamer */}
+                    <div className="flex items-center gap-3 min-w-0">
+                        {streamerSessions.length > 1 && (
+                            <button
+                                onClick={handlePrevSession}
+                                title="Sesi Sebelumnya"
+                                className="p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition cursor-pointer shrink-0"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                </svg>
+                            </button>
+                        )}
+
+                        <div className="min-w-0">
+                            <div className="flex items-center gap-2.5 flex-wrap">
+                                <h3 className="font-semibold text-base sm:text-lg text-zinc-100 truncate">
+                                    {selectedStreamer.fullName}
+                                </h3>
+                                <span className={`px-2 py-0.5 rounded-md text-[11px] font-medium border ${selectedStreamer.endAt
+                                    ? "bg-zinc-800 text-zinc-400 border-zinc-700"
+                                    : "bg-red-500/10 text-red-400 border-red-500/20"
+                                    }`}>
+                                    {selectedStreamer.endAt ? "Selesai Live" : "Sedang Live"}
+                                </span>
+                                {/* Badge penanda sesi */}
+                                {streamerSessions.length > 1 && (
+                                    <span className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-zinc-800 text-zinc-300 border border-zinc-700">
+                                        Sesi {(currentSessionIndex >= 0 ? currentSessionIndex : 0) + 1} dari {streamerSessions.length}
+                                    </span>
+                                )}
+                            </div>
+                            <p className="text-zinc-400 text-xs sm:text-sm mt-0.5 truncate">{selectedStreamer.slug}</p>
                         </div>
-                        <p className="text-zinc-400 text-xs sm:text-sm mt-0.5 truncate">{selectedStreamer.slug}</p>
                     </div>
 
+                    {/* Sisi Kanan: Statistik, Tombol Panah Kanan (jika multi-sesi), & Reset */}
                     <div className="flex flex-wrap items-center gap-5">
                         <div>
                             <span className="text-zinc-400 block text-xs">Total Snapshot</span>
@@ -283,7 +341,7 @@ export default function Analytics() {
                         <div>
                             <span className="text-zinc-400 block text-xs">Rata-rata (Avg)</span>
                             <span className="font-semibold text-zinc-100 text-base">
-                                {Math.round(selectedStreamer.avgViewers).toLocaleString()}
+                                {Math.round(selectedStreamer.avgViewers || 0).toLocaleString()}
                             </span>
                         </div>
                         <div>
@@ -308,10 +366,22 @@ export default function Analytics() {
                                     : selectedStreamer.duration}
                             </span>
                         </div>
+
+                        {/* Tombol Panah Kanan (Hanya muncul jika lebih dari 1 sesi) */}
+                        {streamerSessions.length > 1 && (
+                            <button
+                                onClick={handleNextSession}
+                                title="Sesi Berikutnya"
+                                className="p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition cursor-pointer"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                            </button>
+                        )}
+
                         <button
-                            onClick={() => {
-                                setSelectedStreamer(null);
-                            }}
+                            onClick={() => setSelectedStreamer(null)}
                             className="text-xs sm:text-sm text-zinc-400 hover:text-white px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 transition cursor-pointer"
                         >
                             Reset
@@ -319,6 +389,7 @@ export default function Analytics() {
                     </div>
                 </div>
             )}
+
 
             {/* Chart Area */}
             <div className="bg-zinc-900/30 border border-zinc-800/40 rounded-3xl p-5 sm:p-6 space-y-4">
@@ -447,7 +518,12 @@ export default function Analytics() {
                                                     <div
                                                         key={streamer.name}
                                                         onClick={() => {
-                                                            setSelectedStreamer(isSelected ? null : { ...streamer, clickedTime: null, clickedViewers: null });
+                                                            setSelectedStreamer(isSelected ? null : {
+                                                                ...streamer,
+                                                                isLegendClick: true,
+                                                                clickedTime: null,
+                                                                clickedViewers: null
+                                                            });
                                                         }}
                                                         className={`inline-flex items-center gap-2 cursor-pointer transition select-none ${isDimmed ? 'opacity-30 hover:opacity-75' : 'opacity-100'
                                                             }`}
@@ -474,8 +550,7 @@ export default function Analytics() {
                                         const isSameMember = selectedStreamer?.name === streamer.name;
                                         const isExactSessionSelected = selectedStreamer?.slug === session.slug;
 
-                                        // Cek apakah yang diklik adalah nama di Legend (bukan titik dot pada grafik)
-                                        const isLegendClick = isSameMember && !selectedStreamer.clickedTime
+                                        const isLegendClick = isSameMember && selectedStreamer?.isLegendClick;
                                         let strokeOpacity = 1;
                                         let strokeWidth = 1.75;
                                         if (selectedStreamer) {
@@ -506,7 +581,7 @@ export default function Analytics() {
                                                 isAnimationActive={false}
                                                 connectNulls={false}
                                                 activeDot={{
-                                                    r: isExactSessionSelected  ? 6 : 4,
+                                                    r: isExactSessionSelected ? 6 : 4,
                                                     onClick: (e, payload) => handleDotClick(streamer, payload),
                                                     cursor: 'pointer',
                                                     strokeWidth: 0
