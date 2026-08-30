@@ -485,6 +485,7 @@ export default function Analytics() {
                                 />
 
                                 <Tooltip
+                                    isAnimationActive={false}
                                     cursor={{ stroke: '#3f3f46', strokeWidth: 1, strokeDasharray: '3 3' }}
                                     itemSorter={(item) => -Number(item.value || 0)}
                                     contentStyle={{
