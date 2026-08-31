@@ -12,7 +12,7 @@ export default function App() {
             <Navbar />
 
             {/* Main Content View with Top Padding for Fixed Navbar */}
-            <main className="flex-1 pt-20 max-w-375 w-full mx-auto px-4 sm:px-6">
+            <main className="flex-1 pt-20 max-w-375 w-[95%] mx-auto">
                 <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/streaming" element={<Streaming />} />

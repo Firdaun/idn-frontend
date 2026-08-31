@@ -281,11 +281,10 @@ export default function Analytics() {
             </div>
 
             {/* Selected Detail */}
-            {/* Selected Detail */}
             {selectedStreamer && (
-                <div className="bg-zinc-900/50 border border-zinc-800/50 p-5 rounded-2xl flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                <div className="bg-zinc-900/50 border border-zinc-800/50 p-3 lg:p-5 rounded-2xl flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                     {/* Sisi Kiri: Tombol Panah Kiri (jika multi-sesi) & Info Streamer */}
-                    <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex items-center gap-2 w-auto">
                         {streamerSessions.length > 1 && (
                             <button
                                 onClick={handlePrevSession}
@@ -298,110 +297,29 @@ export default function Analytics() {
                             </button>
                         )}
 
-                        <div className="min-w-0">
-                            <div className="flex items-center gap-2.5 flex-wrap">
-                                <h3 className="font-semibold text-base sm:text-lg text-zinc-100 truncate">
+                        <div className="min-w-10">
+                            <div className="flex items-center gap-1 flex-wrap">
+                                <h3 className="font-semibold text-base lg:text-lg text-zinc-100 truncate">
                                     {selectedStreamer.fullName}
                                 </h3>
-                                <span className={`px-2 py-0.5 rounded-md text-[11px] font-medium border ${selectedStreamer.endAt
-                                    ? "bg-zinc-800 text-zinc-400 border-zinc-700"
-                                    : "bg-red-500/10 text-red-400 border-red-500/20"
-                                    }`}>
-                                    {selectedStreamer.endAt ? "Selesai Live" : "Sedang Live"}
-                                </span>
-                                {/* Badge penanda sesi */}
-                                {streamerSessions.length > 1 && (
-                                    <span className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-zinc-800 text-zinc-300 border border-zinc-700">
-                                        Sesi {(currentSessionIndex >= 0 ? currentSessionIndex : 0) + 1} dari {streamerSessions.length}
+                                <div className='flex gap-1'>
+                                    <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-medium border ${selectedStreamer.endAt
+                                        ? "bg-zinc-800 text-zinc-400 border-zinc-700"
+                                        : "bg-red-500/10 text-red-400 border-red-500/20"
+                                        }`}>
+                                        {selectedStreamer.endAt ? "Selesai Live" : "Sedang Live"}
                                     </span>
-                                )}
+                                    {/* Badge penanda sesi */}
+                                    {streamerSessions.length > 1 && (
+                                        <span className="px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-zinc-800 text-zinc-300 border border-zinc-700">
+                                            Sesi {(currentSessionIndex >= 0 ? currentSessionIndex : 0) + 1} dari {streamerSessions.length}
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                             <p className="text-zinc-400 text-xs sm:text-sm mt-0.5 truncate">{selectedStreamer.slug}</p>
                         </div>
-                    </div>
 
-                    {/* Sisi Kanan: Statistik, Tombol Panah Kanan (jika multi-sesi), & Reset */}
-                    <div className="flex flex-wrap items-center gap-5">
-                        <div>
-                            <span className="text-zinc-400 block text-xs">Total Snapshot</span>
-                            <span className="font-semibold text-zinc-100 text-base">
-                                {`${selectedStreamer.totalSnapshots}x`}
-                            </span>
-                        </div>
-                        {selectedStreamer.clickedViewers !== null && selectedStreamer.clickedViewers !== undefined && (
-                            <div>
-                                <span className="text-zinc-400 block text-xs">
-                                    Viewers (@{formatLiveTime(selectedStreamer.clickedTime)})
-                                </span>
-                                <span className="font-semibold text-zinc-100 text-base">
-                                    {Number(selectedStreamer.clickedViewers).toLocaleString()}
-                                </span>
-                            </div>
-                        )}
-                        {selectedStreamer.clickedChat !== null && selectedStreamer.clickedChat !== undefined && (
-                            <div>
-                                <span className="text-zinc-400 block text-xs">
-                                    Chat (@{formatLiveTime(selectedStreamer.clickedTime)})
-                                </span>
-                                <span className="font-semibold text-base text-zinc-100">
-                                    {Number(selectedStreamer.clickedChat).toLocaleString()} / 30s
-                                </span>
-                            </div>
-                        )}
-                        <div>
-                            <span className="text-zinc-400 block text-xs">Peak Viewers</span>
-                            <span className="font-semibold text-zinc-100 text-base">
-                                {Number(selectedStreamer.peakViewers ?? 0).toLocaleString()}
-                            </span>
-                        </div>
-                        <div>
-                            <span className="text-zinc-400 block text-xs">Rata-rata Viewers (Avg)</span>
-                            <span className="font-semibold text-zinc-100 text-base">
-                                {Math.round(selectedStreamer.avgViewers || 0).toLocaleString()}
-                            </span>
-                        </div>
-                        <div>
-                            <span className="text-zinc-400 block text-xs">Total Komentar</span>
-                            <span className="font-semibold text-zinc-100 text-base">
-                                {selectedStreamer.totalChat !== undefined ? Number(selectedStreamer.totalChat).toLocaleString() : '-'}
-                            </span>
-                        </div>
-                        <div>
-                            <span className="text-zinc-400 block text-xs">Puncak Chat (Peak Hype)</span>
-                            <span className="font-semibold text-base text-zinc-100">
-                                {selectedStreamer.peakChat !== undefined ? `${Number(selectedStreamer.peakChat).toLocaleString()} / 30s` : '-'}
-                            </span>
-                        </div>
-                        <div>
-                            <span className="text-zinc-400 block text-xs">Rata-rata Chat (Avg)</span>
-                            <span className="font-semibold text-zinc-100 text-base">
-                                {selectedStreamer.avgChat !== undefined ? `${selectedStreamer.avgChat} / 30s` : '-'}
-                            </span>
-                        </div>
-                        <div>
-                            <span className="text-zinc-400 block text-xs">Mulai Live</span>
-                            <span className="font-semibold text-zinc-100 text-base">
-                                {formatLiveTime(selectedStreamer.liveAt)}
-                            </span>
-                        </div>
-                        <div>
-                            <span className="text-zinc-400 block text-xs">Selesai Live</span>
-                            <span className="font-semibold text-zinc-100 text-base">
-                                {selectedStreamer.endAt ? formatLiveTime(selectedStreamer.endAt) : '-'}
-                            </span>
-                        </div>
-                        <div>
-                            <span className="text-zinc-400 block text-xs">
-                                {selectedStreamer.clickedTime ? `Durasi (@${formatLiveTime(selectedStreamer.clickedTime)})` : "Durasi"}
-                            </span>
-                            <span className="font-semibold text-zinc-100 text-base">
-                                {selectedStreamer.clickedTime
-                                    ? (calculateDurationAtTime(selectedStreamer.liveAt, selectedStreamer.clickedTime) || selectedStreamer.duration)
-                                    : selectedStreamer.duration}
-                            </span>
-                        </div>
-
-                        {/* Tombol Panah Kanan (Hanya muncul jika lebih dari 1 sesi) */}
                         {streamerSessions.length > 1 && (
                             <button
                                 onClick={handleNextSession}
@@ -413,13 +331,102 @@ export default function Analytics() {
                                 </svg>
                             </button>
                         )}
+                    </div>
 
-                        <button
-                            onClick={() => setSelectedStreamer(null)}
-                            className="text-xs sm:text-sm text-zinc-400 hover:text-white px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 transition cursor-pointer"
-                        >
-                            Reset
-                        </button>
+                    <div className='flex items-center gap-4 w-full xl:w-auto min-w-0'>
+                        <div className='flex-1 overflow-x-auto pb-1 min-w-0'>
+                            <div className="flex items-center gap-6 whitespace-nowrap">
+                                <div className='shrink-0'>
+                                    <span className="text-zinc-400 block text-xs">Total Snapshot</span>
+                                    <span className="font-semibold text-zinc-100 text-base">
+                                        {`${selectedStreamer.totalSnapshots}x`}
+                                    </span>
+                                </div>
+                                {selectedStreamer.clickedViewers !== null && selectedStreamer.clickedViewers !== undefined && (
+                                    <div className='shrink-0'>
+                                        <span className="text-zinc-400 block text-xs">
+                                            Viewers (@{formatLiveTime(selectedStreamer.clickedTime)})
+                                        </span>
+                                        <span className="font-semibold text-zinc-100 text-base">
+                                            {Number(selectedStreamer.clickedViewers).toLocaleString()}
+                                        </span>
+                                    </div>
+                                )}
+                                {selectedStreamer.clickedChat !== null && selectedStreamer.clickedChat !== undefined && (
+                                    <div className='shrink-0'>
+                                        <span className="text-zinc-400 block text-xs">
+                                            Chat (@{formatLiveTime(selectedStreamer.clickedTime)})
+                                        </span>
+                                        <span className="font-semibold text-base text-zinc-100">
+                                            {Number(selectedStreamer.clickedChat).toLocaleString()} / 30s
+                                        </span>
+                                    </div>
+                                )}
+                                <div className='shrink-0'>
+                                    <span className="text-zinc-400 block text-xs">Peak Viewers</span>
+                                    <span className="font-semibold text-zinc-100 text-base">
+                                        {Number(selectedStreamer.peakViewers ?? 0).toLocaleString()}
+                                    </span>
+                                </div>
+                                <div className='shrink-0'>
+                                    <span className="text-zinc-400 block text-xs">Rata-rata Viewers (Avg)</span>
+                                    <span className="font-semibold text-zinc-100 text-base">
+                                        {Math.round(selectedStreamer.avgViewers || 0).toLocaleString()}
+                                    </span>
+                                </div>
+                                <div className='shrink-0'>
+                                    <span className="text-zinc-400 block text-xs">Total Komentar</span>
+                                    <span className="font-semibold text-zinc-100 text-base">
+                                        {selectedStreamer.totalChat !== undefined ? Number(selectedStreamer.totalChat).toLocaleString() : '-'}
+                                    </span>
+                                </div>
+                                <div className='shrink-0'>
+                                    <span className="text-zinc-400 block text-xs">Puncak Chat (Peak Hype)</span>
+                                    <span className="font-semibold text-base text-zinc-100">
+                                        {selectedStreamer.peakChat !== undefined ? `${Number(selectedStreamer.peakChat).toLocaleString()} / 30s` : '-'}
+                                    </span>
+                                </div>
+                                <div className='shrink-0'>
+                                    <span className="text-zinc-400 block text-xs">Rata-rata Chat (Avg)</span>
+                                    <span className="font-semibold text-zinc-100 text-base">
+                                        {selectedStreamer.avgChat !== undefined ? `${selectedStreamer.avgChat} / 30s` : '-'}
+                                    </span>
+                                </div>
+                                <div className='shrink-0'>
+                                    <span className="text-zinc-400 block text-xs">Mulai Live</span>
+                                    <span className="font-semibold text-zinc-100 text-base">
+                                        {formatLiveTime(selectedStreamer.liveAt)}
+                                    </span>
+                                </div>
+                                <div className='shrink-0'>
+                                    <span className="text-zinc-400 block text-xs">Selesai Live</span>
+                                    <span className="font-semibold text-zinc-100 text-base">
+                                        {selectedStreamer.endAt ? formatLiveTime(selectedStreamer.endAt) : '-'}
+                                    </span>
+                                </div>
+                                <div className='shrink-0'>
+                                    <span className="text-zinc-400 block text-xs">
+                                        {selectedStreamer.clickedTime ? `Durasi (@${formatLiveTime(selectedStreamer.clickedTime)})` : "Durasi"}
+                                    </span>
+                                    <span className="font-semibold text-zinc-100 text-base">
+                                        {selectedStreamer.clickedTime
+                                            ? (calculateDurationAtTime(selectedStreamer.liveAt, selectedStreamer.clickedTime) || selectedStreamer.duration)
+                                            : selectedStreamer.duration}
+                                    </span>
+                                </div>
+
+                                {/* Tombol Panah Kanan (Hanya muncul jika lebih dari 1 sesi) */}
+
+                            </div>
+                        </div>
+                        <div className='flex justify-center items-center'>
+                            <button
+                                onClick={() => setSelectedStreamer(null)}
+                                className="text-xs sm:text-sm text-zinc-400 hover:text-white px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 transition cursor-pointer"
+                            >
+                                Reset
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
@@ -430,10 +437,10 @@ export default function Analytics() {
                 {/* Time Range Filter Bar */}
                 <div className="flex relative flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-900 pb-4">
                     <div className="flex items-center gap-2.5 flex-wrap">
-                        <div className="inline-flex p-1 rounded-xl bg-zinc-900/80 border border-zinc-800/80">
+                        <div className="flex w-full p-1 rounded-xl bg-zinc-900/80 border border-zinc-800/80">
                             <button
                                 onClick={() => setMetricType('viewers')}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer flex items-center gap-1.5 ${metricType === 'viewers'
+                                className={`px-3 py-1.5 w-1/2 rounded-lg text-xs font-medium transition cursor-pointer flex justify-center items-center gap-1.5 ${metricType === 'viewers'
                                     ? 'bg-zinc-800 text-white shadow-sm'
                                     : 'text-zinc-400 hover:text-zinc-200'
                                     }`}
@@ -442,7 +449,7 @@ export default function Analytics() {
                             </button>
                             <button
                                 onClick={() => setMetricType('chat')}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer flex items-center gap-1.5 ${metricType === 'chat'
+                                className={`px-3 py-1.5 w-1/2 rounded-lg text-xs font-medium transition cursor-pointer flex justify-center items-center gap-1.5 ${metricType === 'chat'
                                     ? 'bg-zinc-800 text-white shadow-sm'
                                     : 'text-zinc-400 hover:text-zinc-200'
                                     }`}
@@ -451,26 +458,30 @@ export default function Analytics() {
                             </button>
                         </div>
 
-                        <div className="inline-flex p-1 rounded-xl bg-zinc-900/80 border border-zinc-800/80">
-                            {[
-                                { id: 'today', label: 'Hari Ini' },
-                                { id: '1d', label: '1 Hari Lalu' },
-                                { id: '2d', label: '2 Hari Lalu' },
-                                { id: '1h', label: '1 Jam' },
-                                { id: 'all', label: 'Semua' },
-                                { id: 'custom', label: '⚙️ Kustom' }
-                            ].map((tab) => (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setTimeRange(tab.id)}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${timeRange === tab.id
-                                        ? 'bg-zinc-800 text-white shadow-sm'
-                                        : 'text-zinc-400 hover:text-zinc-200'
-                                        }`}
-                                >
-                                    {tab.label}
-                                </button>
-                            ))}
+                        <div className="flex rounded-lg overflow-hidden bg-zinc-900/80 border w-full border-zinc-800/80">
+                            <div className='overflow-x-auto'>
+                                <div className='flex'>
+                                    {[
+                                        { id: 'today', label: 'Hari Ini' },
+                                        { id: '1d', label: '1 Hari Lalu' },
+                                        { id: '2d', label: '2 Hari Lalu' },
+                                        { id: '1h', label: '1 Jam' },
+                                        { id: 'all', label: 'Semua' },
+                                        { id: 'custom', label: '⚙️ Kustom' }
+                                    ].map((tab) => (
+                                        <button
+                                            key={tab.id}
+                                            onClick={() => setTimeRange(tab.id)}
+                                            className={`shrink-0 px-3 py-1.5 text-xs font-medium transition cursor-pointer ${timeRange === tab.id
+                                                ? 'bg-zinc-800 text-white shadow-sm'
+                                                : 'text-zinc-400 hover:text-zinc-200'
+                                                }`}
+                                        >
+                                            {tab.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
                         {timeRange === 'custom' && (
                             <div className="flex flex-wrap items-center gap-3 bg-zinc-900/80 p-2 py-1 rounded-xl border border-zinc-800/80">
