@@ -4,6 +4,12 @@ import { getMultiLiveData } from '../../utils/backend-api';
 import { getMemberColor } from '../../utils/color';
 import { useQuery } from '@tanstack/react-query';
 
+const getTodayStartIso = () => {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    return start.toISOString();
+};
+
 export default function Analytics() {
     const [selectedStreamer, setSelectedStreamer] = useState(null);
     const [timeRange, setTimeRange] = useState(() => sessionStorage.getItem('analytics_timeRange') || 'today');
@@ -11,7 +17,7 @@ export default function Analytics() {
     const [customEnd, setCustomEnd] = useState(() => sessionStorage.getItem('analytics_customEnd') || '');
     const [appliedCustom, setAppliedCustom] = useState(() => {
         const saved = sessionStorage.getItem('analytics_appliedCustom');
-        return saved ? JSON.parse(saved) : { start: null, end: null };
+        return saved ? JSON.parse(saved) : { start: getTodayStartIso(), end: null };
     });
     const [metricType, setMetricType] = useState(() => sessionStorage.getItem('analytics_metricType') || 'viewers');
 
@@ -31,11 +37,6 @@ export default function Analytics() {
         sessionStorage.setItem('analytics_appliedCustom', JSON.stringify(appliedCustom));
     }, [appliedCustom]);
 
-    const getTodayStartIso = () => {
-        const start = new Date();
-        start.setHours(0, 0, 0, 0);
-        return start.toISOString();
-    };
 
     const getDaysAgoIsoRange = (daysAgo) => {
         const start = new Date();
@@ -234,7 +235,7 @@ export default function Analytics() {
     };
 
     return (
-        <div className="space-y-6 pb-20">
+        <div className="space-y-3 lg:space-y-5 pb-20">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-900 pb-5">
                 <div>
@@ -247,7 +248,7 @@ export default function Analytics() {
                 <button
                     onClick={() => refetch()}
                     disabled={refreshing}
-                    className="self-start sm:self-auto px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-sm text-zinc-300 hover:text-white font-medium transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                    className="self-start sm:self-auto px-4 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-sm text-zinc-300 hover:text-white font-medium transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                     <svg className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -257,39 +258,46 @@ export default function Analytics() {
             </div>
 
             {/* Metrics */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="bg-zinc-900/30 border border-zinc-800/40 rounded-2xl p-5">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-5">
+                <div className="bg-zinc-900/30 border border-zinc-800/40 rounded-lg lg:rounded-xl p-3 lg:p-5">
                     <span className="text-sm text-zinc-400 font-medium">Streamer Tercatat</span>
-                    <p className="text-2xl sm:text-3xl font-semibold text-zinc-100 mt-1">
+                    <p className="text-2xl lg-text-3xl font-semibold text-zinc-100 mt-1">
                         {streamers.length} <span className="text-sm font-normal text-zinc-400">member</span>
                     </p>
                 </div>
 
-                <div className="bg-zinc-900/30 border border-zinc-800/40 rounded-2xl p-5">
-                    <span className="text-sm text-zinc-400 font-medium">Peak Viewers Tertinggi</span>
-                    <p className="text-2xl sm:text-3xl font-semibold text-zinc-100 mt-1">
+                <div className="bg-zinc-900/30 border border-zinc-800/40 rounded-lg lg:rounded-xl p-3 lg:p-5">
+                    <span className="text-sm text-zinc-400 font-medium">Penonton Tertinggi</span>
+                    <p className="text-2xl lg-text-3xl font-semibold text-zinc-100 mt-1">
                         {maxPeak > 0 ? maxPeak.toLocaleString() : "-"}
                     </p>
                 </div>
 
-                <div className="bg-zinc-900/30 border border-zinc-800/40 rounded-2xl p-5">
+                <div className="bg-zinc-900/30 hidden lg:block border border-zinc-800/40 rounded-lg lg:rounded-xl p-3 lg:p-5">
                     <span className="text-sm text-zinc-400 font-medium">Total Snapshot Waktu</span>
-                    <p className="text-2xl sm:text-3xl font-semibold text-zinc-100 mt-1">
+                    <p className="text-2xl lg-text-3xl font-semibold text-zinc-100 mt-1">
                         {filteredChartData.length} <span className="text-sm font-normal text-zinc-400">titik ({timeRange === 'all' ? 'Semua' : timeRange === 'today' ? 'Hari Ini' : timeRange})</span>
                     </p>
                 </div>
             </div>
+            
+            <div className="bg-zinc-900/30 block lg:hidden border text-center border-zinc-800/40 rounded-lg p-3">
+                <span className="text-sm text-zinc-400 font-medium">Total Snapshot Waktu</span>
+                <p className="text-2xl lg-text-3xl font-semibold text-zinc-100 mt-1">
+                    {filteredChartData.length} <span className="text-sm font-normal text-zinc-400">titik ({timeRange === 'all' ? 'Semua' : timeRange === 'today' ? 'Hari Ini' : timeRange})</span>
+                </p>
+            </div>
 
             {/* Selected Detail */}
             {selectedStreamer && (
-                <div className="bg-zinc-900/50 border border-zinc-800/50 p-3 lg:p-5 rounded-2xl flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                <div className="bg-zinc-900/50 border border-zinc-800/50 p-3 lg:p-5 rounded-lg lg:rounded-xl flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                     {/* Sisi Kiri: Tombol Panah Kiri (jika multi-sesi) & Info Streamer */}
-                    <div className="flex items-center gap-2 w-auto">
+                    <div className="flex items-center justify-between gap-3 w-full lg:w-auto">
                         {streamerSessions.length > 1 && (
                             <button
                                 onClick={handlePrevSession}
                                 title="Sesi Sebelumnya"
-                                className="p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition cursor-pointer shrink-0"
+                                className="p-2 rounded-md lg:rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition cursor-pointer shrink-0"
                             >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -303,7 +311,7 @@ export default function Analytics() {
                                     {selectedStreamer.fullName}
                                 </h3>
                                 <div className='flex gap-1'>
-                                    <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-medium border ${selectedStreamer.endAt
+                                    <span className={`px-1.5 py-0.5 rounded-sm lg:rounded-md text-[10px] font-medium border ${selectedStreamer.endAt
                                         ? "bg-zinc-800 text-zinc-400 border-zinc-700"
                                         : "bg-red-500/10 text-red-400 border-red-500/20"
                                         }`}>
@@ -311,7 +319,7 @@ export default function Analytics() {
                                     </span>
                                     {/* Badge penanda sesi */}
                                     {streamerSessions.length > 1 && (
-                                        <span className="px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-zinc-800 text-zinc-300 border border-zinc-700">
+                                        <span className="px-1.5 py-0.5 rounded-sm lg:rounded-md text-[10px] font-medium bg-zinc-800 text-zinc-300 border border-zinc-700">
                                             Sesi {(currentSessionIndex >= 0 ? currentSessionIndex : 0) + 1} dari {streamerSessions.length}
                                         </span>
                                     )}
@@ -324,7 +332,7 @@ export default function Analytics() {
                             <button
                                 onClick={handleNextSession}
                                 title="Sesi Berikutnya"
-                                className="p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition cursor-pointer"
+                                className="p-2 rounded-md lg:rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition cursor-pointer"
                             >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -422,7 +430,7 @@ export default function Analytics() {
                         <div className='flex justify-center items-center'>
                             <button
                                 onClick={() => setSelectedStreamer(null)}
-                                className="text-xs sm:text-sm text-zinc-400 hover:text-white px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 transition cursor-pointer"
+                                className="text-xs sm:text-sm text-zinc-400 hover:text-white px-3 py-1.5 rounded-md lg:rounded-lg bg-zinc-800 hover:bg-zinc-700 transition cursor-pointer"
                             >
                                 Reset
                             </button>
@@ -433,14 +441,14 @@ export default function Analytics() {
 
 
             {/* Chart Area */}
-            <div className="bg-zinc-900/30 border border-zinc-800/40 rounded-3xl p-5 sm:p-6 space-y-4">
+            <div className="bg-zinc-900/30 border border-zinc-800/40 rounded-lg lg:rounded-xl p-3 lg:p-5 space-y-4">
                 {/* Time Range Filter Bar */}
-                <div className="flex relative flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-900 pb-4">
-                    <div className="flex items-center gap-2.5 flex-wrap">
-                        <div className="flex w-full p-1 rounded-xl bg-zinc-900/80 border border-zinc-800/80">
+                <div className="flex relative justify-between gap-3 border-b border-zinc-900 pb-3 lg:pb-5">
+                    <div className="flex items-center w-full gap-3 md:gap-0 md:justify-between xl:justify-start xl:gap-3 flex-wrap">
+                        <div className="flex w-full md:w-[calc(50%-4px)] lg:w-[calc(50%-37px)] xl:w-[20%] p-1 rounded-md lg:rounded-lg bg-zinc-900/80 border border-zinc-800/80">
                             <button
                                 onClick={() => setMetricType('viewers')}
-                                className={`px-3 py-1.5 w-1/2 rounded-lg text-xs font-medium transition cursor-pointer flex justify-center items-center gap-1.5 ${metricType === 'viewers'
+                                className={`px-3 py-1.5 w-1/2 rounded-sm lg:rounded-md text-xs font-medium transition cursor-pointer flex justify-center items-center gap-1.5 ${metricType === 'viewers'
                                     ? 'bg-zinc-800 text-white shadow-sm'
                                     : 'text-zinc-400 hover:text-zinc-200'
                                     }`}
@@ -449,7 +457,7 @@ export default function Analytics() {
                             </button>
                             <button
                                 onClick={() => setMetricType('chat')}
-                                className={`px-3 py-1.5 w-1/2 rounded-lg text-xs font-medium transition cursor-pointer flex justify-center items-center gap-1.5 ${metricType === 'chat'
+                                className={`px-3 py-1.5 w-1/2 rounded-sm lg:rounded-md text-xs font-medium transition cursor-pointer flex justify-center items-center gap-1.5 ${metricType === 'chat'
                                     ? 'bg-zinc-800 text-white shadow-sm'
                                     : 'text-zinc-400 hover:text-zinc-200'
                                     }`}
@@ -458,9 +466,9 @@ export default function Analytics() {
                             </button>
                         </div>
 
-                        <div className="flex rounded-lg overflow-hidden bg-zinc-900/80 border w-full border-zinc-800/80">
+                        <div className="flex rounded-md lg:rounded-lg overflow-hidden md:h-9.5 bg-zinc-900/80 border w-full md:w-[calc(50%-4px)] lg:w-[calc(50%-37px)] xl:w-[calc(30%-9px)] border-zinc-800/80">
                             <div className='overflow-x-auto'>
-                                <div className='flex'>
+                                <div className='flex h-full'>
                                     {[
                                         { id: 'today', label: 'Hari Ini' },
                                         { id: '1d', label: '1 Hari Lalu' },
@@ -484,14 +492,14 @@ export default function Analytics() {
                             </div>
                         </div>
                         {timeRange === 'custom' && (
-                            <div className="flex flex-wrap items-center gap-3 bg-zinc-900/80 p-2 py-1 rounded-xl border border-zinc-800/80">
+                            <div className="flex flex-wrap md:mt-3 lg:mt-5 xl:mt-0 items-center gap-3 bg-zinc-900/80 p-2 py-1 rounded-md lg:rounded-lg border border-zinc-800/80">
                                 <div className="flex items-center gap-2 text-xs text-zinc-300">
                                     <span>Dari:</span>
                                     <input
                                         type="datetime-local"
                                         value={customStart}
                                         onChange={(e) => setCustomStart(e.target.value)}
-                                        className="bg-zinc-900 border border-zinc-800/80 rounded-lg px-1 py-1 text-xs text-zinc-100 focus:outline-none focus:ring-zinc-500"
+                                        className="bg-zinc-900 border border-zinc-800/80 rounded-sm lg:rounded-md px-1 py-1 text-xs text-zinc-100 focus:outline-none focus:ring-zinc-500"
                                     />
                                 </div>
                                 <div className="flex items-center gap-2 text-xs text-zinc-300">
@@ -500,13 +508,13 @@ export default function Analytics() {
                                         type="datetime-local"
                                         value={customEnd}
                                         onChange={(e) => setCustomEnd(e.target.value)}
-                                        className="bg-zinc-900 border border-zinc-800/80 rounded-lg px-1 py-1 text-xs text-zinc-100 focus:outline-none focus:ring-zinc-500"
+                                        className="bg-zinc-900 border border-zinc-800/80 rounded-sm lg:rounded-md px-1 py-1 text-xs text-zinc-100 focus:outline-none focus:ring-zinc-500"
                                     />
                                 </div>
                                 <button
                                     onClick={handleApplyCustomRange}
                                     disabled={refreshing}
-                                    className="px-3 py-1.5 bg-zinc-100 hover:bg-white text-zinc-900 text-xs font-semibold rounded-lg transition cursor-pointer disabled:opacity-50"
+                                    className="px-3 py-1.5 bg-zinc-100 hover:bg-white text-zinc-900 text-xs font-semibold rounded-sm lg:rounded-md transition cursor-pointer disabled:opacity-50"
                                 >
                                     {refreshing ? "Menerapkan..." : "Terapkan"}
                                 </button>
@@ -514,8 +522,8 @@ export default function Analytics() {
                         )}
                     </div>
 
-                    <span className="absolute right-0 text-xs text-zinc-500 hidden sm:inline-block">
-                        Tarik slider di bawah untuk zoom & geser riwayat
+                    <span className="absolute right-0 text-xs text-zinc-500 hidden xl:inline-block">
+                        geser slider di bawah untuk zoom
                     </span>
                 </div>
 
@@ -585,7 +593,7 @@ export default function Analytics() {
 
                                 <Legend
                                     content={() => (
-                                        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 pt-5 text-xs">
+                                        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 pt-3 lg:pt-5 text-xs">
                                             {activeStreamers.map((streamer, index) => {
                                                 const color = getMemberColor(streamer.name, index);
                                                 const isSelected = selectedStreamer?.name === streamer.name;
