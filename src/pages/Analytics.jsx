@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Brush } from 'recharts';
 import { getMultiLiveData } from '../../utils/backend-api';
 import { getMemberColor } from '../../utils/color';
@@ -20,6 +20,13 @@ export default function Analytics() {
         return saved ? JSON.parse(saved) : { start: getTodayStartIso(), end: null };
     });
     const [metricType, setMetricType] = useState(() => sessionStorage.getItem('analytics_metricType') || 'viewers');
+    const scrollMetricsRef = useRef(null);
+    // Otomatis geser scrollbar ke paling kanan saat ada member/sesi yang dipilih
+    useEffect(() => {
+        if (selectedStreamer && scrollMetricsRef.current) {
+            scrollMetricsRef.current.scrollLeft = scrollMetricsRef.current.scrollWidth;
+        }
+    }, [selectedStreamer?.slug, selectedStreamer?.clickedTime]);
 
     useEffect(() => {
         sessionStorage.setItem('analytics_metricType', metricType);
@@ -280,7 +287,7 @@ export default function Analytics() {
                     </p>
                 </div>
             </div>
-            
+
             <div className="bg-zinc-900/30 block lg:hidden border text-center border-zinc-800/40 rounded-lg p-3">
                 <span className="text-sm text-zinc-400 font-medium">Total Snapshot Waktu</span>
                 <p className="text-2xl lg-text-3xl font-semibold text-zinc-100 mt-1">
@@ -342,7 +349,7 @@ export default function Analytics() {
                     </div>
 
                     <div className='flex items-center gap-4 w-full xl:w-auto min-w-0'>
-                        <div className='flex-1 overflow-x-auto pb-1 min-w-0'>
+                        <div ref={scrollMetricsRef} className='flex-1 overflow-x-auto pb-1 min-w-0'>
                             <div className="flex items-center gap-6 whitespace-nowrap">
                                 <div className='shrink-0'>
                                     <span className="text-zinc-400 block text-xs">Total Snapshot</span>
@@ -422,8 +429,6 @@ export default function Analytics() {
                                             : selectedStreamer.duration}
                                     </span>
                                 </div>
-
-                                {/* Tombol Panah Kanan (Hanya muncul jika lebih dari 1 sesi) */}
 
                             </div>
                         </div>
