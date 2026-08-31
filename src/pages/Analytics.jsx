@@ -13,7 +13,11 @@ export default function Analytics() {
         const saved = sessionStorage.getItem('analytics_appliedCustom');
         return saved ? JSON.parse(saved) : { start: null, end: null };
     });
+    const [metricType, setMetricType] = useState(() => sessionStorage.getItem('analytics_metricType') || 'viewers');
 
+    useEffect(() => {
+        sessionStorage.setItem('analytics_metricType', metricType);
+    }, [metricType]);
     useEffect(() => {
         sessionStorage.setItem('analytics_timeRange', timeRange);
     }, [timeRange]);
@@ -141,6 +145,7 @@ export default function Analytics() {
         const dataPoint = dotPayload?.payload
         const clickedTime = dataPoint?.timeLabel;
         const clickedViewers = dataPoint && streamer?.name ? dataPoint[streamer.name] : null;
+        const clickedChat = dataPoint && streamer?.name ? dataPoint[`_${streamer.name}_chat`] : null;
         const clickedSlug = dataPoint && streamer?.name ? dataPoint[`_${streamer.name}_slug`] : null;
         let matchedSession = null;
         if (clickedSlug && streamer.sessions) {
@@ -154,6 +159,7 @@ export default function Analytics() {
             isLegendClick: false,
             clickedTime: clickedTime || null,
             clickedViewers: clickedViewers ?? null,
+            clickedChat: clickedChat ?? null
         });
     };
 
@@ -332,6 +338,16 @@ export default function Analytics() {
                                 </span>
                             </div>
                         )}
+                        {selectedStreamer.clickedChat !== null && selectedStreamer.clickedChat !== undefined && (
+                            <div>
+                                <span className="text-zinc-400 block text-xs">
+                                    Chat (@{formatLiveTime(selectedStreamer.clickedTime)})
+                                </span>
+                                <span className="font-semibold text-base text-zinc-100">
+                                    {Number(selectedStreamer.clickedChat).toLocaleString()} / 30s
+                                </span>
+                            </div>
+                        )}
                         <div>
                             <span className="text-zinc-400 block text-xs">Peak Viewers</span>
                             <span className="font-semibold text-zinc-100 text-base">
@@ -339,9 +355,27 @@ export default function Analytics() {
                             </span>
                         </div>
                         <div>
-                            <span className="text-zinc-400 block text-xs">Rata-rata (Avg)</span>
+                            <span className="text-zinc-400 block text-xs">Rata-rata Viewers (Avg)</span>
                             <span className="font-semibold text-zinc-100 text-base">
                                 {Math.round(selectedStreamer.avgViewers || 0).toLocaleString()}
+                            </span>
+                        </div>
+                        <div>
+                            <span className="text-zinc-400 block text-xs">Total Komentar</span>
+                            <span className="font-semibold text-zinc-100 text-base">
+                                {selectedStreamer.totalChat !== undefined ? Number(selectedStreamer.totalChat).toLocaleString() : '-'}
+                            </span>
+                        </div>
+                        <div>
+                            <span className="text-zinc-400 block text-xs">Puncak Chat (Peak Hype)</span>
+                            <span className="font-semibold text-base text-zinc-100">
+                                {selectedStreamer.peakChat !== undefined ? `${Number(selectedStreamer.peakChat).toLocaleString()} / 30s` : '-'}
+                            </span>
+                        </div>
+                        <div>
+                            <span className="text-zinc-400 block text-xs">Rata-rata Chat (Avg)</span>
+                            <span className="font-semibold text-zinc-100 text-base">
+                                {selectedStreamer.avgChat !== undefined ? `${selectedStreamer.avgChat} / 30s` : '-'}
                             </span>
                         </div>
                         <div>
@@ -396,7 +430,27 @@ export default function Analytics() {
                 {/* Time Range Filter Bar */}
                 <div className="flex relative flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-900 pb-4">
                     <div className="flex items-center gap-2.5 flex-wrap">
-                        <span className="text-xs sm:text-sm font-medium text-zinc-400">Rentang Waktu:</span>
+                        <div className="inline-flex p-1 rounded-xl bg-zinc-900/80 border border-zinc-800/80">
+                            <button
+                                onClick={() => setMetricType('viewers')}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer flex items-center gap-1.5 ${metricType === 'viewers'
+                                    ? 'bg-zinc-800 text-white shadow-sm'
+                                    : 'text-zinc-400 hover:text-zinc-200'
+                                    }`}
+                            >
+                                <span>👥 Penonton</span>
+                            </button>
+                            <button
+                                onClick={() => setMetricType('chat')}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer flex items-center gap-1.5 ${metricType === 'chat'
+                                    ? 'bg-zinc-800 text-white shadow-sm'
+                                    : 'text-zinc-400 hover:text-zinc-200'
+                                    }`}
+                            >
+                                <span>💬 Aktivitas Chat</span>
+                            </button>
+                        </div>
+
                         <div className="inline-flex p-1 rounded-xl bg-zinc-900/80 border border-zinc-800/80">
                             {[
                                 { id: 'today', label: 'Hari Ini' },
@@ -482,12 +536,22 @@ export default function Analytics() {
                                     axisLine={false}
                                     tickLine={false}
                                     tickMargin={12}
+                                    tickFormatter={(val) => metricType === 'chat' ? `${val}/30s` : Number(val).toLocaleString()}
                                 />
 
                                 <Tooltip
                                     isAnimationActive={false}
                                     cursor={{ stroke: '#3f3f46', strokeWidth: 1, strokeDasharray: '3 3' }}
                                     itemSorter={(item) => -Number(item.value || 0)}
+                                    formatter={(value, name, item) => {
+                                        const dataPoint = item?.payload;
+                                        const chatVal = dataPoint && dataPoint[`_${name}_chat`] !== undefined ? dataPoint[`_${name}_chat`] : 0;
+                                        const viewerVal = dataPoint && dataPoint[name] !== undefined ? dataPoint[name] : 0;
+                                        if (metricType === 'chat') {
+                                            return [`${Number(value).toLocaleString()} pesan / dtk (👥 ${Number(viewerVal).toLocaleString()} penonton)`, name];
+                                        }
+                                        return [`${Number(value).toLocaleString()} penonton (💬 ${Number(chatVal).toLocaleString()} pesan / 30 dtk)`, name];
+                                    }}
                                     contentStyle={{
                                         backgroundColor: '#18181b',
                                         borderRadius: '12px',
@@ -573,7 +637,13 @@ export default function Analytics() {
                                             <Line
                                                 key={`${streamer.name}-${session.slug || sessionIndex}`}
                                                 type="linear"
-                                                dataKey={(d) => (d[`_${streamer.name}_slug`] === session.slug ? d[streamer.name] : null)}
+                                                dataKey={(d) => {
+                                                    if (d[`_${streamer.name}_slug`] !== session.slug) return null;
+                                                    if (metricType === 'chat') {
+                                                        return d[`_${streamer.name}_chat`] ?? 0;
+                                                    }
+                                                    return d[streamer.name] ?? null;
+                                                }}
                                                 name={streamer.name}
                                                 stroke={getMemberColor(streamer.name, streamerIndex)}
                                                 strokeWidth={strokeWidth}
