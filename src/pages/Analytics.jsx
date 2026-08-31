@@ -522,7 +522,7 @@ export default function Analytics() {
                         )}
                     </div>
 
-                    <span className="absolute right-0 text-xs text-zinc-500 hidden xl:inline-block">
+                    <span className="absolute right-0 top-2.5 text-xs text-zinc-500 hidden xl:inline-block">
                         geser slider di bawah untuk zoom
                     </span>
                 </div>
@@ -560,34 +560,66 @@ export default function Analytics() {
 
                                 <Tooltip
                                     isAnimationActive={false}
+                                    offset={25}
+                                    wrapperStyle={{ pointerEvents: 'none', zIndex: 9999 }}
                                     cursor={{ stroke: '#3f3f46', strokeWidth: 1, strokeDasharray: '3 3' }}
-                                    itemSorter={(item) => -Number(item.value || 0)}
-                                    formatter={(value, name, item) => {
-                                        const dataPoint = item?.payload;
-                                        const chatVal = dataPoint && dataPoint[`_${name}_chat`] !== undefined ? dataPoint[`_${name}_chat`] : 0;
-                                        const viewerVal = dataPoint && dataPoint[name] !== undefined ? dataPoint[name] : 0;
-                                        if (metricType === 'chat') {
-                                            return [`${Number(value).toLocaleString()} pesan / dtk (👥 ${Number(viewerVal).toLocaleString()} penonton)`, name];
+                                    content={({ active, payload, label }) => {
+                                        if (!active || !payload || !payload.length) return null;
+
+                                        // Jika ada member yang dipilih, HANYA tampilkan member tersebut di tooltip
+                                        let items = payload.filter(item => item.value !== null && item.value !== undefined);
+                                        if (selectedStreamer) {
+                                            items = items.filter(item => item.name === selectedStreamer.name);
+                                            if (!items.length) return null;
                                         }
-                                        return [`${Number(value).toLocaleString()} penonton (💬 ${Number(chatVal).toLocaleString()} pesan / 30 dtk)`, name];
-                                    }}
-                                    contentStyle={{
-                                        backgroundColor: '#18181b',
-                                        borderRadius: '12px',
-                                        border: '1px solid #27272a',
-                                        color: '#f4f4f5',
-                                        fontSize: '13px',
-                                        padding: '10px 14px'
-                                    }}
-                                    itemStyle={{ padding: '2px 0' }}
-                                    labelStyle={{ marginBottom: '6px', color: '#a1a1aa', fontWeight: 'bold' }}
-                                    labelFormatter={(label) => {
-                                        if (!label) return "";
+
+                                        if (!items.length) return null;
+
+                                        const sortedItems = [...items].sort((a, b) => Number(b.value || 0) - Number(a.value || 0));
+
                                         const d = new Date(Number(label));
-                                        if (isNaN(d.getTime())) return "";
-                                        const timeStr = d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).replace(/\./g, ":");
-                                        const dateStr = d.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
-                                        return `Waktu: ${timeStr} WIB (${dateStr})`;
+                                        const timeStr = !isNaN(d.getTime())
+                                            ? d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).replace(/\./g, ":")
+                                            : "";
+                                        const dateStr = !isNaN(d.getTime())
+                                            ? d.toLocaleDateString("id-ID", { day: "numeric", month: "short" })
+                                            : "";
+
+                                        return (
+                                            <div className="bg-zinc-900 border border-zinc-800 text-zinc-100 text-xs sm:text-sm rounded-xl p-3 shadow-xl space-y-1.5 min-w-48">
+                                                <p className="text-zinc-400 font-semibold text-xs border-b border-zinc-800 pb-1.5">
+                                                    Waktu: {timeStr} WIB ({dateStr})
+                                                </p>
+                                                <div className="space-y-1">
+                                                    {sortedItems.map((item, idx) => {
+                                                        const dataPoint = item?.payload;
+                                                        const memberName = item.name;
+                                                        const chatVal = dataPoint && dataPoint[`_${memberName}_chat`] !== undefined ? dataPoint[`_${memberName}_chat`] : 0;
+                                                        const viewerVal = dataPoint && dataPoint[memberName] !== undefined ? dataPoint[memberName] : 0;
+
+                                                        return (
+                                                            <div key={idx} className="flex items-center gap-2">
+                                                                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.color || '#fff' }} />
+                                                                <span className="truncate">
+                                                                    <strong className="text-zinc-100">{memberName}:</strong>{' '}
+                                                                    {metricType === 'chat' ? (
+                                                                        <span>
+                                                                            {Number(item.value || 0).toLocaleString()} pesan / 30 dtk{' '}
+                                                                            <span className="text-zinc-400 text-[11px]">(👥 {Number(viewerVal).toLocaleString()} penonton)</span>
+                                                                        </span>
+                                                                    ) : (
+                                                                        <span>
+                                                                            {Number(item.value || 0).toLocaleString()} penonton{' '}
+                                                                            <span className="text-zinc-400 text-[11px]">(💬 {Number(chatVal).toLocaleString()} pesan / 30 dtk)</span>
+                                                                        </span>
+                                                                    )}
+                                                                </span>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        );
                                     }}
                                 />
 
@@ -652,6 +684,10 @@ export default function Analytics() {
                                                 strokeWidth = 1.25;
                                             }
                                         }
+
+                                        // Hanya tampilkan dot interaktif untuk sesi/member yang sedang dipilih
+                                        const shouldShowActiveDot = !selectedStreamer || (isLegendClick ? isSameMember : isExactSessionSelected);
+
                                         return (
                                             <Line
                                                 key={`${streamer.name}-${session.slug || sessionIndex}`}
@@ -670,12 +706,12 @@ export default function Analytics() {
                                                 dot={false}
                                                 isAnimationActive={false}
                                                 connectNulls={false}
-                                                activeDot={{
+                                                activeDot={shouldShowActiveDot ? {
                                                     r: isExactSessionSelected ? 6 : 4,
                                                     onClick: (e, payload) => handleDotClick(streamer, payload),
                                                     cursor: 'pointer',
                                                     strokeWidth: 0
-                                                }}
+                                                } : false}
                                             />
                                         )
                                     })
