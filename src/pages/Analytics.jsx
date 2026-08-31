@@ -566,7 +566,6 @@ export default function Analytics() {
                                     content={({ active, payload, label }) => {
                                         if (!active || !payload || !payload.length) return null;
 
-                                        // Jika ada member yang dipilih, HANYA tampilkan member tersebut di tooltip
                                         let items = payload.filter(item => item.value !== null && item.value !== undefined);
                                         if (selectedStreamer) {
                                             items = items.filter(item => item.name === selectedStreamer.name);
@@ -625,37 +624,39 @@ export default function Analytics() {
 
                                 <Legend
                                     content={() => (
-                                        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 pt-3 lg:pt-5 text-xs">
-                                            {activeStreamers.map((streamer, index) => {
-                                                const color = getMemberColor(streamer.name, index);
-                                                const isSelected = selectedStreamer?.name === streamer.name;
-                                                const isDimmed = selectedStreamer && !isSelected;
-                                                return (
-                                                    <div
-                                                        key={streamer.name}
-                                                        onClick={() => {
-                                                            setSelectedStreamer(isSelected ? null : {
-                                                                ...streamer,
-                                                                isLegendClick: true,
-                                                                clickedTime: null,
-                                                                clickedViewers: null
-                                                            });
-                                                        }}
-                                                        className={`inline-flex items-center gap-2 cursor-pointer transition select-none ${isDimmed ? 'opacity-30 hover:opacity-75' : 'opacity-100'
-                                                            }`}
-                                                    >
-                                                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
-                                                        <span className={`font-medium ${isSelected ? 'text-white font-semibold' : 'text-zinc-300 hover:text-white'}`}>
-                                                            {streamer.name}
-                                                        </span>
-                                                        {streamer.peakViewers > 0 && (
-                                                            <span className="text-[11px] text-zinc-500 font-normal">
-                                                                ({Number(streamer.peakViewers).toLocaleString()})
+                                        <div className="overflow-x-auto max-w-full pb-1.5 pt-3 lg:pt-5 custom-scrollbar">
+                                            <div className="grid grid-rows-2 grid-flow-col auto-cols-max gap-x-4 gap-y-2 items-center min-w-max mx-auto px-2 text-xs">
+                                                {activeStreamers.map((streamer, index) => {
+                                                    const color = getMemberColor(streamer.name, index);
+                                                    const isSelected = selectedStreamer?.name === streamer.name;
+                                                    const isDimmed = selectedStreamer && !isSelected;
+                                                    return (
+                                                        <div
+                                                            key={streamer.name}
+                                                            onClick={() => {
+                                                                setSelectedStreamer(isSelected ? null : {
+                                                                    ...streamer,
+                                                                    isLegendClick: true,
+                                                                    clickedTime: null,
+                                                                    clickedViewers: null
+                                                                });
+                                                            }}
+                                                            className={`inline-flex items-center gap-2 cursor-pointer transition select-none shrink-0 ${isDimmed ? 'opacity-30 hover:opacity-75' : 'opacity-100'
+                                                                }`}
+                                                        >
+                                                            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                                                            <span className={`font-medium whitespace-nowrap ${isSelected ? 'text-white font-semibold' : 'text-zinc-300 hover:text-white'}`}>
+                                                                {streamer.name}
                                                             </span>
-                                                        )}
-                                                    </div>
-                                                );
-                                            })}
+                                                            {streamer.peakViewers > 0 && (
+                                                                <span className="text-[11px] text-zinc-500 font-normal whitespace-nowrap">
+                                                                    ({Number(streamer.peakViewers).toLocaleString()})
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
                                         </div>
                                     )}
                                 />
