@@ -20,7 +20,6 @@ export default function Analytics() {
         return saved ? JSON.parse(saved) : { start: getTodayStartIso(), end: null };
     });
     const [metricType, setMetricType] = useState(() => sessionStorage.getItem('analytics_metricType') || 'viewers');
-    const [useFullData, setUseFullData] = useState(() => sessionStorage.getItem('analytics_useFullData') === 'true');
     const scrollMetricsRef = useRef(null);
     useEffect(() => {
         if (selectedStreamer && scrollMetricsRef.current) {
@@ -28,9 +27,6 @@ export default function Analytics() {
         }
     }, [selectedStreamer?.slug, selectedStreamer?.clickedTime]);
 
-    useEffect(() => {
-        sessionStorage.setItem('analytics_useFullData', String(useFullData));
-    }, [useFullData]);
     useEffect(() => {
         sessionStorage.setItem('analytics_metricType', metricType);
     }, [metricType]);
@@ -205,7 +201,21 @@ export default function Analytics() {
         return sampled;
     }, [filteredChartData]);
 
-    const activeChartData = useFullData ? filteredChartData : sampledChartData;
+    const activeChartData = useMemo(() => {
+        if (!selectedStreamer) return sampledChartData;
+
+        const memberPoints = filteredChartData.filter(
+            d => d[selectedStreamer.name] !== undefined && d[selectedStreamer.name] !== null
+        );
+        
+        if (!memberPoints.length) return sampledChartData;
+        
+        const timeMap = new Map();
+        sampledChartData.forEach(d => timeMap.set(Number(d.timeLabel), d));
+        memberPoints.forEach(d => timeMap.set(Number(d.timeLabel), d));
+
+        return Array.from(timeMap.values()).sort((a, b) => Number(a.timeLabel) - Number(b.timeLabel));
+    }, [selectedStreamer?.name, sampledChartData, filteredChartData]);
 
     const activeStreamers = useMemo(() => {
         if (!streamers.length || !activeChartData.length) return streamers;
@@ -258,19 +268,6 @@ export default function Analytics() {
                 </div>
 
                 <div className="flex items-center gap-2.5 self-start sm:self-auto flex-wrap">
-                    {/* Tombol Toggle Full Data vs Sampled */}
-                    <button
-                        onClick={() => setUseFullData(prev => !prev)}
-                        title={useFullData ? "Klik untuk mengaktifkan optimasi sampling (lebih ringan)" : "Klik untuk menampilkan seluruh titik data tanpa sampling"}
-                        className={`px-3 py-2 rounded-lg text-xs sm:text-sm font-medium border transition cursor-pointer flex items-center gap-2 ${useFullData
-                            ? "bg-amber-500/10 text-amber-300 border-amber-500/30 hover:bg-amber-500/20"
-                            : "bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border-zinc-800 hover:text-white"
-                            }`}
-                    >
-                        <span className={`w-2 h-2 rounded-full ${useFullData ? "bg-amber-400 animate-pulse" : "bg-zinc-500"}`} />
-                        <span>{useFullData ? "Semua Titik (Full)" : "Data Dioptimasi"}</span>
-                    </button>
-
                     <button
                         onClick={() => refetch()}
                         disabled={refreshing}
@@ -303,7 +300,10 @@ export default function Analytics() {
                 <div className="bg-zinc-900/30 hidden lg:block border border-zinc-800/40 rounded-lg lg:rounded-xl p-3 lg:p-5">
                     <span className="text-sm text-zinc-400 font-medium">Total Snapshot Waktu</span>
                     <p className="text-2xl lg:text-3xl font-semibold text-zinc-100 mt-1">
-                        {activeChartData.length} <span className="text-sm font-normal text-zinc-400">titik ({useFullData ? 'Semua Titik' : 'Dioptimasi'})</span>
+                        {selectedStreamer ? (selectedStreamer.totalSnapshots || activeChartData.length) : activeChartData.length}{' '}
+                        <span className="text-sm font-normal text-zinc-400">
+                            titik {selectedStreamer ? `(${selectedStreamer.name})` : `(${timeRange === 'all' ? 'Semua' : timeRange === 'today' ? 'Hari Ini' : timeRange})`}
+                        </span>
                     </p>
                 </div>
             </div>
@@ -311,7 +311,10 @@ export default function Analytics() {
             <div className="bg-zinc-900/30 block lg:hidden border text-center border-zinc-800/40 rounded-lg p-3">
                 <span className="text-sm text-zinc-400 font-medium">Total Snapshot Waktu</span>
                 <p className="text-2xl lg:text-3xl font-semibold text-zinc-100 mt-1">
-                    {activeChartData.length} <span className="text-sm font-normal text-zinc-400">titik ({useFullData ? 'Semua Titik' : 'Dioptimasi'})</span>
+                    {selectedStreamer ? (selectedStreamer.totalSnapshots || activeChartData.length) : activeChartData.length}{' '}
+                    <span className="text-sm font-normal text-zinc-400">
+                        titik {selectedStreamer ? `(${selectedStreamer.name})` : `(${timeRange === 'all' ? 'Semua' : timeRange === 'today' ? 'Hari Ini' : timeRange})`}
+                    </span>
                 </p>
             </div>
 
@@ -650,7 +653,7 @@ export default function Analytics() {
                                 <Legend
                                     content={() => (
                                         <div className="overflow-x-auto max-w-full pb-1.5 pt-3 lg:pt-5 custom-scrollbar">
-                                            <div className="grid grid-rows-2 grid-flow-col auto-cols-max gap-x-4 gap-y-2 items-center min-w-max mx-auto px-2 text-xs">
+                                            <div className="grid grid-rows-2 grid-flow-col auto-cols-max gap-x-4 gap-y-2 items-center w-max mx-auto px-4 text-xs">
                                                 {activeStreamers.map((streamer, index) => {
                                                     const color = getMemberColor(streamer.name, index);
                                                     const isSelected = selectedStreamer?.name === streamer.name;
