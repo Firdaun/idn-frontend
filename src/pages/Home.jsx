@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Link, useNavigate } from "react-router";
 import { getLiveStreams, getMultiLiveData } from "../../utils/backend-api";
 import { useQuery } from "@tanstack/react-query";
@@ -43,11 +44,45 @@ export default function Home() {
         refetchAnalytics()
     }
 
-    const streamersList = analyticsData?.streamers || []
-    const totalPeakViewers = streamersList.reduce((max, s) => Math.max(max, s.peakViewers || 0), 0)
-    const topStreamer = totalPeakViewers > 0
-        ? streamersList.reduce((prev, current) => ((prev.peakViewers || 0) >= (current.peakViewers || 0) ? prev : current), streamersList[0])
-        : null
+    const streamersList = useMemo(() => {
+        const raw = analyticsData?.streamers || [];
+        return raw.map(s => {
+            const sessions = s.sessions || [];
+            const bestSession = sessions.length > 0
+                ? [...sessions].sort((a, b) => (Number(b.peakViewers) || 0) - (Number(a.peakViewers) || 0))[0]
+                : null;
+            const maxSessionPeakViewers = bestSession ? (Number(bestSession.peakViewers) || 0) : 0;
+            const maxSessionPeakChat = sessions.length > 0
+                ? Math.max(...sessions.map(sess => Number(sess.peakChat) || 0))
+                : 0;
+            const totalSessionChat = sessions.length > 0
+                ? sessions.reduce((acc, sess) => acc + (Number(sess.totalChat) || 0), 0)
+                : (Number(s.totalChat) || 0);
+
+            return {
+                ...s,
+                ...(bestSession ? {
+                    duration: bestSession.duration || s.duration,
+                    avgViewers: bestSession.avgViewers || s.avgViewers,
+                    totalSnapshots: bestSession.totalSnapshots || s.totalSnapshots,
+                    liveAt: bestSession.liveAt || s.liveAt,
+                    endAt: bestSession.endAt || s.endAt
+                } : {}),
+                peakViewers: Math.max(Number(s.peakViewers) || 0, maxSessionPeakViewers),
+                peakChat: Math.max(Number(s.peakChat) || 0, maxSessionPeakChat),
+                totalChat: s.totalChat !== undefined ? Math.max(Number(s.totalChat) || 0, totalSessionChat) : totalSessionChat
+            };
+        });
+    }, [analyticsData?.streamers]);
+
+    const totalPeakViewers = useMemo(() => {
+        return streamersList.reduce((max, s) => Math.max(max, s.peakViewers || 0), 0);
+    }, [streamersList]);
+
+    const topStreamer = useMemo(() => {
+        if (!streamersList.length || totalPeakViewers === 0) return null;
+        return [...streamersList].sort((a, b) => (b.peakViewers || 0) - (a.peakViewers || 0))[0];
+    }, [streamersList, totalPeakViewers]);
 
     const liveStreams = streams.filter(s => s.status !== "scheduled")
     const scheduledStreams = streams.filter(s => s.status === "scheduled")

@@ -83,22 +83,51 @@ export default function Analytics() {
 
     useEffect(() => {
         if (selectedStreamer && data?.streamers) {
-            const updated = data.streamers.find(s => s.name === selectedStreamer.name)
+            const updated = data.streamers.find(s => s.name === selectedStreamer.name);
             if (updated) {
+                const matchedSession = updated.sessions?.find(sess => sess.slug === selectedStreamer.slug);
+                const base = matchedSession || updated;
                 setSelectedStreamer(prev => ({
-                    ...updated,
+                    ...base,
+                    name: updated.name,
+                    fullName: base.fullName || updated.fullName,
                     clickedTime: prev?.clickedTime ?? null,
-                    clickedViewers: prev?.clickedViewers ?? null
-                }))
+                    clickedViewers: prev?.clickedViewers ?? null,
+                    clickedChat: prev?.clickedChat ?? null
+                }));
             } else {
-                setSelectedStreamer(null)
+                setSelectedStreamer(null);
             }
         }
-    }, [data])
+    }, [data]);
 
-    const streamers = data.streamers || [];
+    const streamers = useMemo(() => {
+        const rawStreamers = data.streamers || [];
+        return rawStreamers.map(s => {
+            const sessions = s.sessions || [];
+            const maxSessionPeakViewers = sessions.length > 0
+                ? Math.max(...sessions.map(sess => Number(sess.peakViewers) || 0))
+                : 0;
+            const maxSessionPeakChat = sessions.length > 0
+                ? Math.max(...sessions.map(sess => Number(sess.peakChat) || 0))
+                : 0;
+            const totalSessionChat = sessions.length > 0
+                ? sessions.reduce((acc, sess) => acc + (Number(sess.totalChat) || 0), 0)
+                : (Number(s.totalChat) || 0);
+
+            return {
+                ...s,
+                peakViewers: Math.max(Number(s.peakViewers) || 0, maxSessionPeakViewers),
+                peakChat: Math.max(Number(s.peakChat) || 0, maxSessionPeakChat),
+                totalChat: s.totalChat !== undefined ? Math.max(Number(s.totalChat) || 0, totalSessionChat) : totalSessionChat
+            };
+        });
+    }, [data.streamers]);
+
     const chartData = data.chartData || [];
-    const maxPeak = streamers.reduce((max, s) => Math.max(max, s.peakViewers || 0), 0);
+    const maxPeak = useMemo(() => {
+        return streamers.reduce((max, s) => Math.max(max, s.peakViewers || 0), 0);
+    }, [streamers]);
 
     const handleApplyCustomRange = () => {
         if (!customStart || !customEnd) {
@@ -221,8 +250,13 @@ export default function Analytics() {
         if (!streamers.length || !activeChartData.length) return streamers;
         const present = streamers.filter(s => activeChartData.some(d => d[s.name] !== undefined && d[s.name] !== null));
         const list = present.length > 0 ? present : streamers;
-        return [...list].sort((a, b) => (b.peakViewers || 0) - (a.peakViewers || 0));
-    }, [streamers, activeChartData]);
+        return [...list].sort((a, b) => {
+            if (metricType === 'chat') {
+                return (b.peakChat || 0) - (a.peakChat || 0);
+            }
+            return (b.peakViewers || 0) - (a.peakViewers || 0);
+        });
+    }, [streamers, activeChartData, metricType]);
 
     const currentStreamerObj = streamers.find(s => s.name === selectedStreamer?.name);
     const streamerSessions = currentStreamerObj?.sessions || [];
@@ -662,12 +696,21 @@ export default function Analytics() {
                                                         <div
                                                             key={streamer.name}
                                                             onClick={() => {
-                                                                setSelectedStreamer(isSelected ? null : {
-                                                                    ...streamer,
-                                                                    isLegendClick: true,
-                                                                    clickedTime: null,
-                                                                    clickedViewers: null
-                                                                });
+                                                                if (isSelected) {
+                                                                    setSelectedStreamer(null);
+                                                                } else {
+                                                                    const bestSession = streamer.sessions && streamer.sessions.length > 0
+                                                                        ? [...streamer.sessions].sort((a, b) => (b.peakViewers || 0) - (a.peakViewers || 0))[0]
+                                                                        : streamer;
+                                                                    setSelectedStreamer({
+                                                                        ...bestSession,
+                                                                        name: streamer.name,
+                                                                        fullName: bestSession.fullName || streamer.fullName,
+                                                                        isLegendClick: true,
+                                                                        clickedTime: null,
+                                                                        clickedViewers: null
+                                                                    });
+                                                                }
                                                             }}
                                                             className={`inline-flex items-center gap-2 cursor-pointer transition select-none shrink-0 ${isDimmed ? 'opacity-30 hover:opacity-75' : 'opacity-100'
                                                                 }`}
@@ -676,10 +719,18 @@ export default function Analytics() {
                                                             <span className={`font-medium whitespace-nowrap ${isSelected ? 'text-white font-semibold' : 'text-zinc-300 hover:text-white'}`}>
                                                                 {streamer.name}
                                                             </span>
-                                                            {streamer.peakViewers > 0 && (
-                                                                <span className="text-[11px] text-zinc-500 font-normal whitespace-nowrap">
-                                                                    ({Number(streamer.peakViewers).toLocaleString()})
-                                                                </span>
+                                                            {metricType === 'chat' ? (
+                                                                streamer.peakChat > 0 && (
+                                                                    <span className="text-[11px] text-zinc-500 font-normal whitespace-nowrap">
+                                                                        ({Number(streamer.peakChat).toLocaleString()}/30s)
+                                                                    </span>
+                                                                )
+                                                            ) : (
+                                                                streamer.peakViewers > 0 && (
+                                                                    <span className="text-[11px] text-zinc-500 font-normal whitespace-nowrap">
+                                                                        ({Number(streamer.peakViewers).toLocaleString()})
+                                                                    </span>
+                                                                )
                                                             )}
                                                         </div>
                                                     );
