@@ -20,14 +20,17 @@ export default function Analytics() {
         return saved ? JSON.parse(saved) : { start: getTodayStartIso(), end: null };
     });
     const [metricType, setMetricType] = useState(() => sessionStorage.getItem('analytics_metricType') || 'viewers');
+    const [useFullData, setUseFullData] = useState(() => sessionStorage.getItem('analytics_useFullData') === 'true');
     const scrollMetricsRef = useRef(null);
-    // Otomatis geser scrollbar ke paling kanan saat ada member/sesi yang dipilih
     useEffect(() => {
         if (selectedStreamer && scrollMetricsRef.current) {
             scrollMetricsRef.current.scrollLeft = scrollMetricsRef.current.scrollWidth;
         }
     }, [selectedStreamer?.slug, selectedStreamer?.clickedTime]);
 
+    useEffect(() => {
+        sessionStorage.setItem('analytics_useFullData', String(useFullData));
+    }, [useFullData]);
     useEffect(() => {
         sessionStorage.setItem('analytics_metricType', metricType);
     }, [metricType]);
@@ -202,12 +205,14 @@ export default function Analytics() {
         return sampled;
     }, [filteredChartData]);
 
+    const activeChartData = useFullData ? filteredChartData : sampledChartData;
+
     const activeStreamers = useMemo(() => {
-        if (!streamers.length || !sampledChartData.length) return streamers;
-        const present = streamers.filter(s => sampledChartData.some(d => d[s.name] !== undefined && d[s.name] !== null));
+        if (!streamers.length || !activeChartData.length) return streamers;
+        const present = streamers.filter(s => activeChartData.some(d => d[s.name] !== undefined && d[s.name] !== null));
         const list = present.length > 0 ? present : streamers;
         return [...list].sort((a, b) => (b.peakViewers || 0) - (a.peakViewers || 0));
-    }, [streamers, sampledChartData]);
+    }, [streamers, activeChartData]);
 
     const currentStreamerObj = streamers.find(s => s.name === selectedStreamer?.name);
     const streamerSessions = currentStreamerObj?.sessions || [];
@@ -252,46 +257,61 @@ export default function Analytics() {
                     </p>
                 </div>
 
-                <button
-                    onClick={() => refetch()}
-                    disabled={refreshing}
-                    className="self-start sm:self-auto px-4 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-sm text-zinc-300 hover:text-white font-medium transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
-                >
-                    <svg className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                    <span>{refreshing ? "Memuat..." : "Refresh"}</span>
-                </button>
+                <div className="flex items-center gap-2.5 self-start sm:self-auto flex-wrap">
+                    {/* Tombol Toggle Full Data vs Sampled */}
+                    <button
+                        onClick={() => setUseFullData(prev => !prev)}
+                        title={useFullData ? "Klik untuk mengaktifkan optimasi sampling (lebih ringan)" : "Klik untuk menampilkan seluruh titik data tanpa sampling"}
+                        className={`px-3 py-2 rounded-lg text-xs sm:text-sm font-medium border transition cursor-pointer flex items-center gap-2 ${useFullData
+                            ? "bg-amber-500/10 text-amber-300 border-amber-500/30 hover:bg-amber-500/20"
+                            : "bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border-zinc-800 hover:text-white"
+                            }`}
+                    >
+                        <span className={`w-2 h-2 rounded-full ${useFullData ? "bg-amber-400 animate-pulse" : "bg-zinc-500"}`} />
+                        <span>{useFullData ? "Semua Titik (Full)" : "Data Dioptimasi"}</span>
+                    </button>
+
+                    <button
+                        onClick={() => refetch()}
+                        disabled={refreshing}
+                        className="px-4 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-sm text-zinc-300 hover:text-white font-medium transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                    >
+                        <svg className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        <span>{refreshing ? "Memuat..." : "Refresh"}</span>
+                    </button>
+                </div>
             </div>
 
             {/* Metrics */}
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-5">
                 <div className="bg-zinc-900/30 border border-zinc-800/40 rounded-lg lg:rounded-xl p-3 lg:p-5">
                     <span className="text-sm text-zinc-400 font-medium">Streamer Tercatat</span>
-                    <p className="text-2xl lg-text-3xl font-semibold text-zinc-100 mt-1">
+                    <p className="text-2xl lg:text-3xl font-semibold text-zinc-100 mt-1">
                         {streamers.length} <span className="text-sm font-normal text-zinc-400">member</span>
                     </p>
                 </div>
 
                 <div className="bg-zinc-900/30 border border-zinc-800/40 rounded-lg lg:rounded-xl p-3 lg:p-5">
                     <span className="text-sm text-zinc-400 font-medium">Penonton Tertinggi</span>
-                    <p className="text-2xl lg-text-3xl font-semibold text-zinc-100 mt-1">
+                    <p className="text-2xl lg:text-3xl font-semibold text-zinc-100 mt-1">
                         {maxPeak > 0 ? maxPeak.toLocaleString() : "-"}
                     </p>
                 </div>
 
                 <div className="bg-zinc-900/30 hidden lg:block border border-zinc-800/40 rounded-lg lg:rounded-xl p-3 lg:p-5">
                     <span className="text-sm text-zinc-400 font-medium">Total Snapshot Waktu</span>
-                    <p className="text-2xl lg-text-3xl font-semibold text-zinc-100 mt-1">
-                        {filteredChartData.length} <span className="text-sm font-normal text-zinc-400">titik ({timeRange === 'all' ? 'Semua' : timeRange === 'today' ? 'Hari Ini' : timeRange})</span>
+                    <p className="text-2xl lg:text-3xl font-semibold text-zinc-100 mt-1">
+                        {activeChartData.length} <span className="text-sm font-normal text-zinc-400">titik ({useFullData ? 'Semua Titik' : 'Dioptimasi'})</span>
                     </p>
                 </div>
             </div>
 
             <div className="bg-zinc-900/30 block lg:hidden border text-center border-zinc-800/40 rounded-lg p-3">
                 <span className="text-sm text-zinc-400 font-medium">Total Snapshot Waktu</span>
-                <p className="text-2xl lg-text-3xl font-semibold text-zinc-100 mt-1">
-                    {filteredChartData.length} <span className="text-sm font-normal text-zinc-400">titik ({timeRange === 'all' ? 'Semua' : timeRange === 'today' ? 'Hari Ini' : timeRange})</span>
+                <p className="text-2xl lg:text-3xl font-semibold text-zinc-100 mt-1">
+                    {activeChartData.length} <span className="text-sm font-normal text-zinc-400">titik ({useFullData ? 'Semua Titik' : 'Dioptimasi'})</span>
                 </p>
             </div>
 
@@ -545,7 +565,7 @@ export default function Analytics() {
                 ) : (
                     <div className="h-125 w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={sampledChartData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                            <LineChart data={activeChartData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#27272a" opacity={0.4} />
 
                                 <XAxis
@@ -691,8 +711,8 @@ export default function Analytics() {
                                             }
                                         }
 
-                                        // Hanya tampilkan dot interaktif untuk sesi/member yang sedang dipilih
-                                        const shouldShowActiveDot = !selectedStreamer || (isLegendClick ? isSameMember : isExactSessionSelected);
+                                        // Dot tetap aktif untuk semua sesi dari member yang sedang dipilih
+                                        const shouldShowActiveDot = !selectedStreamer || isSameMember;
 
                                         return (
                                             <Line
@@ -723,7 +743,7 @@ export default function Analytics() {
                                     })
                                 })}
 
-                                {sampledChartData.length > 5 && (
+                                {activeChartData.length > 5 && (
                                     <Brush
                                         dataKey="timeLabel"
                                         height={32}
