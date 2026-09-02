@@ -374,7 +374,7 @@ export default function Analytics() {
             {selectedStreamer && (
                 <div className="bg-zinc-900/50 border border-zinc-800/50 p-3 lg:p-5 rounded-lg lg:rounded-xl flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                     {/* Sisi Kiri: Tombol Panah Kiri (jika multi-sesi) & Info Streamer */}
-                    <div className="flex items-center justify-between gap-3 w-full lg:w-auto">
+                    <div className="flex items-center justify-between gap-2 w-full lg:w-auto">
                         {streamerSessions.length > 1 && (
                             <button
                                 onClick={handlePrevSession}
@@ -423,8 +423,8 @@ export default function Analytics() {
                         )}
                     </div>
 
-                    <div className='flex items-center gap-4 w-full xl:w-auto min-w-0'>
-                        <div ref={scrollMetricsRef} className='flex-1 overflow-x-auto pb-1 min-w-0'>
+                    <div className='flex items-center gap-4 w-full lg:w-147 xl:w-208 2xl:w-272'>
+                        <div ref={scrollMetricsRef} className='flex-1 overflow-x-auto pb-1'>
                             <div className="flex items-center gap-6 whitespace-nowrap">
                                 <div className='shrink-0'>
                                     <span className="text-zinc-400 block text-xs">Total Snapshot</span>
@@ -522,88 +522,82 @@ export default function Analytics() {
             {/* Chart Area */}
             <div className="bg-zinc-900/30 border border-zinc-800/40 rounded-lg lg:rounded-xl p-3 lg:p-5 space-y-4">
                 {/* Time Range Filter Bar */}
-                <div className="flex relative justify-between gap-3 border-b border-zinc-900 pb-3 lg:pb-5">
-                    <div className="flex items-center w-full gap-3 md:gap-0 md:justify-between xl:justify-start xl:gap-3 flex-wrap">
-                        <div className="flex w-full md:w-[calc(50%-4px)] lg:w-[calc(50%-37px)] xl:w-[20%] p-1 rounded-md lg:rounded-lg bg-zinc-900/80 border border-zinc-800/80">
-                            <button
-                                onClick={() => setMetricType('viewers')}
-                                className={`px-3 py-1.5 w-1/2 rounded-sm lg:rounded-md text-xs font-medium transition cursor-pointer flex justify-center items-center gap-1.5 ${metricType === 'viewers'
-                                    ? 'bg-zinc-800 text-white shadow-sm'
-                                    : 'text-zinc-400 hover:text-zinc-200'
-                                    }`}
-                            >
-                                <span>👥 Penonton</span>
-                            </button>
-                            <button
-                                onClick={() => setMetricType('chat')}
-                                className={`px-3 py-1.5 w-1/2 rounded-sm lg:rounded-md text-xs font-medium transition cursor-pointer flex justify-center items-center gap-1.5 ${metricType === 'chat'
-                                    ? 'bg-zinc-800 text-white shadow-sm'
-                                    : 'text-zinc-400 hover:text-zinc-200'
-                                    }`}
-                            >
-                                <span>💬 Aktivitas Chat</span>
-                            </button>
-                        </div>
-
-                        <div className="flex rounded-md lg:rounded-lg overflow-hidden md:h-9.5 bg-zinc-900/80 border w-full md:w-[calc(50%-4px)] lg:w-[calc(50%-37px)] xl:w-[calc(30%-9px)] border-zinc-800/80">
-                            <div className='overflow-x-auto'>
-                                <div className='flex h-full'>
-                                    {[
-                                        { id: 'today', label: 'Hari Ini' },
-                                        { id: '1d', label: '1 Hari Lalu' },
-                                        { id: '2d', label: '2 Hari Lalu' },
-                                        { id: '1h', label: '1 Jam' },
-                                        { id: 'all', label: 'Semua' },
-                                        { id: 'custom', label: '⚙️ Kustom' }
-                                    ].map((tab) => (
-                                        <button
-                                            key={tab.id}
-                                            onClick={() => setTimeRange(tab.id)}
-                                            className={`shrink-0 px-3 py-1.5 text-xs font-medium transition cursor-pointer ${timeRange === tab.id
-                                                ? 'bg-zinc-800 text-white shadow-sm'
-                                                : 'text-zinc-400 hover:text-zinc-200'
-                                                }`}
-                                        >
-                                            {tab.label}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                        {timeRange === 'custom' && (
-                            <div className="flex flex-wrap md:mt-3 lg:mt-5 xl:mt-0 items-center gap-3 bg-zinc-900/80 p-2 py-1 rounded-md lg:rounded-lg border border-zinc-800/80">
-                                <div className="flex items-center gap-2 text-xs text-zinc-300">
-                                    <span>Dari:</span>
-                                    <input
-                                        type="datetime-local"
-                                        value={customStart}
-                                        onChange={(e) => setCustomStart(e.target.value)}
-                                        className="bg-zinc-900 border border-zinc-800/80 rounded-sm lg:rounded-md px-1 py-1 text-xs text-zinc-100 focus:outline-none focus:ring-zinc-500"
-                                    />
-                                </div>
-                                <div className="flex items-center gap-2 text-xs text-zinc-300">
-                                    <span>Sampai:</span>
-                                    <input
-                                        type="datetime-local"
-                                        value={customEnd}
-                                        onChange={(e) => setCustomEnd(e.target.value)}
-                                        className="bg-zinc-900 border border-zinc-800/80 rounded-sm lg:rounded-md px-1 py-1 text-xs text-zinc-100 focus:outline-none focus:ring-zinc-500"
-                                    />
-                                </div>
-                                <button
-                                    onClick={handleApplyCustomRange}
-                                    disabled={refreshing}
-                                    className="px-3 py-1.5 bg-zinc-100 hover:bg-white text-zinc-900 text-xs font-semibold rounded-sm lg:rounded-md transition cursor-pointer disabled:opacity-50"
-                                >
-                                    {refreshing ? "Menerapkan..." : "Terapkan"}
-                                </button>
-                            </div>
-                        )}
+                <div className="border-b border-zinc-900 pb-3 lg:pb-5 flex items-center w-full gap-3 md:gap-0 md:justify-between xl:justify-start xl:gap-3 flex-wrap">
+                    <div className="flex w-full md:w-[calc(50%-4px)] lg:w-[calc(50%-37px)] xl:w-[24%] p-1 rounded-md lg:rounded-lg bg-zinc-900/80 border border-zinc-800/80">
+                        <button
+                            onClick={() => setMetricType('viewers')}
+                            className={`px-3 py-1.5 w-1/2 rounded-sm lg:rounded-md text-xs font-medium transition cursor-pointer flex justify-center items-center gap-1.5 ${metricType === 'viewers'
+                                ? 'bg-zinc-800 text-white shadow-sm'
+                                : 'text-zinc-400 hover:text-zinc-200'
+                                }`}
+                        >
+                            <span>👥 Penonton</span>
+                        </button>
+                        <button
+                            onClick={() => setMetricType('chat')}
+                            className={`px-3 py-1.5 w-1/2 rounded-sm lg:rounded-md text-xs font-medium transition cursor-pointer flex justify-center items-center gap-1.5 ${metricType === 'chat'
+                                ? 'bg-zinc-800 text-white shadow-sm'
+                                : 'text-zinc-400 hover:text-zinc-200'
+                                }`}
+                        >
+                            <span>💬 Aktivitas Chat</span>
+                        </button>
                     </div>
 
-                    <span className="absolute right-0 top-2.5 text-xs text-zinc-500 hidden xl:inline-block">
-                        geser slider di bawah untuk zoom
-                    </span>
+                    <div className="flex rounded-md lg:rounded-lg overflow-hidden md:h-9.5 bg-zinc-900/80 border w-full md:w-[calc(50%-4px)] lg:w-[calc(50%-37px)] xl:w-[calc(30%-9.4px)] border-zinc-800/80">
+                        <div className='overflow-x-auto'>
+                            <div className='flex h-full'>
+                                {[
+                                    { id: 'today', label: 'Hari Ini' },
+                                    { id: '1d', label: '1 Hari Lalu' },
+                                    { id: '2d', label: '2 Hari Lalu' },
+                                    { id: '1h', label: '1 Jam' },
+                                    { id: 'all', label: 'Semua' },
+                                    { id: 'custom', label: '⚙️ Kustom' }
+                                ].map((tab) => (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setTimeRange(tab.id)}
+                                        className={`shrink-0 px-3 py-1.5 text-xs font-medium transition cursor-pointer ${timeRange === tab.id
+                                            ? 'bg-zinc-800 text-white shadow-sm'
+                                            : 'text-zinc-400 hover:text-zinc-200'
+                                            }`}
+                                    >
+                                        {tab.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                    {timeRange === 'custom' && (
+                        <div className="flex flex-wrap md:mt-3 lg:mt-5 xl:mt-0 items-center gap-3 bg-zinc-900/80 p-2 py-1 rounded-md lg:rounded-lg border border-zinc-800/80">
+                            <div className="flex items-center gap-2 text-xs text-zinc-300">
+                                <span>Dari:</span>
+                                <input
+                                    type="datetime-local"
+                                    value={customStart}
+                                    onChange={(e) => setCustomStart(e.target.value)}
+                                    className="bg-zinc-900 border border-zinc-800/80 rounded-sm lg:rounded-md px-1 py-1 text-xs text-zinc-100 focus:outline-none focus:ring-zinc-500"
+                                />
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-zinc-300">
+                                <span>Sampai:</span>
+                                <input
+                                    type="datetime-local"
+                                    value={customEnd}
+                                    onChange={(e) => setCustomEnd(e.target.value)}
+                                    className="bg-zinc-900 border border-zinc-800/80 rounded-sm lg:rounded-md px-1 py-1 text-xs text-zinc-100 focus:outline-none focus:ring-zinc-500"
+                                />
+                            </div>
+                            <button
+                                onClick={handleApplyCustomRange}
+                                disabled={refreshing}
+                                className="px-3 py-1.5 bg-zinc-100 hover:bg-white text-zinc-900 text-xs font-semibold rounded-sm lg:rounded-md transition cursor-pointer disabled:opacity-50"
+                            >
+                                {refreshing ? "Menerapkan..." : "Terapkan"}
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {loading ? (
