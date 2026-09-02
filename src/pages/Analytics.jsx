@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Brush } from 'recharts';
 import { getMultiLiveData } from '../../utils/backend-api';
 import { getMemberColor } from '../../utils/color';
-import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 
 const getTodayStartIso = () => {
     const start = new Date();
@@ -80,32 +80,31 @@ export default function Analytics() {
     } = useQuery({
         queryKey: ['multiLive', timeRange, activeStart, activeEnd],
         queryFn: () => getMultiLiveData(activeStart, activeEnd),
-        placeholderData: keepPreviousData,
         staleTime: 1000 * 60 * 15,
         gcTime: 1000 * 60 * 30
     })
 
-    const loading = isAnalyticsLoading && (!data.chartData || data.chartData.length === 0);
+    const loading = isAnalyticsLoading
     const refreshing = isAnalyticsFetching
 
     useEffect(() => {
         if (isAnalyticsLoading || isAnalyticsFetching) return;
-
-        if (selectedStreamer && data?.streamers) {
+        if (selectedStreamer && data.streamers) {
             const updated = data.streamers.find(s => s.name === selectedStreamer.name);
             if (updated) {
-                const sessions = updated.sessions || [];
+                const sessions = updated.sessions;
                 const matchedSession = sessions.find(sess => sess.slug === selectedStreamer.slug);
-                
                 if (matchedSession) {
                     setSelectedStreamer(prev => ({
                         ...matchedSession,
                         name: updated.name,
-                        fullName: matchedSession.fullName || updated.fullName,
+                        fullName: matchedSession.fullName,
                         clickedTime: prev?.clickedTime ?? null,
                         clickedViewers: prev?.clickedViewers ?? null,
                         clickedChat: prev?.clickedChat ?? null
                     }));
+                    console.log('selectedStreamer', selectedStreamer);
+                    
                 } else {
                     setSelectedStreamer(null);
                 }
@@ -116,31 +115,27 @@ export default function Analytics() {
     }, [data, isAnalyticsLoading, isAnalyticsFetching]);
 
     const streamers = useMemo(() => {
-        const rawStreamers = data.streamers || [];
+        const rawStreamers = data.streamers;
         return rawStreamers.map(s => {
-            const sessions = s.sessions || [];
-            const maxSessionPeakViewers = sessions.length > 0
-                ? Math.max(...sessions.map(sess => Number(sess.peakViewers) || 0))
-                : 0;
-            const maxSessionPeakChat = sessions.length > 0
-                ? Math.max(...sessions.map(sess => Number(sess.peakChat) || 0))
-                : 0;
-            const totalSessionChat = sessions.length > 0
-                ? sessions.reduce((acc, sess) => acc + (Number(sess.totalChat) || 0), 0)
-                : (Number(s.totalChat) || 0);
+            const sessions = s.sessions
+            const getPeak = (key) => Math.max(...sessions.map(sess => Number(sess[key])), 0);
+            
+            const maxSessionPeakViewers = getPeak('peakViewers');
+            const maxSessionPeakChat = getPeak('peakChat');
+            const totalSessionChat = s.sessions.reduce((acc, sess) => acc + (Number(sess.totalChat)), 0)
 
             return {
                 ...s,
-                peakViewers: Math.max(Number(s.peakViewers) || 0, maxSessionPeakViewers),
-                peakChat: Math.max(Number(s.peakChat) || 0, maxSessionPeakChat),
-                totalChat: s.totalChat !== undefined ? Math.max(Number(s.totalChat) || 0, totalSessionChat) : totalSessionChat
+                peakViewers: maxSessionPeakViewers,
+                peakChat: maxSessionPeakChat,
+                totalChat: totalSessionChat
             };
         });
     }, [data.streamers]);
 
-    const chartData = data.chartData || [];
+    const chartData = data.chartData;
     const maxPeak = useMemo(() => {
-        return streamers.reduce((max, s) => Math.max(max, s.peakViewers || 0), 0);
+        return streamers.reduce((max, s) => Math.max(max, s.peakViewers), 0);
     }, [streamers]);
 
     const handleApplyCustomRange = () => {
