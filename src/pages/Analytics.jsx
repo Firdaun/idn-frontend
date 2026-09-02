@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Brush } from 'recharts';
 import { getMultiLiveData } from '../../utils/backend-api';
 import { getMemberColor } from '../../utils/color';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 
 const getTodayStartIso = () => {
     const start = new Date();
@@ -80,6 +80,7 @@ export default function Analytics() {
     } = useQuery({
         queryKey: ['multiLive', timeRange, activeStart, activeEnd],
         queryFn: () => getMultiLiveData(activeStart, activeEnd),
+        placeholderData: keepPreviousData,
         staleTime: 1000 * 60 * 15,
         gcTime: 1000 * 60 * 30
     })
@@ -88,28 +89,31 @@ export default function Analytics() {
     const refreshing = isAnalyticsFetching
 
     useEffect(() => {
+        if (isAnalyticsLoading || isAnalyticsFetching) return;
+
         if (selectedStreamer && data?.streamers) {
             const updated = data.streamers.find(s => s.name === selectedStreamer.name);
             if (updated) {
                 const sessions = updated.sessions || [];
                 const matchedSession = sessions.find(sess => sess.slug === selectedStreamer.slug);
-                const bestSession = [...sessions].sort((a, b) => (b.peakViewers || 0) - (a.peakViewers || 0))[0];
-                const base = matchedSession || bestSession || updated;
-                const isSameSession = Boolean(matchedSession);
-
-                setSelectedStreamer(prev => ({
-                    ...base,
-                    name: updated.name,
-                    fullName: base.fullName || updated.fullName,
-                    clickedTime: isSameSession ? (prev?.clickedTime ?? null) : null,
-                    clickedViewers: isSameSession ? (prev?.clickedViewers ?? null) : null,
-                    clickedChat: isSameSession ? (prev?.clickedChat ?? null) : null
-                }));
+                
+                if (matchedSession) {
+                    setSelectedStreamer(prev => ({
+                        ...matchedSession,
+                        name: updated.name,
+                        fullName: matchedSession.fullName || updated.fullName,
+                        clickedTime: prev?.clickedTime ?? null,
+                        clickedViewers: prev?.clickedViewers ?? null,
+                        clickedChat: prev?.clickedChat ?? null
+                    }));
+                } else {
+                    setSelectedStreamer(null);
+                }
             } else {
                 setSelectedStreamer(null);
             }
         }
-    }, [data]);
+    }, [data, isAnalyticsLoading, isAnalyticsFetching]);
 
     const streamers = useMemo(() => {
         const rawStreamers = data.streamers || [];
@@ -637,17 +641,7 @@ export default function Analytics() {
                                     wrapperStyle={{ pointerEvents: 'none', zIndex: 9999 }}
                                     cursor={{ stroke: '#3f3f46', strokeWidth: 1, strokeDasharray: '3 3' }}
                                     content={({ active, payload, label }) => {
-                                        if (!active || !payload || !payload.length) return null;
-
-                                        let items = payload.filter(item => item.value !== null && item.value !== undefined);
-                                        if (selectedStreamer) {
-                                            items = items.filter(item => item.name === selectedStreamer.name);
-                                            if (!items.length) return null;
-                                        }
-
-                                        if (!items.length) return null;
-
-                                        const sortedItems = [...items].sort((a, b) => Number(b.value || 0) - Number(a.value || 0));
+                                        if (!active || label === undefined || label === null) return null;
 
                                         const d = new Date(Number(label));
                                         const timeStr = !isNaN(d.getTime())
@@ -656,6 +650,27 @@ export default function Analytics() {
                                         const dateStr = !isNaN(d.getTime())
                                             ? d.toLocaleDateString("id-ID", { day: "numeric", month: "short" })
                                             : "";
+
+                                        if (!timeStr) return null;
+
+                                        let items = (payload || []).filter(item => item.value !== null && item.value !== undefined);
+                                        if (selectedStreamer) {
+                                            items = items.filter(item => item.name === selectedStreamer.name);
+                                        }
+
+                                        // Jika tidak ada data member (misal sedang hover di luar sesi member yang dipilih),
+                                        // hanya tampilkan informasi waktu saja
+                                        if (!items.length) {
+                                            return (
+                                                <div className="bg-zinc-900/95 border border-zinc-800 text-zinc-100 text-xs rounded-xl p-2.5 px-3 shadow-xl">
+                                                    <p className="text-zinc-300 font-medium text-xs">
+                                                        Waktu: {timeStr} WIB ({dateStr})
+                                                    </p>
+                                                </div>
+                                            );
+                                        }
+
+                                        const sortedItems = [...items].sort((a, b) => Number(b.value || 0) - Number(a.value || 0));
 
                                         return (
                                             <div className="bg-zinc-900 border border-zinc-800 text-zinc-100 text-xs sm:text-sm rounded-xl p-3 shadow-xl space-y-1.5 min-w-48">
