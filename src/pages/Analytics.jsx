@@ -32,6 +32,12 @@ export default function Analytics() {
     }, [metricType]);
     useEffect(() => {
         sessionStorage.setItem('analytics_timeRange', timeRange);
+        setSelectedStreamer(prev => prev ? ({
+            ...prev,
+            clickedTime: null,
+            clickedViewers: null,
+            clickedChat: null
+        }) : null);
     }, [timeRange]);
     useEffect(() => {
         sessionStorage.setItem('analytics_customStart', customStart);
@@ -85,15 +91,19 @@ export default function Analytics() {
         if (selectedStreamer && data?.streamers) {
             const updated = data.streamers.find(s => s.name === selectedStreamer.name);
             if (updated) {
-                const matchedSession = updated.sessions?.find(sess => sess.slug === selectedStreamer.slug);
-                const base = matchedSession || updated;
+                const sessions = updated.sessions || [];
+                const matchedSession = sessions.find(sess => sess.slug === selectedStreamer.slug);
+                const bestSession = [...sessions].sort((a, b) => (b.peakViewers || 0) - (a.peakViewers || 0))[0];
+                const base = matchedSession || bestSession || updated;
+                const isSameSession = Boolean(matchedSession);
+
                 setSelectedStreamer(prev => ({
                     ...base,
                     name: updated.name,
                     fullName: base.fullName || updated.fullName,
-                    clickedTime: prev?.clickedTime ?? null,
-                    clickedViewers: prev?.clickedViewers ?? null,
-                    clickedChat: prev?.clickedChat ?? null
+                    clickedTime: isSameSession ? (prev?.clickedTime ?? null) : null,
+                    clickedViewers: isSameSession ? (prev?.clickedViewers ?? null) : null,
+                    clickedChat: isSameSession ? (prev?.clickedChat ?? null) : null
                 }));
             } else {
                 setSelectedStreamer(null);
@@ -137,7 +147,13 @@ export default function Analytics() {
         setAppliedCustom({
             start: new Date(customStart).toISOString(),
             end: new Date(customEnd).toISOString()
-        })
+        });
+        setSelectedStreamer(prev => prev ? ({
+            ...prev,
+            clickedTime: null,
+            clickedViewers: null,
+            clickedChat: null
+        }) : null);
     };
 
     const calculateDurationAtTime = (liveAt, timestamp) => {
@@ -236,9 +252,9 @@ export default function Analytics() {
         const memberPoints = filteredChartData.filter(
             d => d[selectedStreamer.name] !== undefined && d[selectedStreamer.name] !== null
         );
-        
+
         if (!memberPoints.length) return sampledChartData;
-        
+
         const timeMap = new Map();
         sampledChartData.forEach(d => timeMap.set(Number(d.timeLabel), d));
         memberPoints.forEach(d => timeMap.set(Number(d.timeLabel), d));
@@ -272,7 +288,8 @@ export default function Analytics() {
             fullName: target.fullName || selectedStreamer.fullName,
             isLegendClick: false,
             clickedTime: null,
-            clickedViewers: null
+            clickedViewers: null,
+            clickedChat: null
         });
     };
     const handleNextSession = () => {
@@ -286,7 +303,8 @@ export default function Analytics() {
             fullName: target.fullName || selectedStreamer.fullName,
             isLegendClick: false,
             clickedTime: null,
-            clickedViewers: null
+            clickedViewers: null,
+            clickedChat: null
         });
     };
 
@@ -414,26 +432,6 @@ export default function Analytics() {
                                         {`${selectedStreamer.totalSnapshots}x`}
                                     </span>
                                 </div>
-                                {selectedStreamer.clickedViewers !== null && selectedStreamer.clickedViewers !== undefined && (
-                                    <div className='shrink-0'>
-                                        <span className="text-zinc-400 block text-xs">
-                                            Viewers (@{formatLiveTime(selectedStreamer.clickedTime)})
-                                        </span>
-                                        <span className="font-semibold text-zinc-100 text-base">
-                                            {Number(selectedStreamer.clickedViewers).toLocaleString()}
-                                        </span>
-                                    </div>
-                                )}
-                                {selectedStreamer.clickedChat !== null && selectedStreamer.clickedChat !== undefined && (
-                                    <div className='shrink-0'>
-                                        <span className="text-zinc-400 block text-xs">
-                                            Chat (@{formatLiveTime(selectedStreamer.clickedTime)})
-                                        </span>
-                                        <span className="font-semibold text-base text-zinc-100">
-                                            {Number(selectedStreamer.clickedChat).toLocaleString()} / 30s
-                                        </span>
-                                    </div>
-                                )}
                                 <div className='shrink-0'>
                                     <span className="text-zinc-400 block text-xs">Peak Viewers</span>
                                     <span className="font-semibold text-zinc-100 text-base">
@@ -486,7 +484,26 @@ export default function Analytics() {
                                             : selectedStreamer.duration}
                                     </span>
                                 </div>
-
+                                {selectedStreamer.clickedViewers !== null && selectedStreamer.clickedViewers !== undefined && (
+                                    <div className='shrink-0'>
+                                        <span className="text-zinc-400 block text-xs">
+                                            Viewers (@{formatLiveTime(selectedStreamer.clickedTime)})
+                                        </span>
+                                        <span className="font-semibold text-zinc-100 text-base">
+                                            {Number(selectedStreamer.clickedViewers).toLocaleString()}
+                                        </span>
+                                    </div>
+                                )}
+                                {selectedStreamer.clickedChat !== null && selectedStreamer.clickedChat !== undefined && (
+                                    <div className='shrink-0'>
+                                        <span className="text-zinc-400 block text-xs">
+                                            Chat (@{formatLiveTime(selectedStreamer.clickedTime)})
+                                        </span>
+                                        <span className="font-semibold text-base text-zinc-100">
+                                            {Number(selectedStreamer.clickedChat).toLocaleString()} / 30s
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                         </div>
                         <div className='flex justify-center items-center'>
