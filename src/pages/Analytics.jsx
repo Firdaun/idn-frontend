@@ -104,7 +104,7 @@ export default function Analytics() {
                         clickedChat: prev?.clickedChat ?? null
                     }));
                     console.log('selectedStreamer', selectedStreamer);
-                    
+
                 } else {
                     setSelectedStreamer(null);
                 }
@@ -119,7 +119,7 @@ export default function Analytics() {
         return rawStreamers.map(s => {
             const sessions = s.sessions
             const getPeak = (key) => Math.max(...sessions.map(sess => Number(sess[key])), 0);
-            
+
             const maxSessionPeakViewers = getPeak('peakViewers');
             const maxSessionPeakChat = getPeak('peakChat');
             const totalSessionChat = s.sessions.reduce((acc, sess) => acc + (Number(sess.totalChat)), 0)
@@ -243,7 +243,7 @@ export default function Analytics() {
         if (!selectedStreamer) return sampledChartData;
 
         const memberPoints = filteredChartData.filter(
-            d => d[selectedStreamer.name] !== undefined && d[selectedStreamer.name] !== null
+            d => selectedStreamer.name in d
         );
 
         if (!memberPoints.length) return sampledChartData;
@@ -252,12 +252,12 @@ export default function Analytics() {
         sampledChartData.forEach(d => timeMap.set(Number(d.timeLabel), d));
         memberPoints.forEach(d => timeMap.set(Number(d.timeLabel), d));
 
-        return Array.from(timeMap.values()).sort((a, b) => Number(a.timeLabel) - Number(b.timeLabel));
+        return [...timeMap.values()].sort((a, b) => Number(a.timeLabel) - Number(b.timeLabel));
     }, [selectedStreamer?.name, sampledChartData, filteredChartData]);
 
     const activeStreamers = useMemo(() => {
         if (!streamers.length || !activeChartData.length) return streamers;
-        const present = streamers.filter(s => activeChartData.some(d => d[s.name] !== undefined && d[s.name] !== null));
+        const present = streamers.filter(s => activeChartData.some(d => s.name in d));
         const list = present.length > 0 ? present : streamers;
         return [...list].sort((a, b) => {
             if (metricType === 'chat') {
@@ -301,6 +301,8 @@ export default function Analytics() {
         });
     };
 
+    const activeRangeLabel = timeRange === 'all' ? 'Semua' : timeRange === 'today' ? 'Hari Ini' : timeRange === '1d' ? '1 Hari Lalu' : timeRange === '2d' ? '2 Hari Lalu' : timeRange === '1h' ? '1 Jam' : timeRange === 'custom' ? 'Kustom' : timeRange;
+
     return (
         <div className="space-y-3 lg:space-y-5 pb-20">
             {/* Header */}
@@ -343,22 +345,40 @@ export default function Analytics() {
                 </div>
 
                 <div className="bg-zinc-900/30 hidden lg:block border border-zinc-800/40 rounded-lg lg:rounded-xl p-3 lg:p-5">
-                    <span className="text-sm text-zinc-400 font-medium">Total Snapshot Waktu</span>
+                    <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm text-zinc-400 font-medium">Total Snapshot Waktu</span>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border ${
+                            filteredChartData.length > 400
+                                ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                                : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                        }`}>
+                            {filteredChartData.length > 400 ? '> 400 (Disampling)' : '≤ 400 (Lengkap)'}
+                        </span>
+                    </div>
                     <p className="text-2xl lg:text-3xl font-semibold text-zinc-100 mt-1">
-                        {selectedStreamer ? (selectedStreamer.totalSnapshots || activeChartData.length) : activeChartData.length}{' '}
+                        {sampledChartData.length.toLocaleString()}{' '}
                         <span className="text-sm font-normal text-zinc-400">
-                            titik {selectedStreamer ? `(${selectedStreamer.name})` : `(${timeRange === 'all' ? 'Semua' : timeRange === 'today' ? 'Hari Ini' : timeRange})`}
+                            titik (dari {filteredChartData.length.toLocaleString()} asli • {activeRangeLabel})
                         </span>
                     </p>
                 </div>
             </div>
 
             <div className="bg-zinc-900/30 block lg:hidden border text-center border-zinc-800/40 rounded-lg p-3">
-                <span className="text-sm text-zinc-400 font-medium">Total Snapshot Waktu</span>
+                <div className="flex items-center justify-center gap-2">
+                    <span className="text-sm text-zinc-400 font-medium">Total Snapshot Waktu</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium border ${
+                        filteredChartData.length > 400
+                            ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                            : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                    }`}>
+                        {filteredChartData.length > 400 ? '> 400 (Disampling)' : '≤ 400 (Lengkap)'}
+                    </span>
+                </div>
                 <p className="text-2xl lg:text-3xl font-semibold text-zinc-100 mt-1">
-                    {selectedStreamer ? (selectedStreamer.totalSnapshots || activeChartData.length) : activeChartData.length}{' '}
+                    {sampledChartData.length.toLocaleString()}{' '}
                     <span className="text-sm font-normal text-zinc-400">
-                        titik {selectedStreamer ? `(${selectedStreamer.name})` : `(${timeRange === 'all' ? 'Semua' : timeRange === 'today' ? 'Hari Ini' : timeRange})`}
+                        titik (dari {filteredChartData.length.toLocaleString()} asli • {activeRangeLabel})
                     </span>
                 </p>
             </div>
