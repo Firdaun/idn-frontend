@@ -195,25 +195,19 @@ export default function Analytics() {
     const handleDotClick = (streamer, dotPayload) => {
         const dataPoint = dotPayload?.payload
         const clickedTime = dataPoint?.timeLabel;
-        const clickedViewers = dataPoint && streamer?.name ? dataPoint[streamer.name] : null;
-        const clickedChat = dataPoint && streamer?.name ? dataPoint[`_${streamer.name}_chat`] : null;
-        const clickedSlug = dataPoint && streamer?.name ? dataPoint[`_${streamer.name}_slug`] : null;
-        let matchedSession = null;
-        if (clickedSlug && streamer.sessions) {
-            matchedSession = streamer.sessions.find(s => s.slug === clickedSlug);
-        }
-
-        const baseInfo = matchedSession || streamer;
+        const clickedViewers = dataPoint[streamer.name];
+        const clickedChat = dataPoint[`_${streamer.name}_chat`];
+        const clickedSlug = dataPoint[`_${streamer.name}_slug`];
+        const matchedSession = streamer.sessions.find(s => s.slug === clickedSlug);
         setSelectedStreamer({
-            ...baseInfo,
+            ...matchedSession,
             name: streamer.name,
             isLegendClick: false,
-            clickedTime: clickedTime || null,
+            clickedTime: clickedTime ?? null,
             clickedViewers: clickedViewers ?? null,
             clickedChat: clickedChat ?? null
         });
     };
-
 
     const filteredChartData = useMemo(() => {
         if (!chartData.length || timeRange !== '1h') return chartData;
