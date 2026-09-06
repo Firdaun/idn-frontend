@@ -1,8 +1,10 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Brush } from 'recharts';
-import { getMultiLiveData } from '../../utils/backend-api';
+import { getMultiLiveData, getAnalytics } from '../../utils/backend-api';
 import { getMemberColor } from '../../utils/color';
 import { useQuery } from '@tanstack/react-query';
+import SentimentCard from '../components/SentimentCard';
+import WordCloudCard from '../components/WordCloudCard';
 
 const getTodayStartIso = () => {
     const start = new Date();
@@ -36,7 +38,10 @@ export default function Analytics() {
             ...prev,
             clickedTime: null,
             clickedViewers: null,
-            clickedChat: null
+            clickedChat: null,
+            clickedPos: null,
+            clickedNeu: null,
+            clickedNeg: null
         }) : null);
     }, [timeRange]);
     useEffect(() => {
@@ -84,6 +89,20 @@ export default function Analytics() {
         gcTime: 1000 * 60 * 30
     })
 
+    const {
+        data: sessionAnalyticsData,
+        isLoading: isSessionLoading
+    } = useQuery({
+        queryKey: ['sessionAnalytics', selectedStreamer?.slug],
+        queryFn: () => getAnalytics(selectedStreamer.slug),
+        enabled: !!selectedStreamer?.slug,
+        staleTime: 1000 * 60 * 5,
+        gcTime: 1000 * 60 * 15
+    });
+
+    const activeSentiment = sessionAnalyticsData?.sentiment || null;
+    const activeWordCloud = sessionAnalyticsData?.wordCloud || [];
+
     const loading = isAnalyticsLoading
     const refreshing = isAnalyticsFetching
 
@@ -101,10 +120,11 @@ export default function Analytics() {
                         fullName: matchedSession.fullName,
                         clickedTime: prev?.clickedTime ?? null,
                         clickedViewers: prev?.clickedViewers ?? null,
-                        clickedChat: prev?.clickedChat ?? null
+                        clickedChat: prev?.clickedChat ?? null,
+                        clickedPos: prev?.clickedPos ?? null,
+                        clickedNeu: prev?.clickedNeu ?? null,
+                        clickedNeg: prev?.clickedNeg ?? null
                     }));
-                    console.log('selectedStreamer', selectedStreamer);
-
                 } else {
                     setSelectedStreamer(null);
                 }
@@ -151,7 +171,10 @@ export default function Analytics() {
             ...prev,
             clickedTime: null,
             clickedViewers: null,
-            clickedChat: null
+            clickedChat: null,
+            clickedPos: null,
+            clickedNeu: null,
+            clickedNeg: null
         }) : null);
     };
 
@@ -193,11 +216,14 @@ export default function Analytics() {
     };
 
     const handleDotClick = (streamer, dotPayload) => {
-        const dataPoint = dotPayload?.payload
+        const dataPoint = dotPayload?.payload;
         const clickedTime = dataPoint?.timeLabel;
         const clickedViewers = dataPoint[streamer.name];
         const clickedChat = dataPoint[`_${streamer.name}_chat`];
         const clickedSlug = dataPoint[`_${streamer.name}_slug`];
+        const clickedPos = dataPoint[`_${streamer.name}_pos`];
+        const clickedNeu = dataPoint[`_${streamer.name}_neu`];
+        const clickedNeg = dataPoint[`_${streamer.name}_neg`];
         const matchedSession = streamer.sessions.find(s => s.slug === clickedSlug);
         setSelectedStreamer({
             ...matchedSession,
@@ -205,7 +231,10 @@ export default function Analytics() {
             isLegendClick: false,
             clickedTime: clickedTime ?? null,
             clickedViewers: clickedViewers ?? null,
-            clickedChat: clickedChat ?? null
+            clickedChat: clickedChat ?? null,
+            clickedPos: clickedPos ?? null,
+            clickedNeu: clickedNeu ?? null,
+            clickedNeg: clickedNeg ?? null
         });
     };
 
@@ -282,7 +311,10 @@ export default function Analytics() {
             isLegendClick: false,
             clickedTime: null,
             clickedViewers: null,
-            clickedChat: null
+            clickedChat: null,
+            clickedPos: null,
+            clickedNeu: null,
+            clickedNeg: null
         });
     };
     const handleNextSession = () => {
@@ -297,7 +329,10 @@ export default function Analytics() {
             isLegendClick: false,
             clickedTime: null,
             clickedViewers: null,
-            clickedChat: null
+            clickedChat: null,
+            clickedPos: null,
+            clickedNeu: null,
+            clickedNeg: null
         });
     };
 
@@ -517,6 +552,26 @@ export default function Analytics() {
                                         </span>
                                     </div>
                                 )}
+                                {selectedStreamer.clickedPos !== null && selectedStreamer.clickedPos !== undefined && (
+                                    <div className='shrink-0'>
+                                        <span className="text-zinc-400 block text-xs">
+                                            Sentimen Snapshot (@{formatLiveTime(selectedStreamer.clickedTime)})
+                                        </span>
+                                        <span className="font-semibold text-xs sm:text-sm text-zinc-100 flex items-center gap-1.5 mt-0.5">
+                                            <span className="text-emerald-400">🟢 {selectedStreamer.clickedPos}</span>
+                                            <span className="text-zinc-300">⚪ {selectedStreamer.clickedNeu}</span>
+                                            <span className="text-rose-400">🔴 {selectedStreamer.clickedNeg}</span>
+                                        </span>
+                                    </div>
+                                )}
+                                {activeSentiment && (
+                                    <div className='shrink-0'>
+                                        <span className="text-zinc-400 block text-xs">Sentimen Positif</span>
+                                        <span className="font-semibold text-emerald-400 text-base">
+                                            {activeSentiment.positivePercentage}%
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                         </div>
                         <div className='flex justify-center items-center'>
@@ -527,6 +582,26 @@ export default function Analytics() {
                                 Reset
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Sentiment & Word Cloud Section */}
+            {selectedStreamer && (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-5">
+                    <div className="lg:col-span-5">
+                        <SentimentCard
+                            sentiment={activeSentiment}
+                            isLoading={isSessionLoading && !activeSentiment}
+                        />
+                    </div>
+                    <div className="lg:col-span-7">
+                        <WordCloudCard
+                            wordCloud={activeWordCloud}
+                            isLoading={isSessionLoading && (!activeWordCloud || activeWordCloud.length === 0)}
+                            streamerName={selectedStreamer.fullName || selectedStreamer.name}
+                            isLive={!selectedStreamer.endAt}
+                        />
                     </div>
                 </div>
             )}
@@ -682,34 +757,47 @@ export default function Analytics() {
                                         const sortedItems = [...items].sort((a, b) => Number(b.value || 0) - Number(a.value || 0));
 
                                         return (
-                                            <div className="bg-zinc-900 border border-zinc-800 text-zinc-100 text-xs sm:text-sm rounded-xl p-3 shadow-xl space-y-1.5 min-w-48">
+                                            <div className="bg-zinc-900 border border-zinc-800 text-zinc-100 text-xs sm:text-sm rounded-xl p-3 shadow-xl space-y-2 min-w-52">
                                                 <p className="text-zinc-400 font-semibold text-xs border-b border-zinc-800 pb-1.5">
                                                     Waktu: {timeStr} WIB ({dateStr})
                                                 </p>
-                                                <div className="space-y-1">
+                                                <div className="space-y-1.5">
                                                     {sortedItems.map((item, idx) => {
                                                         const dataPoint = item?.payload;
                                                         const memberName = item.name;
                                                         const chatVal = dataPoint && dataPoint[`_${memberName}_chat`] !== undefined ? dataPoint[`_${memberName}_chat`] : 0;
                                                         const viewerVal = dataPoint && dataPoint[memberName] !== undefined ? dataPoint[memberName] : 0;
+                                                        const posVal = dataPoint?.[`_${memberName}_pos`];
+                                                        const neuVal = dataPoint?.[`_${memberName}_neu`];
+                                                        const negVal = dataPoint?.[`_${memberName}_neg`];
+                                                        const hasSentiment = posVal !== undefined || neuVal !== undefined || negVal !== undefined;
 
                                                         return (
-                                                            <div key={idx} className="flex items-center gap-2">
-                                                                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.color || '#fff' }} />
-                                                                <span className="truncate">
-                                                                    <strong className="text-zinc-100">{memberName}:</strong>{' '}
-                                                                    {metricType === 'chat' ? (
-                                                                        <span>
-                                                                            {Number(item.value || 0).toLocaleString()} pesan / 30 dtk{' '}
-                                                                            <span className="text-zinc-400 text-[11px]">(👥 {Number(viewerVal).toLocaleString()} penonton)</span>
-                                                                        </span>
-                                                                    ) : (
-                                                                        <span>
-                                                                            {Number(item.value || 0).toLocaleString()} penonton{' '}
-                                                                            <span className="text-zinc-400 text-[11px]">(💬 {Number(chatVal).toLocaleString()} pesan / 30 dtk)</span>
-                                                                        </span>
-                                                                    )}
-                                                                </span>
+                                                            <div key={idx} className="space-y-0.5">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.color || '#fff' }} />
+                                                                    <span className="truncate">
+                                                                        <strong className="text-zinc-100">{memberName}:</strong>{' '}
+                                                                        {metricType === 'chat' ? (
+                                                                            <span>
+                                                                                {Number(item.value || 0).toLocaleString()} pesan / 30 dtk{' '}
+                                                                                <span className="text-zinc-400 text-[11px]">(👥 {Number(viewerVal).toLocaleString()} penonton)</span>
+                                                                            </span>
+                                                                        ) : (
+                                                                            <span>
+                                                                                {Number(item.value || 0).toLocaleString()} penonton{' '}
+                                                                                <span className="text-zinc-400 text-[11px]">(💬 {Number(chatVal).toLocaleString()} pesan / 30 dtk)</span>
+                                                                            </span>
+                                                                        )}
+                                                                    </span>
+                                                                </div>
+                                                                {hasSentiment && (
+                                                                    <div className="flex items-center gap-2 text-[10px] text-zinc-400 ml-4 pl-0.5">
+                                                                        <span className="text-emerald-400 font-medium">🟢 {posVal ?? 0}</span>
+                                                                        <span className="text-zinc-300 font-medium">⚪ {neuVal ?? 0}</span>
+                                                                        <span className="text-rose-400 font-medium">🔴 {negVal ?? 0}</span>
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         );
                                                     })}
@@ -848,6 +936,16 @@ export default function Analytics() {
                     </div>
                 )}
             </div>
+
+            {/* Tip banner when no streamer is selected */}
+            {!selectedStreamer && !loading && filteredChartData.length > 0 && (
+                <div className="bg-zinc-900/20 border border-zinc-800/40 rounded-xl p-3.5 sm:p-4 text-center text-xs text-zinc-400 flex items-center justify-center gap-2">
+                    <span>💡</span>
+                    <span>
+                        <strong className="text-zinc-200">Eksplorasi Sentimen & Topik:</strong> Klik salah satu nama member di grafik atau legenda di atas untuk melihat analisis sentimen mendalam dan Word Cloud (Top 50 Kata).
+                    </span>
+                </div>
+            )}
         </div>
     );
 }
