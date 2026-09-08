@@ -135,21 +135,19 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                     <div className="flex p-0.5 rounded-lg bg-zinc-900 border border-zinc-800">
                         <button
                             onClick={() => setViewMode('cloud')}
-                            className={`px-2.5 py-1 rounded-md text-xs font-medium transition cursor-pointer flex items-center gap-1 ${
-                                viewMode === 'cloud'
-                                    ? 'bg-zinc-800 text-white shadow-sm'
-                                    : 'text-zinc-400 hover:text-zinc-200'
-                            }`}
+                            className={`px-2.5 py-1 rounded-md text-xs font-medium transition cursor-pointer flex items-center gap-1 ${viewMode === 'cloud'
+                                ? 'bg-zinc-800 text-white shadow-sm'
+                                : 'text-zinc-400 hover:text-zinc-200'
+                                }`}
                         >
                             <span>☁️ Cloud</span>
                         </button>
                         <button
                             onClick={() => setViewMode('list')}
-                            className={`px-2.5 py-1 rounded-md text-xs font-medium transition cursor-pointer flex items-center gap-1 ${
-                                viewMode === 'list'
-                                    ? 'bg-zinc-800 text-white shadow-sm'
-                                    : 'text-zinc-400 hover:text-zinc-200'
-                            }`}
+                            className={`px-2.5 py-1 rounded-md text-xs font-medium transition cursor-pointer flex items-center gap-1 ${viewMode === 'list'
+                                ? 'bg-zinc-800 text-white shadow-sm'
+                                : 'text-zinc-400 hover:text-zinc-200'
+                                }`}
                         >
                             <span>📋 Top Rank</span>
                         </button>
@@ -197,9 +195,8 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                                         lineHeight: style.lineHeight,
                                         ...style
                                     }}
-                                    className={`px-3 py-1.5 rounded-xl border transition-all duration-200 cursor-pointer flex items-center gap-1.5 transform hover:scale-105 ${
-                                        style.className
-                                    } ${isHovered ? 'ring-2 ring-emerald-400 scale-110 z-10' : ''}`}
+                                    className={`px-3 py-1.5 rounded-xl border transition-all duration-200 cursor-pointer flex items-center gap-1.5 transform hover:scale-105 ${style.className
+                                        } ${isHovered ? 'ring-2 ring-emerald-400 scale-110 z-10' : ''}`}
                                 >
                                     <span>{item.text}</span>
                                     <span className="text-[10px] opacity-75 font-normal">
@@ -212,68 +209,85 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                 </div>
             ) : (
                 /* Mode List / Top Ranking */
-                <div className="overflow-x-auto max-h-80 custom-scrollbar rounded-xl border border-zinc-800/60 bg-zinc-950/30">
-                    <table className="w-full text-left text-xs">
-                        <thead className="bg-zinc-900/90 text-zinc-400 sticky top-0 border-b border-zinc-800">
+                <div className="rounded-xl border border-zinc-800/60 bg-zinc-950/30 overflow-hidden">
+                    <table className="w-full table-fixed text-left text-xs bg-zinc-900 text-zinc-400 border-b border-zinc-800">
+                        <colgroup>
+                            <col className="w-14 sm:w-16" />
+                            <col />
+                            <col className="w-32 sm:w-48" />
+                            <col className="w-24 sm:w-28" />
+                        </colgroup>
+                        <thead>
                             <tr>
-                                <th className="py-2.5 px-3 w-16 text-center font-medium">Rank</th>
+                                <th className="py-2.5 px-3 text-center font-medium">Rank</th>
                                 <th className="py-2.5 px-3 font-medium">Kata Kunci</th>
-                                <th className="py-2.5 px-3 w-32 sm:w-48 font-medium">Frekuensi Relatif</th>
-                                <th className="py-2.5 px-3 w-28 text-right font-medium">Total Sebutan</th>
+                                <th className="py-2.5 px-3 font-medium">Frekuensi Relatif</th>
+                                <th className="py-2.5 pl-2 pr-3 text-right font-medium">Total Sebutan</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-zinc-800/40 text-zinc-300">
-                            {filteredWords.length === 0 ? (
-                                <tr>
-                                    <td colSpan={4} className="py-6 text-center text-zinc-500 text-xs">
-                                        Tidak ada kata yang sesuai dengan pencarian "{searchQuery}"
-                                    </td>
-                                </tr>
-                            ) : (
-                                filteredWords.map((item, idx) => {
-                                    const rank = idx + 1;
-                                    const relativePct = maxVal > 0 ? (item.value / maxVal) * 100 : 0;
-                                    
-                                    let rankBadge = <span className="text-zinc-400 font-semibold">#{rank}</span>;
-                                    if (rank === 1) rankBadge = <span className="text-base">🥇</span>;
-                                    else if (rank === 2) rankBadge = <span className="text-base">🥈</span>;
-                                    else if (rank === 3) rankBadge = <span className="text-base">🥉</span>;
-
-                                    return (
-                                        <tr
-                                            key={item.text}
-                                            onMouseEnter={() => setHoveredWord(item)}
-                                            onMouseLeave={() => setHoveredWord(null)}
-                                            className="hover:bg-zinc-800/40 transition"
-                                        >
-                                            <td className="py-2 px-3 text-center">{rankBadge}</td>
-                                            <td className="py-2 px-3">
-                                                <span className={`font-medium ${rank <= 3 ? 'text-zinc-100 font-semibold' : 'text-zinc-300'}`}>
-                                                    {item.text}
-                                                </span>
-                                            </td>
-                                            <td className="py-2 px-3">
-                                                <div className="w-full bg-zinc-800 h-2 rounded-full overflow-hidden">
-                                                    <div
-                                                        style={{ width: `${relativePct}%` }}
-                                                        className={`h-full rounded-full ${
-                                                            rank === 1 ? 'bg-emerald-400' :
-                                                            rank === 2 ? 'bg-amber-400' :
-                                                            rank === 3 ? 'bg-cyan-400' :
-                                                            'bg-indigo-400'
-                                                        }`}
-                                                    />
-                                                </div>
-                                            </td>
-                                            <td className="py-2 px-3 text-right font-semibold text-zinc-100">
-                                                {Number(item.value).toLocaleString()} <span className="text-zinc-500 text-[10px] font-normal">x</span>
-                                            </td>
-                                        </tr>
-                                    );
-                                })
-                            )}
-                        </tbody>
                     </table>
+
+                    <div className="overflow-y-auto max-h-80 custom-scrollbar">
+                        <table className="w-full table-fixed text-left text-xs">
+                            <colgroup>
+                                <col className="w-14 sm:w-16" />
+                                <col />
+                                <col className="w-32 sm:w-48" />
+                                <col className="w-24 sm:w-28" />
+                            </colgroup>
+                            <tbody className="divide-y divide-zinc-800/40 text-zinc-300">
+                                {filteredWords.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={4} className="py-8 text-center text-zinc-500 text-xs">
+                                            Tidak ada kata yang sesuai dengan pencarian "{searchQuery}"
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    filteredWords.map((item, idx) => {
+                                        const rank = idx + 1;
+                                        const relativePct = maxVal > 0 ? (item.value / maxVal) * 100 : 0;
+
+                                        let rankBadge = <span className="text-zinc-400 font-semibold">#{rank}</span>;
+                                        if (rank === 1) rankBadge = <span className="text-base">🥇</span>;
+                                        else if (rank === 2) rankBadge = <span className="text-base">🥈</span>;
+                                        else if (rank === 3) rankBadge = <span className="text-base">🥉</span>;
+
+                                        return (
+                                            <tr
+                                                key={item.text}
+                                                onMouseEnter={() => setHoveredWord(item)}
+                                                onMouseLeave={() => setHoveredWord(null)}
+                                                className="hover:bg-zinc-800/40 transition"
+                                            >
+                                                <td className="py-2 px-3 text-center">{rankBadge}</td>
+                                                <td className="py-2 px-3 truncate">
+                                                    <span className={`font-medium ${rank <= 3 ? 'text-zinc-100 font-semibold' : 'text-zinc-300'}`}>
+                                                        {item.text}
+                                                    </span>
+                                                </td>
+                                                <td className="py-2 px-3">
+                                                    <div className="w-full bg-zinc-800 h-2 rounded-full overflow-hidden">
+                                                        <div
+                                                            style={{ width: `${relativePct}%` }}
+                                                            className={`h-full rounded-full ${
+                                                                rank === 1 ? 'bg-emerald-400' :
+                                                                rank === 2 ? 'bg-amber-400' :
+                                                                rank === 3 ? 'bg-cyan-400' :
+                                                                'bg-indigo-400'
+                                                            }`}
+                                                        />
+                                                    </div>
+                                                </td>
+                                                <td className="py-2 px-3 text-right font-semibold text-zinc-100">
+                                                    {Number(item.value).toLocaleString()} <span className="text-zinc-500 text-[10px] font-normal">x</span>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             )}
         </div>

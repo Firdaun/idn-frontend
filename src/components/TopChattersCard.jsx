@@ -215,87 +215,104 @@ export default function TopChattersCard({ topChatters = [], isLoading = false, s
                     <span>Menampilkan {filteredChatters.length} penonton</span>
                 </div>
 
-                <div className="overflow-x-auto max-h-96 custom-scrollbar rounded-xl border border-zinc-800/60 bg-zinc-950/30">
-                    <table className="w-full text-left text-xs">
-                        <thead className="bg-zinc-900/90 text-zinc-400 sticky top-0 border-b border-zinc-800 z-10">
+                <div className="rounded-xl border border-zinc-800/60 bg-zinc-950/30 overflow-hidden">
+                    <table className="w-full table-fixed text-left text-xs bg-zinc-900 text-zinc-400 border-b border-zinc-800">
+                        <colgroup>
+                            <col className="w-14 sm:w-16" />
+                            <col />
+                            <col className="w-32 sm:w-56 hidden sm:table-column" />
+                            <col className="w-24 sm:w-28" />
+                        </colgroup>
+                        <thead>
                             <tr>
-                                <th className="py-2.5 px-3 w-14 text-center font-medium">Rank</th>
+                                <th className="py-2.5 px-3 text-center font-medium">Rank</th>
                                 <th className="py-2.5 px-3 font-medium">Pengguna IDN</th>
-                                <th className="py-2.5 px-3 w-32 sm:w-56 font-medium hidden sm:table-cell">Aktivitas Relatif</th>
-                                <th className="py-2.5 px-3 w-28 text-right font-medium">Total Pesan</th>
+                                <th className="py-2.5 px-3 font-medium hidden sm:table-cell">Aktivitas Relatif</th>
+                                <th className="py-2.5 px-3 text-right font-medium">Total Pesan</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-zinc-800/40 text-zinc-300">
-                            {filteredChatters.length === 0 ? (
-                                <tr>
-                                    <td colSpan={4} className="py-8 text-center text-zinc-500 text-xs">
-                                        Tidak ditemukan penonton dengan nama "{searchQuery}"
-                                    </td>
-                                </tr>
-                            ) : (
-                                filteredChatters.map((chatter, idx) => {
-                                    // Cari ranking asli di array lengkap
-                                    const originalRank = topChatters.findIndex(c => c.userUuid === chatter.userUuid) + 1 || idx + 1;
-                                    const relativePct = maxCount > 0 ? (Number(chatter.count) / maxCount) * 100 : 0;
-
-                                    let rankBadge = <span className="text-zinc-400 font-semibold">#{originalRank}</span>;
-                                    if (originalRank === 1) rankBadge = <span className="text-sm">🥇</span>;
-                                    else if (originalRank === 2) rankBadge = <span className="text-sm">🥈</span>;
-                                    else if (originalRank === 3) rankBadge = <span className="text-sm">🥉</span>;
-
-                                    return (
-                                        <tr
-                                            key={chatter.userUuid || idx}
-                                            className="hover:bg-zinc-800/40 transition group"
-                                        >
-                                            {/* Rank */}
-                                            <td className="py-2.5 px-3 text-center">{rankBadge}</td>
-
-                                            {/* User Info */}
-                                            <td className="py-2.5 px-3">
-                                                <div className="flex items-center gap-2.5 min-w-0">
-                                                    {renderAvatar(chatter, 'w-7 h-7 text-[11px]')}
-                                                    <div className="min-w-0">
-                                                        <p className="font-semibold text-zinc-100 truncate max-w-40 sm:max-w-xs" title={chatter.userName}>
-                                                            {chatter.userName}
-                                                        </p>
-                                                        <p className="text-[10px] text-zinc-500 truncate font-mono">
-                                                            {chatter.userUuid ? `${chatter.userUuid.slice(0, 8)}...` : ''}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </td>
-
-                                            {/* Relative Progress Bar */}
-                                            <td className="py-2.5 px-3 hidden sm:table-cell">
-                                                <div className="w-full bg-zinc-800/80 h-2 rounded-full overflow-hidden">
-                                                    <div
-                                                        style={{ width: `${relativePct}%` }}
-                                                        className={`h-full rounded-full transition-all duration-500 ${
-                                                            originalRank === 1 ? 'bg-amber-400' :
-                                                            originalRank === 2 ? 'bg-zinc-300' :
-                                                            originalRank === 3 ? 'bg-amber-600' :
-                                                            'bg-indigo-400'
-                                                        }`}
-                                                    />
-                                                </div>
-                                            </td>
-
-                                            {/* Count */}
-                                            <td className="py-2.5 px-3 text-right">
-                                                <span className="font-bold text-zinc-100 text-xs sm:text-sm">
-                                                    {Number(chatter.count).toLocaleString()}
-                                                </span>
-                                                <span className="text-zinc-500 text-[10px] font-normal ml-1">
-                                                    pesan
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    );
-                                })
-                            )}
-                        </tbody>
                     </table>
+
+                    <div className="overflow-y-auto max-h-96 custom-scrollbar">
+                        <table className="w-full table-fixed text-left text-xs">
+                            <colgroup>
+                                <col className="w-14 sm:w-16" />
+                                <col />
+                                <col className="w-32 sm:w-56 hidden sm:table-column" />
+                                <col className="w-24 sm:w-28" />
+                            </colgroup>
+                            <tbody className="divide-y divide-zinc-800/40 text-zinc-300">
+                                {filteredChatters.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={4} className="py-8 text-center text-zinc-500 text-xs">
+                                            Tidak ditemukan penonton dengan nama "{searchQuery}"
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    filteredChatters.map((chatter, idx) => {
+                                        // Cari ranking asli di array lengkap
+                                        const originalRank = topChatters.findIndex(c => c.userUuid === chatter.userUuid) + 1 || idx + 1;
+                                        const relativePct = maxCount > 0 ? (Number(chatter.count) / maxCount) * 100 : 0;
+
+                                        let rankBadge = <span className="text-zinc-400 font-semibold">#{originalRank}</span>;
+                                        if (originalRank === 1) rankBadge = <span className="text-sm">🥇</span>;
+                                        else if (originalRank === 2) rankBadge = <span className="text-sm">🥈</span>;
+                                        else if (originalRank === 3) rankBadge = <span className="text-sm">🥉</span>;
+
+                                        return (
+                                            <tr
+                                                key={chatter.userUuid || idx}
+                                                className="hover:bg-zinc-800/40 transition group"
+                                            >
+                                                {/* Rank */}
+                                                <td className="py-2.5 px-3 text-center">{rankBadge}</td>
+
+                                                {/* User Info */}
+                                                <td className="py-2.5 px-3">
+                                                    <div className="flex items-center gap-2.5 min-w-0">
+                                                        {renderAvatar(chatter, 'w-7 h-7 text-[11px]')}
+                                                        <div className="min-w-0">
+                                                            <p className="font-semibold text-zinc-100 truncate max-w-40 sm:max-w-xs" title={chatter.userName}>
+                                                                {chatter.userName}
+                                                            </p>
+                                                            <p className="text-[10px] text-zinc-500 truncate font-mono">
+                                                                {chatter.userUuid ? `${chatter.userUuid.slice(0, 8)}...` : ''}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </td>
+
+                                                {/* Relative Progress Bar */}
+                                                <td className="py-2.5 px-3 hidden sm:table-cell">
+                                                    <div className="w-full bg-zinc-800/80 h-2 rounded-full overflow-hidden">
+                                                        <div
+                                                            style={{ width: `${relativePct}%` }}
+                                                            className={`h-full rounded-full transition-all duration-500 ${
+                                                                originalRank === 1 ? 'bg-amber-400' :
+                                                                originalRank === 2 ? 'bg-zinc-300' :
+                                                                originalRank === 3 ? 'bg-amber-600' :
+                                                                'bg-indigo-400'
+                                                            }`}
+                                                        />
+                                                    </div>
+                                                </td>
+
+                                                {/* Count */}
+                                                <td className="py-2.5 px-3 text-right">
+                                                    <span className="font-bold text-zinc-100 text-xs sm:text-sm">
+                                                        {Number(chatter.count).toLocaleString()}
+                                                    </span>
+                                                    <span className="text-zinc-500 text-[10px] font-normal ml-1">
+                                                        pesan
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
