@@ -107,7 +107,7 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                         </span>
                     </div>
                     <p className="text-xs text-zinc-400 mt-0.5">
-                        Topik yang paling sering dibicarakan <br /> penonton selama siaran berlangsung
+                        Topik yang paling sering dibicarakan penonton selama siaran berlangsung
                     </p>
                 </div>
 

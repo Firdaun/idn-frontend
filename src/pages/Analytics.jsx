@@ -467,7 +467,9 @@ export default function Analytics() {
 
                     {/* Sisi Kanan: Jadwal Waktu & Tombol Reset */}
                     <div className="flex items-center justify-between gap-0 md:gap-2 xl:gap-5 w-full md:w-auto flex-wrap border-t md:border-t-0 border-zinc-800/80 pt-3 md:pt-0">
-                        <div className='min-w-50 w-53 min-[360px]:w-57 min-[375px]:w-60 min-[412px]:w-70 min-[440px]:w-73 md:w-69 lg:w-85 overflow-x-auto pb-1'>
+                        <div className={`min-w-50 w-53 min-[360px]:w-57 min-[375px]:w-60 min-[412px]:w-70 min-[440px]:w-76 ${
+                            streamerSessions.length > 1 ? 'md:w-67' : 'md:w-93.5'
+                        } lg:w-85 overflow-x-auto pb-1`}>
                             <div className="flex items-center gap-3 text-xs sm:text-sm whitespace-nowrap">
                                 <div className='shrink-0'>
                                     <span className="text-zinc-400 block text-xs">Mulai Siaran</span>

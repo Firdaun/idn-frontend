@@ -109,7 +109,7 @@ export default function TopChattersCard({ topChatters = [], isLoading = false, s
     return (
         <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-xl p-4 lg:p-5 space-y-5">
             {/* Header & Controls */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-zinc-800/80 pb-3.5">
+            <div className="flex flex-col min-[540px]:flex-row min-[540px]:items-center justify-between gap-3 border-b border-zinc-800/80 pb-3.5">
                 <div>
                     <div className="flex items-center gap-2">
                         <h3 className="text-sm sm:text-base font-semibold text-zinc-100 flex items-center gap-2">
@@ -120,18 +120,18 @@ export default function TopChattersCard({ topChatters = [], isLoading = false, s
                         </span>
                     </div>
                     <p className="text-xs text-zinc-400 mt-0.5">
-                        Daftar penonton yang paling banyak mengirimkan pesan selama siaran langsung {streamerName ? `• ${streamerName}` : ''}
+                        Daftar penonton yang paling banyak mengirimkan <br /> pesan selama siaran langsung {streamerName ? `• ${streamerName}` : ''}
                     </p>
                 </div>
 
                 {/* Search Input */}
-                <div className="relative self-start md:self-auto">
+                <div className="relative min-[540px]:w-[40%] lg:w-74.5">
                     <input
                         type="text"
                         placeholder="Cari nama penonton..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="bg-zinc-900 border rounded-lg px-2.5 py-1.5 text-xs placeholder:text-zinc-500 focus:outline-none focus:border-zinc-600 w-44 sm:w-56"
+                        className="bg-zinc-900 border rounded-lg px-2.5 py-1.5 text-xs placeholder:text-zinc-500 focus:outline-none focus:border-zinc-600 w-full"
                     />
                     {searchQuery && (
                         <button
