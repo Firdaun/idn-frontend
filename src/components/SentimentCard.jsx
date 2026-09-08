@@ -9,10 +9,10 @@ export default function SentimentCard({ sentiment, isLoading = false }) {
                 <div className="flex justify-center items-center py-2">
                     <div className="w-32 h-32 rounded-full border-8 border-zinc-800"></div>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
-                    <div className="h-16 bg-zinc-800/50 rounded-lg"></div>
-                    <div className="h-16 bg-zinc-800/50 rounded-lg"></div>
-                    <div className="h-16 bg-zinc-800/50 rounded-lg"></div>
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-1 gap-2.5 pt-1">
+                    <div className="h-14 bg-zinc-800/50 rounded-xl"></div>
+                    <div className="h-14 bg-zinc-800/50 rounded-xl"></div>
+                    <div className="h-14 bg-zinc-800/50 rounded-xl"></div>
                 </div>
             </div>
         );
@@ -163,98 +163,77 @@ export default function SentimentCard({ sentiment, isLoading = false }) {
                         </span>
                     </div>
                 </div>
-
-                {/* Legenda & Rincian Persentase */}
-                <div className="flex flex-col justify-center gap-2 w-full sm:w-auto flex-1 sm:max-w-xs">
-                    {/* Positif */}
-                    <div className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs">
-                        <div className="flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-xs shadow-emerald-400/50"></span>
-                            <span className="text-zinc-200 font-medium">Positif</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <span className="text-emerald-400 font-bold">{positivePct}%</span>
-                            <span className="text-zinc-400 text-[11px]">({positive.toLocaleString()})</span>
-                        </div>
-                    </div>
-
-                    {/* Netral (Sky Blue Menonjol) */}
-                    <div className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-sky-500/10 border border-sky-500/20 text-xs">
-                        <div className="flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-full bg-sky-400 shadow-xs shadow-sky-400/50"></span>
-                            <span className="text-zinc-200 font-medium">Netral</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <span className="text-sky-400 font-bold">{neutralPct}%</span>
-                            <span className="text-zinc-400 text-[11px]">({neutral.toLocaleString()})</span>
-                        </div>
-                    </div>
-
-                    {/* Negatif */}
-                    <div className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-xs">
-                        <div className="flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-full bg-rose-400 shadow-xs shadow-rose-400/50"></span>
-                            <span className="text-zinc-200 font-medium">Keluhan</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <span className="text-rose-400 font-bold">{negativePct}%</span>
-                            <span className="text-zinc-400 text-[11px]">({negative.toLocaleString()})</span>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             {/* Metric Detail Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3 pt-1">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-1 gap-2.5 pt-1">
                 {/* Positif */}
-                <div className="bg-emerald-950/20 border border-emerald-500/20 rounded-lg p-3 hover:border-emerald-500/40 transition">
-                    <div className="flex items-center justify-between text-emerald-400 text-xs font-medium">
-                        <span className="flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                            Pujian & Tawa
-                        </span>
-                        <span className="text-xs font-semibold">{positivePct}%</span>
+                <div className="bg-emerald-950/20 border border-emerald-500/20 rounded-xl p-3 hover:border-emerald-500/40 transition flex items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></span>
+                            <span className="text-xs sm:text-sm font-semibold text-emerald-300 truncate">
+                                Pujian & Tawa
+                            </span>
+                        </div>
+                        <p className="text-[11px] text-zinc-400 mt-0.5 pl-4.5 truncate">
+                            Pujian, tawa, antusiasme
+                        </p>
                     </div>
-                    <p className="text-lg sm:text-xl font-bold text-zinc-100 mt-1">
-                        {positive.toLocaleString()}
-                    </p>
-                    <p className="text-[11px] text-zinc-400 mt-0.5 truncate">
-                        Pujian, tawa (wkwk), antusiasme
-                    </p>
+                    <div className="text-right shrink-0">
+                        <span className="text-base sm:text-lg font-bold text-zinc-100 block leading-tight">
+                            {positive.toLocaleString()}
+                        </span>
+                        <span className="text-[11px] font-semibold text-emerald-400">
+                            {positivePct}%
+                        </span>
+                    </div>
                 </div>
 
-                {/* Netral (Warna Sky Blue Menonjol) */}
-                <div className="bg-sky-950/20 border border-sky-500/20 rounded-lg p-3 hover:border-sky-500/40 transition">
-                    <div className="flex items-center justify-between text-sky-400 text-xs font-medium">
-                        <span className="flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-sky-400"></span>
-                            Obrolan Umum
-                        </span>
-                        <span className="text-xs font-semibold">{neutralPct}%</span>
+                {/* Netral */}
+                <div className="bg-sky-950/20 border border-sky-500/20 rounded-xl p-3 hover:border-sky-500/40 transition flex items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-sky-400 shrink-0"></span>
+                            <span className="text-xs sm:text-sm font-semibold text-sky-300 truncate">
+                                Obrolan Umum
+                            </span>
+                        </div>
+                        <p className="text-[11px] text-zinc-400 mt-0.5 pl-4.5 truncate">
+                            Sapaan & obrolan santai penonton
+                        </p>
                     </div>
-                    <p className="text-lg sm:text-xl font-bold text-zinc-100 mt-1">
-                        {neutral.toLocaleString()}
-                    </p>
-                    <p className="text-[11px] text-zinc-400 mt-0.5 truncate">
-                        Sapaan & obrolan santai penonton
-                    </p>
+                    <div className="text-right shrink-0">
+                        <span className="text-base sm:text-lg font-bold text-zinc-100 block leading-tight">
+                            {neutral.toLocaleString()}
+                        </span>
+                        <span className="text-[11px] font-semibold text-sky-400">
+                            {neutralPct}%
+                        </span>
+                    </div>
                 </div>
 
-                {/* Negatif / Kendala */}
-                <div className="bg-rose-950/20 border border-rose-500/20 rounded-lg p-3 hover:border-rose-500/40 transition">
-                    <div className="flex items-center justify-between text-rose-400 text-xs font-medium">
-                        <span className="flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-rose-500"></span>
-                            Keluhan Teknis
-                        </span>
-                        <span className="text-xs font-semibold">{negativePct}%</span>
+                {/* Negatif */}
+                <div className="bg-rose-950/20 border border-rose-500/20 rounded-xl p-3 hover:border-rose-500/40 transition flex items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0"></span>
+                            <span className="text-xs sm:text-sm font-semibold text-rose-300 truncate">
+                                Komentar Negatif
+                            </span>
+                        </div>
+                        <p className="text-[11px] text-zinc-400 mt-0.5 pl-4.5 truncate">
+                            Kendala siaran, komplain, kritik
+                        </p>
                     </div>
-                    <p className="text-lg sm:text-xl font-bold text-zinc-100 mt-1">
-                        {negative.toLocaleString()}
-                    </p>
-                    <p className="text-[11px] text-zinc-400 mt-0.5 truncate">
-                        Lag, buffering, patah, muter
-                    </p>
+                    <div className="text-right shrink-0">
+                        <span className="text-base sm:text-lg font-bold text-zinc-100 block leading-tight">
+                            {negative.toLocaleString()}
+                        </span>
+                        <span className="text-[11px] font-semibold text-rose-400">
+                            {negativePct}%
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
