@@ -56,3 +56,12 @@ export const getWordCloud = async (slug) => {
     const result = await response.json();
     return result.data || [];
 };
+
+export const getTopChatters = async (slug) => {
+    const response = await fetch(`${BASE_URL}/idn/analytics/${slug}/top-chatters`);
+    if (!response.ok) {
+        throw new Error(`HTTP Error: ${response.status}`);
+    }
+    const result = await response.json();
+    return result.data || [];
+};
