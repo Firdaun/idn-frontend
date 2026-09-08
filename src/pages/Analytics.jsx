@@ -377,12 +377,12 @@ export default function Analytics() {
 
                 <div className="bg-zinc-900/30 hidden lg:block border border-zinc-800/40 rounded-lg lg:rounded-xl p-3 lg:p-5">
                     <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs text-zinc-400 font-medium">Total Snapshot Waktu</span>
+                        <span className="text-xs text-zinc-400 font-medium">Total Cuplikan Waktu</span>
                         <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium border ${filteredChartData.length > 400
                                 ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
                                 : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                             }`}>
-                            {filteredChartData.length > 400 ? '> 400 (Disampling)' : '≤ 400 (Lengkap)'}
+                            {filteredChartData.length > 400 ? '> 400 (Disampel)' : '≤ 400 (Lengkap)'}
                         </span>
                     </div>
                     <p className="text-2xl lg:text-3xl font-semibold text-zinc-100 mt-1">
@@ -396,12 +396,12 @@ export default function Analytics() {
 
             <div className="bg-zinc-900/30 block lg:hidden border text-center border-zinc-800/40 rounded-lg p-3">
                 <div className="flex items-center justify-center gap-2">
-                    <span className="text-xs text-zinc-400 font-medium">Total Snapshot Waktu</span>
+                    <span className="text-xs text-zinc-400 font-medium">Total Cuplikan Waktu</span>
                     <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium border ${filteredChartData.length > 400
                             ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
                             : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                         }`}>
-                        {filteredChartData.length > 400 ? '> 400 (Disampling)' : '≤ 400 (Lengkap)'}
+                        {filteredChartData.length > 400 ? '> 400 (Disampel)' : '≤ 400 (Lengkap)'}
                     </span>
                 </div>
                 <p className="text-2xl lg:text-3xl font-semibold text-zinc-100 mt-1">
@@ -727,8 +727,8 @@ export default function Analytics() {
                     </div>
                 ) : !filteredChartData.length ? (
                     <div className="h-72 flex flex-col items-center justify-center text-center p-6 text-zinc-400 space-y-1.5 text-sm">
-                        <p className="text-zinc-200 font-semibold text-base">Belum ada riwayat snapshot</p>
-                        <p>Data grafik akan tampil saat ada perekaman live aktif.</p>
+                        <p className="text-zinc-200 font-semibold text-base">Belum ada riwayat cuplikan</p>
+                        <p>Data grafik akan tampil saat ada perekaman siaran langsung aktif.</p>
                     </div>
                 ) : (
                     <div className="h-125 w-full">
@@ -877,7 +877,7 @@ export default function Analytics() {
                                                             {metricType === 'chat' ? (
                                                                 streamer.peakChat > 0 && (
                                                                     <span className="text-[11px] text-zinc-500 font-normal whitespace-nowrap">
-                                                                        ({Number(streamer.peakChat).toLocaleString()}/30s)
+                                                                        ({Number(streamer.peakChat).toLocaleString()}/30 dtk)
                                                                     </span>
                                                                 )
                                                             ) : (

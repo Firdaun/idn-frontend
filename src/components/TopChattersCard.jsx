@@ -82,19 +82,19 @@ export default function TopChattersCard({ topChatters = [], isLoading = false, s
         return (
             <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-xl p-5 text-center text-zinc-400 text-sm space-y-2">
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border bg-zinc-800/80 border-zinc-700/80 text-zinc-300">
-                    <span>🏆 Top Chatters & Leaderboard</span>
+                    <span>🏆 Papan Peringkat Pengirim Pesan</span>
                 </div>
                 {isLive ? (
                     <div>
                         <p className="text-zinc-200 font-medium text-sm">🔴 Siaran Sedang Berlangsung</p>
                         <p className="text-xs text-zinc-400 mt-1 max-w-md mx-auto">
-                            Leaderboard Top 50 Chatters sedang dikumpulkan dan akan otomatis tersedia setelah sesi live ini selesai.
+                            Daftar 50 Pengirim Pesan Terbanyak sedang dikumpulkan dan akan otomatis tersedia setelah sesi siaran ini selesai.
                         </p>
                     </div>
                 ) : (
                     <div>
                         <p className="text-zinc-300 font-medium text-sm">Belum ada data interaksi penonton untuk siaran ini.</p>
-                        <p className="text-xs text-zinc-500 mt-1">Data pengirim pesan terbanyak akan muncul saat penonton mengirim pesan di live chat.</p>
+                        <p className="text-xs text-zinc-500 mt-1">Data pengirim pesan terbanyak akan muncul saat penonton mengirim pesan di obrolan langsung.</p>
                     </div>
                 )}
             </div>

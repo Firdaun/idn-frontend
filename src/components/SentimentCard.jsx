@@ -20,7 +20,7 @@ export default function SentimentCard({ sentiment, isLoading = false }) {
         return (
             <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-xl p-5 text-center text-zinc-400 text-sm">
                 <p className="text-zinc-300 font-medium">Belum ada data sentimen untuk siaran ini.</p>
-                <p className="text-xs text-zinc-500 mt-1">Data sentimen akan dihitung secara real-time berdasarkan pesan penonton.</p>
+                <p className="text-xs text-zinc-500 mt-1">Data sentimen akan dihitung secara langsung berdasarkan pesan penonton.</p>
             </div>
         );
     }
