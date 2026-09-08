@@ -74,19 +74,19 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
         return (
             <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-xl p-5 text-center text-zinc-400 text-sm space-y-2">
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border bg-zinc-800/80 border-zinc-700/80 text-zinc-300">
-                    <span>☁️ Topik Hangat & Word Cloud</span>
+                    <span>☁️ Awan Kata & Topik Hangat</span>
                 </div>
                 {isLive ? (
                     <div>
                         <p className="text-zinc-200 font-medium text-sm">🔴 Siaran Sedang Berlangsung</p>
                         <p className="text-xs text-zinc-400 mt-1 max-w-md mx-auto">
-                            Word Cloud (Top 50 Kata) sedang dianalisis dari riwayat live chat dan akan otomatis tersedia setelah sesi live ini selesai.
+                            Awan kata (50 kata teratas) sedang dianalisis dari riwayat obrolan dan akan otomatis tersedia setelah siaran selesai.
                         </p>
                     </div>
                 ) : (
                     <div>
                         <p className="text-zinc-300 font-medium text-sm">Belum ada data topik & kata kunci untuk siaran ini.</p>
-                        <p className="text-xs text-zinc-500 mt-1">Data kata terpopuler akan otomatis muncul saat penonton berinteraksi di live chat.</p>
+                        <p className="text-xs text-zinc-500 mt-1">Data kata terpopuler akan otomatis muncul saat penonton mengirim pesan.</p>
                     </div>
                 )}
             </div>
@@ -96,30 +96,30 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
     return (
         <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-xl p-4 lg:p-5 space-y-4">
             {/* Header & Controls */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-zinc-800/80 pb-3.5">
+            <div className="flex flex-col md:flex-row lg:flex-col xl:flex-row md:items-center lg:items-start justify-between gap-3 border-b border-zinc-800/80 pb-3.5">
                 <div>
                     <div className="flex items-center gap-2">
-                        <h3 className="text-base font-semibold text-zinc-100 flex items-center gap-2">
-                            <span>☁️ Topik Hangat & Top 50 Kata</span>
+                        <h3 className="text-sm sm:text-base font-semibold text-zinc-100 flex items-center gap-2">
+                            <span>☁️ 50 Kata Terpopuler</span>
                         </h3>
                         <span className="text-xs text-zinc-400">
                             ({filteredWords.length} kata {streamerName ? `• ${streamerName}` : ''})
                         </span>
                     </div>
                     <p className="text-xs text-zinc-400 mt-0.5">
-                        Topik yang paling sering dibicarakan penonton selama live streaming
+                        Topik yang paling sering dibicarakan <br /> penonton selama siaran berlangsung
                     </p>
                 </div>
 
-                <div className="flex items-center gap-2.5 self-start md:self-auto flex-wrap">
+                <div className="flex items-center gap-2 flex-col min-[540px]:flex-row md:flex-col lg:flex-row xl:flex-col lg:w-full xl:w-85">
                     {/* Search Input */}
-                    <div className="relative">
+                    <div className="relative w-full min-[540px]:w-[45%] md:w-64.75 lg:w-[90%] xl:w-80">
                         <input
                             type="text"
                             placeholder="Cari kata kunci..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="bg-zinc-900 border rounded-lg px-2.5 py-1.5 text-xs placeholder:text-zinc-500 focus:outline-none focus:border-zinc-600 w-36 sm:w-44"
+                            className="bg-zinc-900 border rounded-lg px-2.5 py-1.5 text-xs placeholder:text-zinc-500 focus:outline-none focus:border-zinc-600 w-full"
                         />
                         {searchQuery && (
                             <button
@@ -132,24 +132,24 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                     </div>
 
                     {/* Mode Toggle */}
-                    <div className="flex p-0.5 rounded-lg bg-zinc-900 border border-zinc-800">
+                    <div className="flex p-0.5 w-full min-[540px]:w-[55%] md:w-64.75 lg:w-full xl:w-80 rounded-lg bg-zinc-900 border border-zinc-800">
                         <button
                             onClick={() => setViewMode('cloud')}
-                            className={`px-2.5 py-1 rounded-md text-xs font-medium transition cursor-pointer flex items-center gap-1 ${viewMode === 'cloud'
+                            className={`px-2.5 py-1 rounded-md text-xs font-medium transition cursor-pointer flex justify-center w-full gap-1 ${viewMode === 'cloud'
                                 ? 'bg-zinc-800 text-white shadow-sm'
                                 : 'text-zinc-400 hover:text-zinc-200'
                                 }`}
                         >
-                            <span>☁️ Cloud</span>
+                            <span>☁️ Awan Kata</span>
                         </button>
                         <button
                             onClick={() => setViewMode('list')}
-                            className={`px-2.5 py-1 rounded-md text-xs font-medium transition cursor-pointer flex items-center gap-1 ${viewMode === 'list'
+                            className={`px-2.5 py-1 rounded-md text-xs font-medium transition cursor-pointer flex justify-center w-full gap-1 ${viewMode === 'list'
                                 ? 'bg-zinc-800 text-white shadow-sm'
                                 : 'text-zinc-400 hover:text-zinc-200'
                                 }`}
                         >
-                            <span>📋 Top Rank</span>
+                            <span>📋 Daftar Peringkat</span>
                         </button>
                     </div>
                 </div>
@@ -169,7 +169,7 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                     </div>
                 ) : (
                     <span className="text-zinc-500 text-xs italic">
-                        {viewMode === 'cloud' ? 'Arahkan kursor atau klik kata untuk melihat frekuensi' : 'Peringkat 50 kata yang paling dominan di live chat'}
+                        {viewMode === 'cloud' ? 'Arahkan kursor atau klik kata untuk melihat frekuensi' : 'Peringkat 50 kata yang paling dominan di obrolan'}
                     </span>
                 )}
             </div>
@@ -199,7 +199,7 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                                         } ${isHovered ? 'ring-2 ring-emerald-400 scale-110 z-10' : ''}`}
                                 >
                                     <span>{item.text}</span>
-                                    <span className="text-[10px] opacity-75 font-normal">
+                                    <span className="text-[11px] opacity-75 font-normal">
                                         {Number(item.value).toLocaleString()}
                                     </span>
                                 </button>
@@ -219,7 +219,7 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                         </colgroup>
                         <thead>
                             <tr>
-                                <th className="py-2.5 px-3 text-center font-medium">Rank</th>
+                                <th className="py-2.5 px-3 text-center font-medium">Peringkat</th>
                                 <th className="py-2.5 px-3 font-medium">Kata Kunci</th>
                                 <th className="py-2.5 px-3 font-medium">Frekuensi Relatif</th>
                                 <th className="py-2.5 pl-2 pr-3 text-right font-medium">Total Sebutan</th>
@@ -247,7 +247,7 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                                         const rank = idx + 1;
                                         const relativePct = maxVal > 0 ? (item.value / maxVal) * 100 : 0;
 
-                                        let rankBadge = <span className="text-zinc-400 font-semibold">#{rank}</span>;
+                                        let rankBadge = <span className="text-zinc-400 font-semibold text-xs">#{rank}</span>;
                                         if (rank === 1) rankBadge = <span className="text-base">🥇</span>;
                                         else if (rank === 2) rankBadge = <span className="text-base">🥈</span>;
                                         else if (rank === 3) rankBadge = <span className="text-base">🥉</span>;
@@ -261,7 +261,7 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                                             >
                                                 <td className="py-2 px-3 text-center">{rankBadge}</td>
                                                 <td className="py-2 px-3 truncate">
-                                                    <span className={`font-medium ${rank <= 3 ? 'text-zinc-100 font-semibold' : 'text-zinc-300'}`}>
+                                                    <span className={`text-xs sm:text-sm font-medium ${rank <= 3 ? 'text-zinc-100 font-semibold' : 'text-zinc-300'}`}>
                                                         {item.text}
                                                     </span>
                                                 </td>
@@ -269,17 +269,16 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                                                     <div className="w-full bg-zinc-800 h-2 rounded-full overflow-hidden">
                                                         <div
                                                             style={{ width: `${relativePct}%` }}
-                                                            className={`h-full rounded-full ${
-                                                                rank === 1 ? 'bg-emerald-400' :
-                                                                rank === 2 ? 'bg-amber-400' :
-                                                                rank === 3 ? 'bg-cyan-400' :
-                                                                'bg-indigo-400'
-                                                            }`}
+                                                            className={`h-full rounded-full ${rank === 1 ? 'bg-emerald-400' :
+                                                                    rank === 2 ? 'bg-amber-400' :
+                                                                        rank === 3 ? 'bg-cyan-400' :
+                                                                            'bg-indigo-400'
+                                                                }`}
                                                         />
                                                     </div>
                                                 </td>
-                                                <td className="py-2 px-3 text-right font-semibold text-zinc-100">
-                                                    {Number(item.value).toLocaleString()} <span className="text-zinc-500 text-[10px] font-normal">x</span>
+                                                <td className="py-2 px-3 text-right font-semibold text-zinc-100 text-xs sm:text-sm">
+                                                    {Number(item.value).toLocaleString()} <span className="text-zinc-500 text-[11px] font-normal">x</span>
                                                 </td>
                                             </tr>
                                         );

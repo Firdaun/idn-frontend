@@ -64,21 +64,10 @@ export default function SentimentCard({ sentiment, isLoading = false }) {
     return (
         <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-xl p-4 lg:p-5 space-y-4">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                    <span className="text-base font-semibold text-zinc-100 flex items-center gap-2">
-                        <span>💬 Analisis Sentimen Chat</span>
-                    </span>
-                    <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                        Real-Time
-                    </span>
-                </div>
-
-                <div className={`self-start sm:self-auto inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${moodBadge.color}`}>
-                    <span>{moodBadge.icon}</span>
-                    <span>{moodBadge.label}</span>
-                </div>
+            <div className="text-sm sm:text-base font-semibold text-zinc-100 flex items-center gap-2">
+                <span>💬 Analisis Sentimen Obrolan</span>
             </div>
+
 
             {/* Multi-Segment Sentiment Bar */}
             <div className="space-y-1.5">
@@ -124,7 +113,7 @@ export default function SentimentCard({ sentiment, isLoading = false }) {
                         </span>
                         <span className="text-xs font-semibold">{positivePct}%</span>
                     </div>
-                    <p className="text-xl font-bold text-zinc-100 mt-1">
+                    <p className="text-lg sm:text-xl font-bold text-zinc-100 mt-1">
                         {positive.toLocaleString()}
                     </p>
                     <p className="text-[11px] text-zinc-400 mt-0.5 truncate">
@@ -141,7 +130,7 @@ export default function SentimentCard({ sentiment, isLoading = false }) {
                         </span>
                         <span className="text-xs font-semibold">{neutralPct}%</span>
                     </div>
-                    <p className="text-xl font-bold text-zinc-100 mt-1">
+                    <p className="text-lg sm:text-xl font-bold text-zinc-100 mt-1">
                         {neutral.toLocaleString()}
                     </p>
                     <p className="text-[11px] text-zinc-400 mt-0.5 truncate">
@@ -158,7 +147,7 @@ export default function SentimentCard({ sentiment, isLoading = false }) {
                         </span>
                         <span className="text-xs font-semibold">{negativePct}%</span>
                     </div>
-                    <p className="text-xl font-bold text-zinc-100 mt-1">
+                    <p className="text-lg sm:text-xl font-bold text-zinc-100 mt-1">
                         {negative.toLocaleString()}
                     </p>
                     <p className="text-[11px] text-zinc-400 mt-0.5 truncate">

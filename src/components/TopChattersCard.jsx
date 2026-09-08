@@ -112,15 +112,15 @@ export default function TopChattersCard({ topChatters = [], isLoading = false, s
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-zinc-800/80 pb-3.5">
                 <div>
                     <div className="flex items-center gap-2">
-                        <h3 className="text-base font-semibold text-zinc-100 flex items-center gap-2">
-                            <span>🏆 Top 50 Chatters (Paling Aktif)</span>
+                        <h3 className="text-sm sm:text-base font-semibold text-zinc-100 flex items-center gap-2">
+                            <span>🏆 Top 50 Chatters</span>
                         </h3>
                         <span className="text-xs text-zinc-400">
                             ({totalChattersCount} pengguna • {totalMessagesByTop.toLocaleString()} pesan)
                         </span>
                     </div>
                     <p className="text-xs text-zinc-400 mt-0.5">
-                        Daftar penonton yang paling banyak mengirimkan pesan selama sesi live {streamerName ? `• ${streamerName}` : ''}
+                        Daftar penonton yang paling banyak mengirimkan pesan selama siaran langsung {streamerName ? `• ${streamerName}` : ''}
                     </p>
                 </div>
 
@@ -149,14 +149,14 @@ export default function TopChattersCard({ topChatters = [], isLoading = false, s
                 <div className="bg-zinc-950/40 border border-zinc-800/40 rounded-xl p-4 sm:p-5">
                     <h4 className="text-xs uppercase tracking-wider text-zinc-400 font-semibold text-center mb-4 flex items-center justify-center gap-1.5">
                         <span>👑</span>
-                        <span>Hall of Fame • Top 3 Pengirim Chat</span>
+                        <span>Top 3 Pengirim Chat</span>
                     </h4>
 
                     <div className="grid grid-cols-3 gap-2 sm:gap-4 items-end max-w-lg mx-auto pt-2">
                         {/* Rank 2 (Silver) */}
                         {top2 ? (
                             <div className="flex flex-col items-center text-center p-3 rounded-xl bg-zinc-900/60 border border-zinc-700/60 shadow-lg relative group">
-                                <div className="absolute -top-3 px-2 py-0.5 rounded-full bg-zinc-800 border border-zinc-600 text-[10px] font-bold text-zinc-200 flex items-center gap-1 shadow">
+                                <div className="absolute -top-3 px-2 py-0.5 rounded-full bg-zinc-800 border border-zinc-600 text-[11px] font-bold text-zinc-200 flex items-center gap-1 shadow">
                                     <span>🥈</span> #2
                                 </div>
                                 <div className="mt-1">
@@ -165,8 +165,8 @@ export default function TopChattersCard({ topChatters = [], isLoading = false, s
                                 <span className="font-semibold text-xs sm:text-sm text-zinc-100 mt-2 truncate max-w-full" title={top2.userName}>
                                     {top2.userName}
                                 </span>
-                                <span className="text-[11px] sm:text-xs text-zinc-300 font-bold mt-0.5">
-                                    {Number(top2.count).toLocaleString()} <span className="text-[10px] font-normal text-zinc-500">pesan</span>
+                                <span className="text-xs sm:text-sm text-zinc-300 font-bold mt-0.5">
+                                    {Number(top2.count).toLocaleString()} <span className="text-[11px] font-normal text-zinc-400">pesan</span>
                                 </span>
                             </div>
                         ) : <div />}
@@ -183,14 +183,14 @@ export default function TopChattersCard({ topChatters = [], isLoading = false, s
                                 {top1.userName}
                             </span>
                             <span className="text-xs sm:text-sm text-amber-400 font-extrabold mt-0.5">
-                                {Number(top1.count).toLocaleString()} <span className="text-[10px] font-normal text-zinc-400">pesan</span>
+                                {Number(top1.count).toLocaleString()} <span className="text-[11px] font-normal text-zinc-400">pesan</span>
                             </span>
                         </div>
 
                         {/* Rank 3 (Bronze) */}
                         {top3 ? (
                             <div className="flex flex-col items-center text-center p-3 rounded-xl bg-zinc-900/60 border border-amber-800/40 shadow-lg relative group">
-                                <div className="absolute -top-3 px-2 py-0.5 rounded-full bg-zinc-800 border border-amber-800/60 text-[10px] font-bold text-amber-300 flex items-center gap-1 shadow">
+                                <div className="absolute -top-3 px-2 py-0.5 rounded-full bg-zinc-800 border border-amber-800/60 text-[11px] font-bold text-amber-300 flex items-center gap-1 shadow">
                                     <span>🥉</span> #3
                                 </div>
                                 <div className="mt-1">
@@ -199,8 +199,8 @@ export default function TopChattersCard({ topChatters = [], isLoading = false, s
                                 <span className="font-semibold text-xs sm:text-sm text-zinc-100 mt-2 truncate max-w-full" title={top3.userName}>
                                     {top3.userName}
                                 </span>
-                                <span className="text-[11px] sm:text-xs text-zinc-300 font-bold mt-0.5">
-                                    {Number(top3.count).toLocaleString()} <span className="text-[10px] font-normal text-zinc-500">pesan</span>
+                                <span className="text-xs sm:text-sm text-zinc-300 font-bold mt-0.5">
+                                    {Number(top3.count).toLocaleString()} <span className="text-[11px] font-normal text-zinc-400">pesan</span>
                                 </span>
                             </div>
                         ) : <div />}
@@ -225,7 +225,7 @@ export default function TopChattersCard({ topChatters = [], isLoading = false, s
                         </colgroup>
                         <thead>
                             <tr>
-                                <th className="py-2.5 px-3 text-center font-medium">Rank</th>
+                                <th className="py-2.5 px-3 text-center font-medium">Peringkat</th>
                                 <th className="py-2.5 px-3 font-medium">Pengguna IDN</th>
                                 <th className="py-2.5 px-3 font-medium hidden sm:table-cell">Aktivitas Relatif</th>
                                 <th className="py-2.5 px-3 text-right font-medium">Total Pesan</th>
@@ -254,7 +254,7 @@ export default function TopChattersCard({ topChatters = [], isLoading = false, s
                                         const originalRank = topChatters.findIndex(c => c.userUuid === chatter.userUuid) + 1 || idx + 1;
                                         const relativePct = maxCount > 0 ? (Number(chatter.count) / maxCount) * 100 : 0;
 
-                                        let rankBadge = <span className="text-zinc-400 font-semibold">#{originalRank}</span>;
+                                        let rankBadge = <span className="text-zinc-400 font-semibold text-xs">#{originalRank}</span>;
                                         if (originalRank === 1) rankBadge = <span className="text-sm">🥇</span>;
                                         else if (originalRank === 2) rankBadge = <span className="text-sm">🥈</span>;
                                         else if (originalRank === 3) rankBadge = <span className="text-sm">🥉</span>;
@@ -272,10 +272,10 @@ export default function TopChattersCard({ topChatters = [], isLoading = false, s
                                                     <div className="flex items-center gap-2.5 min-w-0">
                                                         {renderAvatar(chatter, 'w-7 h-7 text-[11px]')}
                                                         <div className="min-w-0">
-                                                            <p className="font-semibold text-zinc-100 truncate max-w-40 sm:max-w-xs" title={chatter.userName}>
+                                                            <p className="text-xs sm:text-sm font-semibold text-zinc-100 truncate max-w-40 sm:max-w-xs" title={chatter.userName}>
                                                                 {chatter.userName}
                                                             </p>
-                                                            <p className="text-[10px] text-zinc-500 truncate font-mono">
+                                                            <p className="text-[11px] text-zinc-500 truncate font-mono">
                                                                 {chatter.userUuid ? `${chatter.userUuid.slice(0, 8)}...` : ''}
                                                             </p>
                                                         </div>
@@ -302,7 +302,7 @@ export default function TopChattersCard({ topChatters = [], isLoading = false, s
                                                     <span className="font-bold text-zinc-100 text-xs sm:text-sm">
                                                         {Number(chatter.count).toLocaleString()}
                                                     </span>
-                                                    <span className="text-zinc-500 text-[10px] font-normal ml-1">
+                                                    <span className="text-zinc-500 text-[11px] font-normal ml-1">
                                                         pesan
                                                     </span>
                                                 </td>

@@ -339,9 +339,9 @@ export default function Analytics() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-900 pb-5">
                 <div>
-                    <h1 className="text-2xl sm:text-3xl font-semibold text-zinc-100">Live Analytics</h1>
+                    <h1 className="text-2xl sm:text-3xl font-semibold text-zinc-100">Analisis Siaran Langsung</h1>
                     <p className="text-sm text-zinc-400 mt-1">
-                        Statistik penonton dan durasi stream per member secara komparatif
+                        Statistik penonton dan durasi siaran antar member secara komparatif
                     </p>
                 </div>
 
@@ -354,7 +354,7 @@ export default function Analytics() {
                         <svg className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                         </svg>
-                        <span>{refreshing ? "Memuat..." : "Refresh"}</span>
+                        <span>{refreshing ? "Memuat..." : "Segarkan"}</span>
                     </button>
                 </div>
             </div>
@@ -362,14 +362,14 @@ export default function Analytics() {
             {/* Metrics */}
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-5">
                 <div className="bg-zinc-900/30 border border-zinc-800/40 rounded-lg lg:rounded-xl p-3 lg:p-5">
-                    <span className="text-sm text-zinc-400 font-medium">Streamer Tercatat</span>
+                    <span className="text-xs text-zinc-400 font-medium">Member Tercatat</span>
                     <p className="text-2xl lg:text-3xl font-semibold text-zinc-100 mt-1">
-                        {streamers.length} <span className="text-sm font-normal text-zinc-400">member</span>
+                        {streamers.length} <span className="text-xs sm:text-sm font-normal text-zinc-400">member</span>
                     </p>
                 </div>
 
                 <div className="bg-zinc-900/30 border border-zinc-800/40 rounded-lg lg:rounded-xl p-3 lg:p-5">
-                    <span className="text-sm text-zinc-400 font-medium">Penonton Tertinggi</span>
+                    <span className="text-xs text-zinc-400 font-medium">Penonton Tertinggi</span>
                     <p className="text-2xl lg:text-3xl font-semibold text-zinc-100 mt-1">
                         {maxPeak > 0 ? maxPeak.toLocaleString() : "-"}
                     </p>
@@ -377,8 +377,8 @@ export default function Analytics() {
 
                 <div className="bg-zinc-900/30 hidden lg:block border border-zinc-800/40 rounded-lg lg:rounded-xl p-3 lg:p-5">
                     <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm text-zinc-400 font-medium">Total Snapshot Waktu</span>
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border ${filteredChartData.length > 400
+                        <span className="text-xs text-zinc-400 font-medium">Total Snapshot Waktu</span>
+                        <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium border ${filteredChartData.length > 400
                                 ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
                                 : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                             }`}>
@@ -387,7 +387,7 @@ export default function Analytics() {
                     </div>
                     <p className="text-2xl lg:text-3xl font-semibold text-zinc-100 mt-1">
                         {sampledChartData.length.toLocaleString()}{' '}
-                        <span className="text-sm font-normal text-zinc-400">
+                        <span className="text-xs sm:text-sm font-normal text-zinc-400">
                             titik (dari {filteredChartData.length.toLocaleString()} asli • {activeRangeLabel})
                         </span>
                     </p>
@@ -396,8 +396,8 @@ export default function Analytics() {
 
             <div className="bg-zinc-900/30 block lg:hidden border text-center border-zinc-800/40 rounded-lg p-3">
                 <div className="flex items-center justify-center gap-2">
-                    <span className="text-sm text-zinc-400 font-medium">Total Snapshot Waktu</span>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium border ${filteredChartData.length > 400
+                    <span className="text-xs text-zinc-400 font-medium">Total Snapshot Waktu</span>
+                    <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium border ${filteredChartData.length > 400
                             ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
                             : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                         }`}>
@@ -406,7 +406,7 @@ export default function Analytics() {
                 </div>
                 <p className="text-2xl lg:text-3xl font-semibold text-zinc-100 mt-1">
                     {sampledChartData.length.toLocaleString()}{' '}
-                    <span className="text-sm font-normal text-zinc-400">
+                    <span className="text-xs sm:text-sm font-normal text-zinc-400">
                         titik (dari {filteredChartData.length.toLocaleString()} asli • {activeRangeLabel})
                     </span>
                 </p>
@@ -414,9 +414,9 @@ export default function Analytics() {
 
             {/* Selected Detail Header */}
             {selectedStreamer && (
-                <div className="bg-zinc-900/50 border border-zinc-800/50 p-3 lg:p-5 rounded-lg lg:rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                <div className="bg-zinc-900/50 border border-zinc-800/50 p-3 lg:p-5 rounded-lg lg:rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-1">
                     {/* Sisi Kiri: Tombol Navigasi Sesi & Info Streamer */}
-                    <div className="flex items-center justify-between gap-2 xl:gap-5 w-full md:w-auto">
+                    <div className="flex items-center justify-between gap-0 min-[375px]:gap-2 xl:gap-5 w-full md:w-auto">
                         {streamerSessions.length > 1 && (
                             <button
                                 onClick={handlePrevSession}
@@ -430,26 +430,26 @@ export default function Analytics() {
                         )}
 
                         <div className="min-w-0">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                                <h3 className="font-semibold text-base lg:text-lg text-zinc-100 truncate">
+                            <div className="flex items-center min-[375px]:gap-1.5 flex-wrap">
+                                <h3 className="font-semibold text-base sm:text-lg text-zinc-100 truncate">
                                     {selectedStreamer.fullName}
                                 </h3>
-                                <div className='flex gap-1'>
-                                    <span className={`px-1.5 py-0.5 rounded-sm lg:rounded-md text-[10px] font-medium border ${selectedStreamer.endAt
+                                <div className='flex pl-0.5 min-[360px]:pl-1 space-x-0.5 min-[360px]:space-x-0 min-[360px]:gap-1'>
+                                    <span className={`px-2 py-0.5 rounded-sm lg:rounded-md text-[11px] font-medium border ${selectedStreamer.endAt
                                         ? "bg-zinc-800 text-zinc-400 border-zinc-700"
                                         : "bg-red-500/10 text-red-400 border-red-500/20"
-                                        }`}>
-                                        {selectedStreamer.endAt ? "Selesai Live" : "Sedang Live"}
+                                            }`}>
+                                        {selectedStreamer.endAt ? "Selesai Siaran" : "Sedang Siaran"}
                                     </span>
                                     {/* Badge penanda sesi */}
                                     {streamerSessions.length > 1 && (
-                                        <span className="px-1.5 py-0.5 rounded-sm lg:rounded-md text-[10px] font-medium bg-zinc-800 text-zinc-300 border border-zinc-700">
+                                        <span className="px-2 py-0.5 rounded-sm lg:rounded-md text-[11px] font-medium bg-zinc-800 text-zinc-300 border border-zinc-700">
                                             Sesi {(currentSessionIndex >= 0 ? currentSessionIndex : 0) + 1} dari {streamerSessions.length}
                                         </span>
                                     )}
                                 </div>
                             </div>
-                            <p className="text-zinc-400 text-xs sm:text-sm mt-0.5 truncate">{selectedStreamer.slug}</p>
+                            <p className="text-zinc-400 text-xs mt-0.5 truncate">{selectedStreamer.slug}</p>
                         </div>
 
                         {streamerSessions.length > 1 && (
@@ -466,23 +466,23 @@ export default function Analytics() {
                     </div>
 
                     {/* Sisi Kanan: Jadwal Waktu & Tombol Reset */}
-                    <div className="flex items-center justify-between gap-0 xl:gap-5 w-full md:w-auto flex-wrap border-t md:border-t-0 border-zinc-800/80 pt-3 md:pt-0">
-                        <div className='min-w-50 w-59 min-[360px]:w-65 min-[412px]:w-75 min-[440px]:w-84 md:w-80 xl:w-82 overflow-x-auto pb-1'>
-                            <div className="flex items-center gap-3 text-sm xl:text-base whitespace-nowrap">
+                    <div className="flex items-center justify-between gap-0 md:gap-2 xl:gap-5 w-full md:w-auto flex-wrap border-t md:border-t-0 border-zinc-800/80 pt-3 md:pt-0">
+                        <div className='min-w-50 w-53 min-[360px]:w-57 min-[375px]:w-60 min-[412px]:w-70 min-[440px]:w-73 md:w-69 lg:w-85 overflow-x-auto pb-1'>
+                            <div className="flex items-center gap-3 text-xs sm:text-sm whitespace-nowrap">
                                 <div className='shrink-0'>
-                                    <span className="text-zinc-500 block text-[12px] xl:text-sm">Mulai Live</span>
+                                    <span className="text-zinc-400 block text-xs">Mulai Siaran</span>
                                     <span className="font-semibold text-zinc-200">
                                         {formatLiveTime(selectedStreamer.liveAt)}
                                     </span>
                                 </div>
                                 <div className='shrink-0'>
-                                    <span className="text-zinc-500 block text-[12px] xl:text-sm">Selesai Live</span>
+                                    <span className="text-zinc-400 block text-xs">Selesai Siaran</span>
                                     <span className="font-semibold text-zinc-200">
                                         {selectedStreamer.endAt ? formatLiveTime(selectedStreamer.endAt) : '-'}
                                     </span>
                                 </div>
                                 <div className='shrink-0'>
-                                    <span className="text-zinc-500 block text-[12px] xl:text-sm">Total Durasi</span>
+                                    <span className="text-zinc-400 block text-xs">Total Durasi</span>
                                     <span className="font-semibold text-zinc-200">
                                         {selectedStreamer.duration || '-'}
                                     </span>
@@ -492,9 +492,9 @@ export default function Analytics() {
 
                         <button
                             onClick={() => setSelectedStreamer(null)}
-                            className="text-xs xl:text-sm text-zinc-400 hover:text-white px-3 py-1.5 rounded-md lg:rounded-lg bg-zinc-800 hover:bg-zinc-700 transition cursor-pointer shrink-0"
+                            className="text-xs text-zinc-400 hover:text-white px-3 py-1.5 rounded-md lg:rounded-lg bg-zinc-800 hover:bg-zinc-700 transition cursor-pointer shrink-0 font-medium"
                         >
-                            Reset
+                            Atur Ulang
                         </button>
                     </div>
                 </div>
@@ -515,49 +515,49 @@ export default function Analytics() {
                             {/* Card Statistik Performa & Snapshot Titik Terpilih */}
                             <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-xl p-4 lg:p-5 space-y-3.5 flex-1">
                                 <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2.5">
-                                    <span className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
+                                    <span className="text-sm sm:text-base font-semibold text-zinc-100 flex items-center gap-2">
                                         <span>📊 Statistik Siaran</span>
                                     </span>
                                     <span className="text-xs text-zinc-400">
-                                        {selectedStreamer.totalSnapshots ? `${selectedStreamer.totalSnapshots}x snapshot` : ''}
+                                        {selectedStreamer.totalSnapshots ? `${selectedStreamer.totalSnapshots}x cuplikan` : ''}
                                     </span>
                                 </div>
 
                                 {/* Ringkasan Metrik 2x3 Grid */}
                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                                     <div className="bg-zinc-950/40 border border-zinc-800/60 rounded-lg p-2.5">
-                                        <span className="text-[11px] text-zinc-400 block truncate">Peak Viewers</span>
-                                        <span className="font-bold text-zinc-100 text-sm sm:text-base">
+                                        <span className="text-xs text-zinc-400 font-medium block truncate">Puncak Penonton</span>
+                                        <span className="font-bold text-zinc-100 text-base sm:text-lg">
                                             {Number(selectedStreamer.peakViewers ?? 0).toLocaleString()}
                                         </span>
                                     </div>
                                     <div className="bg-zinc-950/40 border border-zinc-800/60 rounded-lg p-2.5">
-                                        <span className="text-[11px] text-zinc-400 block truncate">Avg Viewers</span>
-                                        <span className="font-bold text-zinc-100 text-sm sm:text-base">
+                                        <span className="text-xs text-zinc-400 font-medium block truncate">Rata-rata Penonton</span>
+                                        <span className="font-bold text-zinc-100 text-base sm:text-lg">
                                             {Math.round(selectedStreamer.avgViewers || 0).toLocaleString()}
                                         </span>
                                     </div>
                                     <div className="bg-zinc-950/40 border border-zinc-800/60 rounded-lg p-2.5">
-                                        <span className="text-[11px] text-zinc-400 block truncate">Total Chat</span>
-                                        <span className="font-bold text-zinc-100 text-sm sm:text-base">
+                                        <span className="text-xs text-zinc-400 font-medium block truncate">Total Pesan</span>
+                                        <span className="font-bold text-zinc-100 text-base sm:text-lg">
                                             {selectedStreamer.totalChat !== undefined ? Number(selectedStreamer.totalChat).toLocaleString() : '-'}
                                         </span>
                                     </div>
                                     <div className="bg-zinc-950/40 border border-zinc-800/60 rounded-lg p-2.5">
-                                        <span className="text-[11px] text-zinc-400 block truncate">Peak Chat / 30s</span>
-                                        <span className="font-bold text-zinc-100 text-sm sm:text-base">
+                                        <span className="text-xs text-zinc-400 font-medium block truncate">Puncak Pesan / 30 dtk</span>
+                                        <span className="font-bold text-zinc-100 text-base sm:text-lg">
                                             {selectedStreamer.peakChat !== undefined ? `${Number(selectedStreamer.peakChat).toLocaleString()}` : '-'}
                                         </span>
                                     </div>
                                     <div className="bg-zinc-950/40 border border-zinc-800/60 rounded-lg p-2.5">
-                                        <span className="text-[11px] text-zinc-400 block truncate">Avg Chat / 30s</span>
-                                        <span className="font-bold text-zinc-100 text-sm sm:text-base">
+                                        <span className="text-xs text-zinc-400 font-medium block truncate">Rata-rata Pesan / 30 dtk</span>
+                                        <span className="font-bold text-zinc-100 text-base sm:text-lg">
                                             {selectedStreamer.avgChat !== undefined ? `${selectedStreamer.avgChat}` : '-'}
                                         </span>
                                     </div>
                                     <div className="bg-zinc-950/40 border border-zinc-800/60 rounded-lg p-2.5">
-                                        <span className="text-[11px] text-zinc-400 block truncate">Sentimen Positif</span>
-                                        <span className="font-bold text-emerald-400 text-sm sm:text-base">
+                                        <span className="text-xs text-zinc-400 font-medium block truncate">Sentimen Positif</span>
+                                        <span className="font-bold text-emerald-400 text-base sm:text-lg">
                                             {activeSentiment?.positivePercentage !== undefined ? `${activeSentiment.positivePercentage}%` : '-'}
                                         </span>
                                     </div>
@@ -569,7 +569,7 @@ export default function Analytics() {
                                         <div className="flex items-center justify-between text-xs border-b border-indigo-500/20 pb-1.5">
                                             <span className="font-semibold text-indigo-300 flex items-center gap-1.5">
                                                 <span>📍</span>
-                                                <span>Titik Snapshot Terpilih</span>
+                                                <span>Titik Cuplikan Terpilih</span>
                                             </span>
                                             <span className="text-[11px] text-zinc-400 font-mono">
                                                 {formatLiveTime(selectedStreamer.clickedTime)}
@@ -578,14 +578,14 @@ export default function Analytics() {
 
                                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                                             <div>
-                                                <span className="text-[10px] text-zinc-400 block">Durasi Saat Itu</span>
+                                                <span className="text-[11px] text-zinc-400 block">Durasi Saat Itu</span>
                                                 <span className="font-semibold text-zinc-200">
                                                     {calculateDurationAtTime(selectedStreamer.liveAt, selectedStreamer.clickedTime) || '-'}
                                                 </span>
                                             </div>
                                             {selectedStreamer.clickedViewers !== null && (
                                                 <div>
-                                                    <span className="text-[10px] text-zinc-400 block">Penonton</span>
+                                                    <span className="text-[11px] text-zinc-400 block">Penonton</span>
                                                     <span className="font-bold text-zinc-100">
                                                         👥 {Number(selectedStreamer.clickedViewers).toLocaleString()}
                                                     </span>
@@ -593,7 +593,7 @@ export default function Analytics() {
                                             )}
                                             {selectedStreamer.clickedChat !== null && (
                                                 <div>
-                                                    <span className="text-[10px] text-zinc-400 block">Chat / 30s</span>
+                                                    <span className="text-[11px] text-zinc-400 block">Pesan / 30 dtk</span>
                                                     <span className="font-bold text-zinc-100">
                                                         💬 {Number(selectedStreamer.clickedChat).toLocaleString()}
                                                     </span>
@@ -601,7 +601,7 @@ export default function Analytics() {
                                             )}
                                             {selectedStreamer.clickedPos !== null && (
                                                 <div>
-                                                    <span className="text-[10px] text-zinc-400 block">Sentimen</span>
+                                                    <span className="text-[11px] text-zinc-400 block">Sentimen</span>
                                                     <span className="font-semibold text-[11px] text-zinc-200 flex items-center gap-1">
                                                         <span className="text-emerald-400">🟢{selectedStreamer.clickedPos}</span>
                                                         <span className="text-zinc-300">⚪{selectedStreamer.clickedNeu}</span>
@@ -658,7 +658,7 @@ export default function Analytics() {
                                 : 'text-zinc-400 hover:text-zinc-200'
                                 }`}
                         >
-                            <span>💬 Aktivitas Chat</span>
+                            <span>💬 Aktivitas Pesan</span>
                         </button>
                     </div>
 
@@ -822,7 +822,7 @@ export default function Analytics() {
                                                                     </span>
                                                                 </div>
                                                                 {hasSentiment && (
-                                                                    <div className="flex items-center gap-2 text-[10px] text-zinc-400 ml-4 pl-0.5">
+                                                                    <div className="flex items-center gap-2 text-[11px] text-zinc-400 ml-4 pl-0.5">
                                                                         <span className="text-emerald-400 font-medium">🟢 {posVal ?? 0}</span>
                                                                         <span className="text-zinc-300 font-medium">⚪ {neuVal ?? 0}</span>
                                                                         <span className="text-rose-400 font-medium">🔴 {negVal ?? 0}</span>
@@ -972,7 +972,7 @@ export default function Analytics() {
                 <div className="bg-zinc-900/20 border border-zinc-800/40 rounded-xl p-3.5 sm:p-4 text-center text-xs text-zinc-400 flex items-center justify-center gap-2">
                     <span>💡</span>
                     <span>
-                        <strong className="text-zinc-200">Eksplorasi Sentimen, Topik & Top Chatters:</strong> Klik salah satu nama member di grafik atau legenda di atas untuk melihat analisis sentimen mendalam, Word Cloud (Top 50 Kata), dan Leaderboard Top 50 Chatters.
+                        <strong className="text-zinc-200">Eksplorasi Sentimen, Topik & Pengirim Chat:</strong> Klik salah satu nama member di grafik atau legenda di atas untuk melihat analisis sentimen mendalam, 50 kata terpopuler, dan daftar 50 pengirim chat terbanyak.
                     </span>
                 </div>
             )}
