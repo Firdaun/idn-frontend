@@ -31,9 +31,9 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
     }, [wordCloud]);
 
     const getWordColor = (idx) => {
-        if (idx === 0) return '#34d399';
-        if (idx === 1) return '#fbbf24';
-        if (idx === 2) return '#38bdf8';
+        if (idx === 0) return '#fbbf24'; // Emas (Peringkat 1)
+        if (idx === 1) return '#38bdf8'; // Biru (Peringkat 2)
+        if (idx === 2) return '#34d399'; // Hijau (Peringkat 3)
         if (idx < 10) return '#a78bfa';
         if (idx < 25) return '#e2e8f0';
         return '#94a3b8';
@@ -115,7 +115,7 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                 } else {
                     TagCanvas.SetSpeed('wordcloud-canvas', [0, 0]);
                 }
-            } catch (e) {}
+            } catch (e) { }
             return next;
         });
     };
@@ -125,7 +125,7 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
         try {
             TagCanvas.SetSpeed('wordcloud-canvas', [0.08, -0.04]);
             setIsAutoRotating(true);
-        } catch (e) {}
+        } catch (e) { }
     };
 
     if (isLoading) {
@@ -241,9 +241,9 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                             <div className="flex items-center flex-wrap gap-1.5">
                                 {topThree.map((item, idx) => {
                                     const rankStyles = [
-                                        'border-emerald-500/40 bg-emerald-500/10 text-emerald-300',
-                                        'border-amber-500/40 bg-amber-500/10 text-amber-300',
-                                        'border-sky-500/40 bg-sky-500/10 text-sky-300'
+                                        'border-amber-500/40 bg-amber-500/10 text-amber-300',     // Peringkat 1: Emas
+                                        'border-sky-500/40 bg-sky-500/10 text-sky-300',         // Peringkat 2: Biru
+                                        'border-emerald-500/40 bg-emerald-500/10 text-emerald-300' // Peringkat 3: Hijau
                                     ];
                                     const medals = ['🥇', '🥈', '🥉'];
                                     return (
@@ -332,7 +332,7 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                             <canvas
                                 id="wordcloud-canvas"
                                 ref={canvasRef}
-                                className="w-full block cursor-grab active:cursor-grabbing"
+                                className="w-full block"
                             >
                                 <p>Peramban Anda tidak mendukung HTML5 Canvas.</p>
                             </canvas>
@@ -352,27 +352,24 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                                         <button
                                             onClick={() => setCloudShape('sphere')}
                                             title="Bentuk Bola 3D"
-                                            className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition cursor-pointer ${
-                                                cloudShape === 'sphere' ? 'bg-zinc-800 text-sky-400' : 'text-zinc-400 hover:text-zinc-200'
-                                            }`}
+                                            className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition cursor-pointer ${cloudShape === 'sphere' ? 'bg-zinc-800 text-sky-400' : 'text-zinc-400 hover:text-zinc-200'
+                                                }`}
                                         >
                                             Bola 3D
                                         </button>
                                         <button
                                             onClick={() => setCloudShape('vcylinder')}
                                             title="Bentuk Silinder Vertikal"
-                                            className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition cursor-pointer ${
-                                                cloudShape === 'vcylinder' ? 'bg-zinc-800 text-sky-400' : 'text-zinc-400 hover:text-zinc-200'
-                                            }`}
+                                            className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition cursor-pointer ${cloudShape === 'vcylinder' ? 'bg-zinc-800 text-sky-400' : 'text-zinc-400 hover:text-zinc-200'
+                                                }`}
                                         >
                                             Silinder
                                         </button>
                                         <button
                                             onClick={() => setCloudShape('hring')}
                                             title="Bentuk Cincin Melingkar"
-                                            className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition cursor-pointer ${
-                                                cloudShape === 'hring' ? 'bg-zinc-800 text-sky-400' : 'text-zinc-400 hover:text-zinc-200'
-                                            }`}
+                                            className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition cursor-pointer ${cloudShape === 'hring' ? 'bg-zinc-800 text-sky-400' : 'text-zinc-400 hover:text-zinc-200'
+                                                }`}
                                         >
                                             Cincin
                                         </button>
@@ -460,10 +457,10 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                                                     <div className="w-full bg-zinc-800 h-2 rounded-full overflow-hidden">
                                                         <div
                                                             style={{ width: `${relativePct}%` }}
-                                                            className={`h-full rounded-full ${rank === 1 ? 'bg-emerald-400' :
-                                                                    rank === 2 ? 'bg-amber-400' :
-                                                                        rank === 3 ? 'bg-sky-400' :
-                                                                            'bg-indigo-400'
+                                                            className={`h-full rounded-full ${rank === 1 ? 'bg-amber-400' :
+                                                                rank === 2 ? 'bg-sky-400' :
+                                                                    rank === 3 ? 'bg-emerald-400' :
+                                                                        'bg-indigo-400'
                                                                 }`}
                                                         />
                                                     </div>
