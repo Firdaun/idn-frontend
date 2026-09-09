@@ -41,7 +41,7 @@
   background: #52525b;
 }
 
-/* Custom scrollbar utility */
+/* Custom scrollbar utility standar */
 .custom-scrollbar::-webkit-scrollbar {
   width: 5px;
   height: 5px;
@@ -58,4 +58,14 @@
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #52525b;
+}
+
+/* Utility untuk menyembunyikan scrollbar 100% tanpa jejak (tetap bisa di-scroll) */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE dan Edge */
+  scrollbar-width: none;    /* Firefox */
 }

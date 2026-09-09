@@ -9,6 +9,51 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
 
     const canvasRef = useRef(null);
     const containerRef = useRef(null);
+    const tableContainerRef = useRef(null);
+    const vThumbRef = useRef(null);
+    const hThumbRef = useRef(null);
+    const scrollTimerRef = useRef(null);
+
+    const handleTableScroll = () => {
+        const el = tableContainerRef.current;
+        if (!el) return;
+
+        // Indikator vertikal
+        if (vThumbRef.current) {
+            const { scrollTop, scrollHeight, clientHeight } = el;
+            if (scrollHeight > clientHeight) {
+                const thumbH = Math.max(24, (clientHeight / scrollHeight) * clientHeight);
+                const maxScrollTop = scrollHeight - clientHeight;
+                const top = (scrollTop / maxScrollTop) * (clientHeight - thumbH);
+                vThumbRef.current.style.height = `${thumbH}px`;
+                vThumbRef.current.style.transform = `translateY(${top}px)`;
+                vThumbRef.current.style.opacity = '1';
+            } else {
+                vThumbRef.current.style.opacity = '0';
+            }
+        }
+
+        // Indikator horizontal
+        if (hThumbRef.current) {
+            const { scrollLeft, scrollWidth, clientWidth } = el;
+            if (scrollWidth > clientWidth) {
+                const thumbW = Math.max(24, (clientWidth / scrollWidth) * clientWidth);
+                const maxScrollLeft = scrollWidth - clientWidth;
+                const left = (scrollLeft / maxScrollLeft) * (clientWidth - thumbW);
+                hThumbRef.current.style.width = `${thumbW}px`;
+                hThumbRef.current.style.transform = `translateX(${left}px)`;
+                hThumbRef.current.style.opacity = '1';
+            } else {
+                hThumbRef.current.style.opacity = '0';
+            }
+        }
+
+        clearTimeout(scrollTimerRef.current);
+        scrollTimerRef.current = setTimeout(() => {
+            if (vThumbRef.current) vThumbRef.current.style.opacity = '0';
+            if (hThumbRef.current) hThumbRef.current.style.opacity = '0';
+        }, 600);
+    };
 
     const filteredWords = useMemo(() => {
         if (!wordCloud || !wordCloud.length) return [];
@@ -49,8 +94,11 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
         const initTagCanvas = () => {
             const width = Math.floor(container.clientWidth || 520);
             const containerH = container.clientHeight || 0;
-            const availableHeight = containerH > 100 ? containerH - 43 : 0;
-            const height = Math.max(460, availableHeight || Math.round(width * 0.65));
+            const toolbarEl = container.querySelector('div.border-t');
+            const toolbarH = toolbarEl ? toolbarEl.offsetHeight : 44;
+            const availableHeight = containerH > 100 ? containerH - toolbarH : 0;
+            const minHeight = width < 640 ? 320 : 460;
+            const height = Math.max(minHeight, availableHeight || Math.round(width * 0.65));
             canvas.width = width;
             canvas.height = height;
 
@@ -76,6 +124,7 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                     depth: 0.85,
                     minBrightness: 0.25,
                     maxBrightness: 1.0,
+                    zoom: 0.93,
 
                     dragControl: true,
                     wheelZoom: false,
@@ -322,15 +371,14 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
             {viewMode === 'cloud' ? (
                 <div
                     ref={containerRef}
-                    className="relative w-full flex-1 min-h-115 rounded-xl bg-linear-to-b from-zinc-900/50 via-zinc-950/80 to-zinc-950 border border-zinc-800/60 overflow-hidden flex flex-col justify-center select-none"
-                    style={{ minHeight: '340px' }}
+                    className="relative w-full flex-1 min-h-80 rounded-xl bg-linear-to-b from-zinc-900/50 via-zinc-950/80 to-zinc-950 border border-zinc-800/60 overflow-hidden flex flex-col justify-center select-none"
                 >
                     {filteredWords.length === 0 ? (
                         <div className="py-16 text-center text-zinc-500 text-xs">
                             Tidak ada kata yang sesuai dengan pencarian "{searchQuery}"
                         </div>
                     ) : (
-                        <>
+                        <div>
                             {/* Canvas 3D */}
                             <canvas
                                 id="wordcloud-canvas"
@@ -397,37 +445,31 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                                     </button>
                                 </div>
                             </div>
-                        </>
+                        </div>
                     )}
                 </div>
             ) : (
-                /* Mode List / Top Ranking */
-                <div className="rounded-xl border border-zinc-800/60 bg-zinc-950/30 overflow-hidden">
-                    <table className="w-full table-fixed text-left text-xs bg-zinc-900 text-zinc-400 border-b border-zinc-800">
-                        <colgroup>
-                            <col className="w-14 sm:w-16" />
-                            <col />
-                            <col className="w-32 sm:w-48" />
-                            <col className="w-24 sm:w-28" />
-                        </colgroup>
-                        <thead>
-                            <tr>
-                                <th className="py-2.5 px-3 text-center font-medium">Peringkat</th>
-                                <th className="py-2.5 px-3 font-medium">Kata Kunci</th>
-                                <th className="py-2.5 px-3 font-medium">Frekuensi Relatif</th>
-                                <th className="py-2.5 pl-2 pr-3 text-right font-medium">Total Sebutan</th>
-                            </tr>
-                        </thead>
-                    </table>
-
-                    <div className="overflow-y-auto max-h-80 custom-scrollbar">
-                        <table className="w-full table-fixed text-left text-xs">
+                <div className="relative rounded-xl border border-zinc-800/60 bg-zinc-950/30 overflow-hidden">
+                    <div
+                        ref={tableContainerRef}
+                        onScroll={handleTableScroll}
+                        className="overflow-auto max-h-90 no-scrollbar"
+                    >
+                        <table className="w-full min-w-120 table-fixed text-left text-xs">
                             <colgroup>
-                                <col className="w-14 sm:w-16" />
-                                <col />
-                                <col className="w-32 sm:w-48" />
-                                <col className="w-24 sm:w-28" />
+                                <col className="w-16" />
+                                <col className="w-32" />
+                                <col className="w-44" />
+                                <col className="w-24" />
                             </colgroup>
+                            <thead className="sticky top-0 z-10 bg-zinc-900 text-zinc-400 border-b border-zinc-800 shadow-sm">
+                                <tr>
+                                    <th className="py-2.5 px-3 text-center font-medium">Peringkat</th>
+                                    <th className="py-2.5 px-3 font-medium">Kata Kunci</th>
+                                    <th className="py-2.5 px-3 font-medium">Frekuensi Relatif</th>
+                                    <th className="py-2.5 px-3 text-right font-medium">Total Sebutan</th>
+                                </tr>
+                            </thead>
                             <tbody className="divide-y divide-zinc-800/40 text-zinc-300">
                                 {filteredWords.length === 0 ? (
                                     <tr>
@@ -478,6 +520,20 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                             </tbody>
                         </table>
                     </div>
+
+                    {/* Floating Vertical Scrollbar Indicator */}
+                    <div
+                        ref={vThumbRef}
+                        className="absolute right-0 top-0 w-1 bg-zinc-700 rounded-full pointer-events-none opacity-0 transition-opacity duration-500 ease-out z-20"
+                        style={{ height: '0px' }}
+                    />
+
+                    {/* Floating Horizontal Scrollbar Indicator */}
+                    <div
+                        ref={hThumbRef}
+                        className="absolute bottom-0 left-0 h-1 bg-zinc-700 rounded-full pointer-events-none opacity-0 transition-opacity duration-500 ease-out z-20"
+                        style={{ width: '0px' }}
+                    />
                 </div>
             )}
         </div>
