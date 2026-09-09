@@ -4,15 +4,11 @@ import TagCanvas from '../lib/tagcanvas.js';
 export default function WordCloudCard({ wordCloud = [], isLoading = false, streamerName = '', isLive = false }) {
     const [viewMode, setViewMode] = useState('cloud');
     const [searchQuery, setSearchQuery] = useState('');
-    const [hoveredWord, setHoveredWord] = useState(null);
-    const [selectedWord, setSelectedWord] = useState(null);
-    const [isHighlightMode, setIsHighlightMode] = useState(false);
     const [cloudShape, setCloudShape] = useState('sphere');
     const [isAutoRotating, setIsAutoRotating] = useState(true);
 
     const canvasRef = useRef(null);
     const containerRef = useRef(null);
-    const lastActiveTagRef = useRef(null);
 
     const filteredWords = useMemo(() => {
         if (!wordCloud || !wordCloud.length) return [];
@@ -30,28 +26,17 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
         };
     }, [wordCloud]);
 
-    const getWordColor = (idx) => {
-        if (idx === 0) return '#34d399'
-        if (idx === 1) return '#fbbf24'
-        if (idx === 2) return '#38bdf8'
-        if (idx < 10) return '#a78bfa'
-        if (idx < 25) return '#e2e8f0'
-        return '#94a3b8';
-    };
+    const topThree = useMemo(() => {
+        return (wordCloud || []).slice(0, 3);
+    }, [wordCloud]);
 
-    const handleSelectWord = (item, idx) => {
-        if (!isHighlightMode && viewMode === 'cloud') return;
-        setSelectedWord(item);
-        setHoveredWord(null);
-        try {
-            if (typeof idx === 'number' && !isNaN(idx)) {
-                TagCanvas.TagToFront('wordcloud-canvas', { id: `word-tag-${idx}` });
-            } else {
-                TagCanvas.TagToFront('wordcloud-canvas', { text: item.text });
-            }
-        } catch (err) {
-            console.warn('TagToFront error:', err);
-        }
+    const getWordColor = (idx) => {
+        if (idx === 0) return '#34d399';
+        if (idx === 1) return '#fbbf24';
+        if (idx === 2) return '#38bdf8';
+        if (idx < 10) return '#a78bfa';
+        if (idx < 25) return '#e2e8f0';
+        return '#94a3b8';
     };
 
     useEffect(() => {
@@ -78,13 +63,8 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                     weightSizeMin: 14,
                     weightSizeMax: 32,
 
-                    noSelect: !isHighlightMode,
-                    outlineMethod: isHighlightMode ? 'outline' : 'none',
-                    outlineColour: '#38bdf8',
-                    outlineThickness: 2,
-                    outlineRadius: 6,
-                    outlineOffset: 4,
-                    padding: 2,
+                    noSelect: true,
+                    outlineMethod: 'none',
 
                     shape: cloudShape,
                     maxSpeed: 0.035,
@@ -97,8 +77,8 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
 
                     dragControl: true,
                     wheelZoom: false,
-                    clickToFront: isHighlightMode ? 600 : false,
-                    activeCursor: isHighlightMode ? 'pointer' : 'grab',
+                    clickToFront: false,
+                    activeCursor: 'grab',
                     fadeIn: 400,
                     animTiming: 'Smooth'
                 });
@@ -122,41 +102,7 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
             } catch (e) {
             }
         };
-    }, [filteredWords, cloudShape, viewMode, isAutoRotating, isHighlightMode]);
-
-    // Tangani mouse move pada canvas untuk melacak kata aktif (hanya di Mode Sorot)
-    const handleCanvasMouseMove = () => {
-        if (!isHighlightMode) return;
-        const tc = TagCanvas?.tc?.['wordcloud-canvas'];
-        if (tc?.active?.tag) {
-            lastActiveTagRef.current = tc.active.tag;
-            const text = tc.active.tag.a?.getAttribute('data-text');
-            const value = Number(tc.active.tag.a?.getAttribute('data-value') || 0);
-            if (text && (!hoveredWord || hoveredWord.text !== text)) {
-                setHoveredWord({ text, value });
-            }
-        } else {
-            if (hoveredWord) {
-                setHoveredWord(null);
-            }
-        }
-    };
-
-    // Tangani klik pada canvas untuk memilih/menyorot kata (hanya di Mode Sorot)
-    const handleCanvasClick = () => {
-        if (!isHighlightMode) return;
-        const tc = TagCanvas?.tc?.['wordcloud-canvas'];
-        const activeTag = tc?.active?.tag || lastActiveTagRef.current;
-        if (activeTag) {
-            const text = activeTag.a?.getAttribute('data-text');
-            const value = Number(activeTag.a?.getAttribute('data-value') || 0);
-            const idxStr = activeTag.a?.getAttribute('data-index');
-            const idx = idxStr ? parseInt(idxStr, 10) : undefined;
-            if (text) {
-                handleSelectWord({ text, value }, idx);
-            }
-        }
-    };
+    }, [filteredWords, cloudShape, viewMode, isAutoRotating]);
 
     // Tombol toggle putar otomatis
     const toggleAutoRotate = () => {
@@ -181,8 +127,6 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
             setIsAutoRotating(true);
         } catch (e) {}
     };
-
-    const displayWord = hoveredWord || selectedWord;
 
     if (isLoading) {
         return (
@@ -283,36 +227,60 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                 </div>
             </div>
 
-            {/* Hovered / Selected Word Summary Bar */}
-            <div className="min-h-6 flex items-center justify-between text-xs px-1">
-                {isHighlightMode && displayWord ? (
-                    <div className="flex items-center gap-2 text-zinc-200 animate-fadeIn">
-                        <span className="text-zinc-400">Kata:</span>
-                        <strong className="text-sky-400 font-semibold text-sm">"{displayWord.text}"</strong>
-                        <span className="text-zinc-400">•</span>
-                        <span className="text-zinc-300 font-medium">{Number(displayWord.value).toLocaleString()} kali diucapkan</span>
-                        <span className="text-zinc-500 text-[11px]">
-                            ({maxVal > 0 ? ((displayWord.value / maxVal) * 100).toFixed(0) : 0}% dari kata teratas)
-                        </span>
-                        {selectedWord && (
-                            <button
-                                onClick={() => setSelectedWord(null)}
-                                className="text-zinc-400 hover:text-zinc-200 ml-2 text-xs px-1.5 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 transition cursor-pointer flex items-center gap-1"
-                                title="Hapus sorotan"
-                            >
-                                <span>✕</span>
-                                <span>Lepas Sorot</span>
-                            </button>
-                        )}
+            {/* Ringkasan Statistik: Total Kata & Top 3 di Atas Konten */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 p-2.5 rounded-xl bg-zinc-900/60 border border-zinc-800/70 text-xs">
+                <div className="flex items-center flex-wrap gap-2">
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-300 font-medium">
+                        <span className="text-zinc-500">Total:</span>
+                        <span className="text-zinc-100 font-semibold">{wordCloud.length} Kata</span>
                     </div>
+
+                    {topThree.length > 0 && (
+                        <>
+                            <div className="h-4 w-px bg-zinc-800 hidden sm:block" />
+                            <div className="flex items-center flex-wrap gap-1.5">
+                                {topThree.map((item, idx) => {
+                                    const rankStyles = [
+                                        'border-emerald-500/40 bg-emerald-500/10 text-emerald-300',
+                                        'border-amber-500/40 bg-amber-500/10 text-amber-300',
+                                        'border-sky-500/40 bg-sky-500/10 text-sky-300'
+                                    ];
+                                    const medals = ['🥇', '🥈', '🥉'];
+                                    return (
+                                        <div
+                                            key={item.text}
+                                            className={`flex items-center gap-1.5 px-2 py-0.5 rounded-lg border text-xs ${rankStyles[idx] || 'border-zinc-700 bg-zinc-800 text-zinc-300'}`}
+                                        >
+                                            <span>{medals[idx]}</span>
+                                            <span className="font-semibold text-zinc-100">"{item.text}"</span>
+                                            <span className="text-[11px] opacity-80">({Number(item.value).toLocaleString()}x)</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </>
+                    )}
+                </div>
+
+                {/* Tombol navigasi ke mode daftar peringkat jika sedang di mode awan kata */}
+                {viewMode === 'cloud' ? (
+                    <button
+                        onClick={() => setViewMode('list')}
+                        className="text-[11px] text-zinc-400 hover:text-sky-400 flex items-center gap-1 transition cursor-pointer group shrink-0 ml-auto sm:ml-0"
+                        title="Buka daftar lengkap peringkat kata"
+                    >
+                        <span>Lihat peringkat detail</span>
+                        <span className="group-hover:translate-x-0.5 transition-transform">→</span>
+                    </button>
                 ) : (
-                    <span className="text-zinc-500 text-xs italic">
-                        {viewMode === 'cloud'
-                            ? isHighlightMode
-                                ? 'Arahkan kursor atau klik kata untuk melihat rincian dan memutarnya ke depan'
-                                : 'Mode putar mulus aktif. Klik tombol "🎯 Mode Sorot" di bawah jika ingin menyorot kata tertentu'
-                            : 'Peringkat 50 kata yang paling dominan di obrolan'}
-                    </span>
+                    <button
+                        onClick={() => setViewMode('cloud')}
+                        className="text-[11px] text-zinc-400 hover:text-sky-400 flex items-center gap-1 transition cursor-pointer group shrink-0 ml-auto sm:ml-0"
+                        title="Kembali ke tampilan bola 3D"
+                    >
+                        <span className="group-hover:-translate-x-0.5 transition-transform">←</span>
+                        <span>Kembali ke Bola 3D</span>
+                    </button>
                 )}
             </div>
 
@@ -336,16 +304,8 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                                     id={`word-tag-${idx}`}
                                     href={`#${encodeURIComponent(item.text)}`}
                                     data-weight={item.value}
-                                    data-text={item.text}
-                                    data-value={item.value}
-                                    data-index={idx}
                                     style={{ color }}
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        if (isHighlightMode) {
-                                            handleSelectWord(item, idx);
-                                        }
-                                    }}
+                                    onClick={(e) => e.preventDefault()}
                                 >
                                     {item.text}
                                 </a>
@@ -372,50 +332,17 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                             <canvas
                                 id="wordcloud-canvas"
                                 ref={canvasRef}
-                                onClick={handleCanvasClick}
-                                onMouseMove={handleCanvasMouseMove}
-                                onMouseLeave={() => setHoveredWord(null)}
-                                className={`w-full block cursor-grab ${isHighlightMode ? 'cursor-pointer' : 'active:cursor-grabbing'}`}
+                                className="w-full block cursor-grab active:cursor-grabbing"
                             >
                                 <p>Peramban Anda tidak mendukung HTML5 Canvas.</p>
                             </canvas>
 
                             {/* Floating Toolbar Interaktif di Bawah Canvas */}
                             <div className="w-full flex items-center justify-between flex-wrap gap-2 px-3 py-2 bg-zinc-900/70 border-t border-zinc-800/60 text-xs backdrop-blur-sm">
-                                {/* Mode Interaksi: Putar Bebas vs Mode Sorot */}
-                                <div className="flex items-center gap-2">
-                                    <div className="flex rounded-lg bg-zinc-950 p-0.5 border border-zinc-800">
-                                        <button
-                                            onClick={() => {
-                                                setIsHighlightMode(false);
-                                                setHoveredWord(null);
-                                                setSelectedWord(null);
-                                            }}
-                                            title="Putar awan kata dengan bebas dan mulus tanpa gangguan sorotan"
-                                            className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition cursor-pointer flex items-center gap-1.5 ${
-                                                !isHighlightMode
-                                                    ? 'bg-zinc-800 text-white shadow-xs'
-                                                    : 'text-zinc-400 hover:text-zinc-200'
-                                            }`}
-                                        >
-                                            <span>🖐️ Putar Bebas</span>
-                                        </button>
-                                        <button
-                                            onClick={() => setIsHighlightMode(true)}
-                                            title="Aktifkan mode sorot untuk melihat border kata saat di-hover dan memilih kata"
-                                            className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition cursor-pointer flex items-center gap-1.5 ${
-                                                isHighlightMode
-                                                    ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40 shadow-xs'
-                                                    : 'text-zinc-400 hover:text-zinc-200'
-                                            }`}
-                                        >
-                                            <span>🎯 Mode Sorot</span>
-                                        </button>
-                                    </div>
-
-                                    {/* Petunjuk Ringkas */}
-                                    <span className="text-[11px] text-zinc-500 hidden sm:inline">
-                                        {isHighlightMode ? '• Klik kata untuk fokus & melihat detail' : '• Geser untuk memutar 360° secara mulus'}
+                                {/* Mode Putar Bebas Info */}
+                                <div className="flex items-center gap-2 text-zinc-400 text-[11px]">
+                                    <span className="text-zinc-500 hidden sm:inline">
+                                        • Geser kursor mouse atau sentuh layar untuk memutar 360°
                                     </span>
                                 </div>
 
@@ -521,10 +448,7 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                                         return (
                                             <tr
                                                 key={item.text}
-                                                onMouseEnter={() => setHoveredWord(item)}
-                                                onMouseLeave={() => setHoveredWord(null)}
-                                                className="hover:bg-zinc-800/40 transition cursor-pointer"
-                                                onClick={() => handleSelectWord(item, idx)}
+                                                className="hover:bg-zinc-800/40 transition"
                                             >
                                                 <td className="py-2 px-3 text-center">{rankBadge}</td>
                                                 <td className="py-2 px-3 truncate">
