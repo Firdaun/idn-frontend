@@ -80,7 +80,8 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                     clickToFront: false,
                     activeCursor: 'grab',
                     fadeIn: 400,
-                    animTiming: 'Smooth'
+                    animTiming: 'Smooth',
+                    padding: 4
                 });
             } catch (err) {
                 console.warn('TagCanvas initialization:', err);
