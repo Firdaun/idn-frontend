@@ -31,9 +31,9 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
     }, [wordCloud]);
 
     const getWordColor = (idx) => {
-        if (idx === 0) return '#fbbf24'; // Emas (Peringkat 1)
-        if (idx === 1) return '#38bdf8'; // Biru (Peringkat 2)
-        if (idx === 2) return '#34d399'; // Hijau (Peringkat 3)
+        if (idx === 0) return '#fbbf24';
+        if (idx === 1) return '#38bdf8';
+        if (idx === 2) return '#34d399';
         if (idx < 10) return '#a78bfa';
         if (idx < 25) return '#e2e8f0';
         return '#94a3b8';
@@ -48,7 +48,9 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
 
         const initTagCanvas = () => {
             const width = Math.floor(container.clientWidth || 520);
-            const height = Math.max(340, Math.min(420, Math.round(width * 0.62)));
+            const containerH = container.clientHeight || 0;
+            const availableHeight = containerH > 100 ? containerH - 43 : 0;
+            const height = Math.max(460, availableHeight || Math.round(width * 0.65));
             canvas.width = width;
             canvas.height = height;
 
@@ -167,7 +169,7 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
     }
 
     return (
-        <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-xl p-4 lg:p-5 space-y-4">
+        <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-xl p-4 lg:p-5 flex flex-col h-full space-y-4">
             {/* Header & Controls */}
             <div className="flex flex-col md:flex-row lg:flex-col xl:flex-row md:items-center lg:items-start justify-between gap-3 border-b border-zinc-800/80 pb-3.5">
                 <div>
@@ -320,7 +322,7 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
             {viewMode === 'cloud' ? (
                 <div
                     ref={containerRef}
-                    className="relative w-full rounded-xl bg-linear-to-b from-zinc-900/50 via-zinc-950/80 to-zinc-950 border border-zinc-800/60 overflow-hidden flex flex-col items-center justify-center select-none"
+                    className="relative w-full flex-1 min-h-115 rounded-xl bg-linear-to-b from-zinc-900/50 via-zinc-950/80 to-zinc-950 border border-zinc-800/60 overflow-hidden flex flex-col justify-center select-none"
                     style={{ minHeight: '340px' }}
                 >
                     {filteredWords.length === 0 ? (

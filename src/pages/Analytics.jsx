@@ -513,9 +513,9 @@ export default function Analytics() {
             {/* Sentiment, Stream Stats & Word Cloud Section */}
             {selectedStreamer && (
                 <div className="space-y-3 lg:space-y-5">
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-5 items-stretch">
+                    <div className="flex flex-col lg:flex-row gap-3 lg:gap-5 items-stretch">
                         {/* Kolom Kiri: Sentimen & Statistik Performa Siaran */}
-                        <div className="lg:col-span-5 flex flex-col gap-3 lg:gap-4">
+                        <div className="w-full lg:w-[35%] flex flex-col gap-3 lg:gap-4 shrink-0">
                             {/* Card Sentimen */}
                             <SentimentCard
                                 sentiment={activeSentiment}
@@ -626,7 +626,7 @@ export default function Analytics() {
                         </div>
 
                         {/* Kolom Kanan: Word Cloud (Topik Hangat) */}
-                        <div className="lg:col-span-7 flex flex-col">
+                        <div className="w-full lg:flex-1 flex flex-col min-w-0">
                             <WordCloudCard
                                 wordCloud={activeWordCloud}
                                 isLoading={isSessionLoading && (!activeWordCloud || activeWordCloud.length === 0)}
