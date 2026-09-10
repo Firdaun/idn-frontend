@@ -91,18 +91,25 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
         const container = containerRef.current;
         if (!canvas || !container) return;
 
-        const initTagCanvas = () => {
-            const width = Math.floor(container.clientWidth || 520);
-            const containerH = container.clientHeight || 0;
-            const toolbarEl = container.querySelector('div.border-t');
-            const toolbarH = toolbarEl ? toolbarEl.offsetHeight : 44;
-            const availableHeight = containerH > 100 ? containerH - toolbarH : 0;
-            const minHeight = width < 640 ? 400 : 460;
-            const height = Math.max(minHeight, availableHeight || Math.round(width * 0.65));
+        let resizeTimer = null;
+        let prevWidth = 0;
+        let prevHeight = 0;
+
+        const initTagCanvas = (force = false) => {
+            const width = Math.floor(canvas.clientWidth);
+            const height = Math.floor(canvas.clientHeight);
+            if (width <= 0 || height <= 0) return;
+
+            if (!force && prevWidth === width && prevHeight === height && canvas.width === width && canvas.height === height) {
+                return;
+            }
+
+            prevWidth = width;
+            prevHeight = height;
             canvas.width = width;
             canvas.height = height;
 
-            const screenW = typeof window !== 'undefined' ? window.innerWidth : container.clientWidth;
+            const screenW = typeof window !== 'undefined' ? window.innerWidth : width;
             const isMobile = screenW < 640;
             const isTablet = screenW >= 640 && screenW < 1024;
 
@@ -149,15 +156,19 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
             }
         };
 
-        const timer = setTimeout(initTagCanvas, 50);
+        const timer = setTimeout(() => initTagCanvas(true), 50);
 
         const resizeObserver = new ResizeObserver(() => {
-            initTagCanvas();
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                initTagCanvas(false);
+            }, 100);
         });
         resizeObserver.observe(container);
 
         return () => {
             clearTimeout(timer);
+            clearTimeout(resizeTimer);
             resizeObserver.disconnect();
             try {
                 TagCanvas.Delete('wordcloud-canvas');
@@ -206,9 +217,9 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
 
     if (!wordCloud || wordCloud.length === 0) {
         return (
-            <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-xl p-5 text-center text-zinc-400 text-sm space-y-2">
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border bg-zinc-800/80 border-zinc-700/80 text-zinc-300">
-                    <span>☁️ Awan Kata & Topik Hangat</span>
+            <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-xl p-4 lg:p-5 flex flex-col items-center justify-center text-center h-full min-h-80 select-none">
+                <div className="w-12 h-12 rounded-full bg-zinc-800/60 border border-zinc-700/50 flex items-center justify-center text-xl mb-3">
+                    💬
                 </div>
                 {isLive ? (
                     <div>
@@ -291,16 +302,15 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
 
             {/* Ringkasan Statistik: Total Kata & Top 3 di Atas Konten */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 p-2.5 rounded-xl bg-zinc-900/60 border border-zinc-800/70 text-xs">
-                <div className="flex items-center flex-wrap gap-2">
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-300 font-medium">
+                <div className="flex md:w-full items-start min-[540px]:items-center justify-between md:flex-wrap gap-2">
+                    <div className="flex items-center justify-evenly px-2.5 py-1 w-30 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-300 font-medium">
                         <span className="text-zinc-500">Total:</span>
                         <span className="text-zinc-100 font-semibold">{wordCloud.length} Kata</span>
                     </div>
 
                     {topThree.length > 0 && (
                         <>
-                            <div className="h-4 w-px bg-zinc-800 hidden sm:block" />
-                            <div className="flex items-center flex-wrap gap-1.5">
+                            <div className="flex w-1/2 min-[540px]:w-[90%] md:w-[70%] items-center justify-end flex-wrap gap-1.5">
                                 {topThree.map((item, idx) => {
                                     const rankStyles = [
                                         'border-amber-500/40 bg-amber-500/10 text-amber-300',     // Peringkat 1: Emas
@@ -315,7 +325,7 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                                         >
                                             <span>{medals[idx]}</span>
                                             <span className="font-semibold text-zinc-100">"{item.text}"</span>
-                                            <span className="text-[11px] opacity-80">({Number(item.value).toLocaleString()}x)</span>
+                                            <span className="text-[11px] opacity-80">{Number(item.value).toLocaleString()}x</span>
                                         </div>
                                     );
                                 })}
@@ -323,27 +333,6 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                         </>
                     )}
                 </div>
-
-                {/* Tombol navigasi ke mode daftar peringkat jika sedang di mode awan kata */}
-                {viewMode === 'cloud' ? (
-                    <button
-                        onClick={() => setViewMode('list')}
-                        className="text-[11px] text-zinc-400 hover:text-sky-400 flex items-center gap-1 transition cursor-pointer group shrink-0 ml-auto sm:ml-0"
-                        title="Buka daftar lengkap peringkat kata"
-                    >
-                        <span>Lihat peringkat detail</span>
-                        <span className="group-hover:translate-x-0.5 transition-transform">→</span>
-                    </button>
-                ) : (
-                    <button
-                        onClick={() => setViewMode('cloud')}
-                        className="text-[11px] text-zinc-400 hover:text-sky-400 flex items-center gap-1 transition cursor-pointer group shrink-0 ml-auto sm:ml-0"
-                        title="Kembali ke tampilan bola 3D"
-                    >
-                        <span className="group-hover:-translate-x-0.5 transition-transform">←</span>
-                        <span>Kembali ke Bola 3D</span>
-                    </button>
-                )}
             </div>
 
             {/* Hidden HTML Tag List for TagCanvas (ditempatkan di luar viewport) */}
@@ -381,25 +370,27 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
             {viewMode === 'cloud' ? (
                 <div
                     ref={containerRef}
-                    className="relative w-full flex-1 min-h-100 rounded-xl bg-linear-to-b from-zinc-900/50 via-zinc-950/80 to-zinc-950 border border-zinc-800/60 overflow-hidden flex flex-col justify-center select-none"
+                    className="relative w-full flex-1 min-h-80 rounded-xl bg-linear-to-b from-zinc-900/50 via-zinc-950/80 to-zinc-950 border border-zinc-800/60 overflow-hidden flex flex-col select-none"
                 >
                     {filteredWords.length === 0 ? (
-                        <div className="py-16 text-center text-zinc-500 text-xs">
+                        <div className="py-16 text-center text-zinc-500 text-xs m-auto">
                             Tidak ada kata yang sesuai dengan pencarian "{searchQuery}"
                         </div>
                     ) : (
-                        <div>
-                            {/* Canvas 3D */}
-                            <canvas
-                                id="wordcloud-canvas"
-                                ref={canvasRef}
-                                className="w-full block"
-                            >
-                                <p>Peramban Anda tidak mendukung HTML5 Canvas.</p>
-                            </canvas>
+                        <div className="flex flex-col flex-1 w-full h-full min-h-0">
+                            {/* Area Canvas 3D */}
+                            <div className="relative w-full flex-1 min-h-0">
+                                <canvas
+                                    id="wordcloud-canvas"
+                                    ref={canvasRef}
+                                    className="absolute inset-0 w-full h-full block"
+                                >
+                                    <p>Peramban Anda tidak mendukung HTML5 Canvas.</p>
+                                </canvas>
+                            </div>
 
-                            {/* Floating Toolbar Interaktif di Bawah Canvas */}
-                            <div className="w-full flex items-center justify-between flex-wrap gap-2 px-3 py-2 bg-zinc-900/70 border-t border-zinc-800/60 text-xs backdrop-blur-sm">
+                            {/* Floating Toolbar Interaktif di Bagian Bawah Canvas */}
+                            <div className="w-full shrink-0 flex items-center justify-between flex-wrap gap-2 px-3 py-2 bg-zinc-900/70 border-t border-zinc-800/60 text-xs backdrop-blur-sm z-10">
                                 {/* Mode Putar Bebas Info */}
                                 <div className="flex items-center gap-2 text-zinc-400 text-[11px]">
                                     <span className="text-zinc-500 hidden sm:inline">
