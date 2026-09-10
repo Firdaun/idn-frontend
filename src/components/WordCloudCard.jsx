@@ -97,7 +97,7 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
             const toolbarEl = container.querySelector('div.border-t');
             const toolbarH = toolbarEl ? toolbarEl.offsetHeight : 44;
             const availableHeight = containerH > 100 ? containerH - toolbarH : 0;
-            const minHeight = width < 640 ? 320 : 460;
+            const minHeight = width < 640 ? 400 : 460;
             const height = Math.max(minHeight, availableHeight || Math.round(width * 0.65));
             canvas.width = width;
             canvas.height = height;
@@ -121,6 +121,8 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                     weightSizeMin: weightSizeMin,
                     weightSizeMax: weightSizeMax,
 
+                    txtOpt: false,
+
                     noSelect: true,
                     outlineMethod: 'none',
 
@@ -130,9 +132,9 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                     initial: isAutoRotating ? [0.08, -0.04] : [0, 0],
                     decel: 0.96,
                     depth: 0.7,
-                    minBrightness: 0.25,
+                    minBrightness: 0.35,
                     maxBrightness: 1.0,
-                    zoom: isMobile ? 0.95 : 1,
+                    zoom: 1,
 
                     dragControl: true,
                     wheelZoom: false,
@@ -379,7 +381,7 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
             {viewMode === 'cloud' ? (
                 <div
                     ref={containerRef}
-                    className="relative w-full flex-1 min-h-80 rounded-xl bg-linear-to-b from-zinc-900/50 via-zinc-950/80 to-zinc-950 border border-zinc-800/60 overflow-hidden flex flex-col justify-center select-none"
+                    className="relative w-full flex-1 min-h-100 rounded-xl bg-linear-to-b from-zinc-900/50 via-zinc-950/80 to-zinc-950 border border-zinc-800/60 overflow-hidden flex flex-col justify-center select-none"
                 >
                     {filteredWords.length === 0 ? (
                         <div className="py-16 text-center text-zinc-500 text-xs">
