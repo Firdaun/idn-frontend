@@ -6,6 +6,8 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
     const [searchQuery, setSearchQuery] = useState('');
     const [cloudShape, setCloudShape] = useState('sphere');
     const [isAutoRotating, setIsAutoRotating] = useState(true);
+    const isAutoRotatingRef = useRef(isAutoRotating);
+    isAutoRotatingRef.current = isAutoRotating;
 
     const canvasRef = useRef(null);
     const containerRef = useRef(null);
@@ -18,7 +20,6 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
         const el = tableContainerRef.current;
         if (!el) return;
 
-        // Indikator vertikal
         if (vThumbRef.current) {
             const { scrollTop, scrollHeight, clientHeight } = el;
             if (scrollHeight > clientHeight) {
@@ -33,7 +34,6 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
             }
         }
 
-        // Indikator horizontal
         if (hThumbRef.current) {
             const { scrollLeft, scrollWidth, clientWidth } = el;
             if (scrollWidth > clientWidth) {
@@ -58,8 +58,9 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
     const filteredWords = useMemo(() => {
         if (!wordCloud || !wordCloud.length) return [];
         if (!searchQuery.trim()) return wordCloud;
-        const query = searchQuery.toLowerCase();
-        return wordCloud.filter(item => item.text.toLowerCase().includes(query));
+        return wordCloud.filter((item) =>
+            item.text.toLowerCase().includes(searchQuery.toLowerCase().trim())
+        );
     }, [wordCloud, searchQuery]);
 
     const { minVal, maxVal } = useMemo(() => {
@@ -72,7 +73,7 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
     }, [wordCloud]);
 
     const topThree = useMemo(() => {
-        return (wordCloud || []).slice(0, 3);
+        return wordCloud.slice(0, 3);
     }, [wordCloud]);
 
     const getWordColor = (idx) => {
@@ -136,7 +137,7 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                     shape: cloudShape,
                     maxSpeed: 0.035,
                     minSpeed: 0.0,
-                    initial: isAutoRotating ? [0.08, -0.04] : [0, 0],
+                    initial: isAutoRotatingRef.current ? [0.08, -0.04] : [0, 0],
                     decel: 0.96,
                     depth: 0.7,
                     minBrightness: 0.35,
@@ -152,12 +153,19 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                     padding: 4
                 });
 
-                // Posisikan kata Top 1-3 di pojok kiri atas depan saat inisialisasi awal
                 TagCanvas.RotateTag('wordcloud-canvas', {
                     id: 'word-tag-0',
                     lat: 18,
                     lng: -40,
-                    time: 0
+                    time: 0,
+                    callback: () => {
+                        if (isAutoRotatingRef.current) {
+                            TagCanvas.SetSpeed('wordcloud-canvas', [0.08, -0.04]);
+                            TagCanvas.Resume('wordcloud-canvas');
+                        } else {
+                            TagCanvas.SetSpeed('wordcloud-canvas', [0, 0]);
+                        }
+                    }
                 });
             } catch (err) {
                 console.warn('TagCanvas initialization:', err);
@@ -184,6 +192,27 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
             }
         };
     }, [filteredWords, cloudShape, viewMode]);
+
+    useEffect(() => {
+        if (viewMode !== 'cloud' || !isAutoRotating) return;
+
+        const checkInterval = setInterval(() => {
+            try {
+                const tc = TagCanvas.tc && TagCanvas.tc['wordcloud-canvas'];
+                if (!tc) return;
+
+                if (!tc.dragging && !tc.down && !tc.touchState && !tc.fixedAnim) {
+                    const isStopped = Math.abs(tc.yaw) < 0.0002 && Math.abs(tc.pitch) < 0.0002;
+                    if (isStopped && (tc.initial === null || (tc.initial[0] === 0 && tc.initial[1] === 0) || (!tc.yaw && !tc.pitch))) {
+                        TagCanvas.SetSpeed('wordcloud-canvas', [0.08, -0.04]);
+                        TagCanvas.Resume('wordcloud-canvas');
+                    }
+                }
+            } catch (e) { }
+        }, 150);
+
+        return () => clearInterval(checkInterval);
+    }, [viewMode, isAutoRotating]);
 
     const toggleAutoRotate = () => {
         setIsAutoRotating(prev => {
@@ -258,7 +287,6 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
 
     return (
         <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-xl p-4 lg:p-5 flex flex-col h-full space-y-4">
-            {/* Header & Controls */}
             <div className="flex flex-col md:flex-row lg:flex-col xl:flex-row md:items-center lg:items-start justify-between gap-3 border-b border-zinc-800/80 pb-3.5">
                 <div>
                     <div className="flex items-center gap-2">
@@ -275,7 +303,6 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                 </div>
 
                 <div className="flex items-center gap-2 flex-col min-[540px]:flex-row md:flex-col lg:flex-row xl:flex-col lg:w-full xl:w-85">
-                    {/* Search Input */}
                     <div className="relative w-full min-[540px]:w-[45%] md:w-64.75 lg:w-[90%] xl:w-80">
                         <input
                             type="text"
@@ -294,7 +321,6 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                         )}
                     </div>
 
-                    {/* Mode Toggle */}
                     <div className="flex p-0.5 w-full min-[540px]:w-[55%] md:w-64.75 lg:w-full xl:w-80 rounded-lg bg-zinc-900 border border-zinc-800">
                         <button
                             onClick={() => setViewMode('cloud')}
@@ -318,7 +344,6 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                 </div>
             </div>
 
-            {/* Ringkasan Statistik: Total Kata & Top 3 di Atas Konten */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 p-2.5 rounded-xl bg-zinc-900/60 border border-zinc-800/70 text-xs">
                 <div className="flex md:w-full items-start min-[540px]:items-center justify-between md:flex-wrap gap-2">
                     <div className="flex items-center justify-evenly px-2.5 py-1 w-30 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-300 font-medium">
@@ -353,7 +378,6 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                 </div>
             </div>
 
-            {/* Hidden HTML Tag List for TagCanvas (ditempatkan di luar viewport) */}
             <div
                 id="wordcloud-taglist"
                 style={{
@@ -384,11 +408,10 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                 </ul>
             </div>
 
-            {/* Content Display */}
             {viewMode === 'cloud' ? (
                 <div
                     ref={containerRef}
-                    className="relative w-full flex-1 min-h-80 rounded-xl bg-linear-to-b from-zinc-900/50 via-zinc-950/80 to-zinc-950 border border-zinc-800/60 overflow-hidden flex flex-col select-none"
+                    className="relative w-full flex-1 min-h-100 rounded-xl bg-linear-to-b from-zinc-900/50 via-zinc-950/80 to-zinc-950 border border-zinc-800/60 overflow-hidden flex flex-col select-none"
                 >
                     {filteredWords.length === 0 ? (
                         <div className="py-16 text-center text-zinc-500 text-xs m-auto">
@@ -407,16 +430,13 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                                 </canvas>
                             </div>
 
-                            {/* Floating Toolbar Interaktif di Bagian Bawah Canvas */}
                             <div className="w-full shrink-0 flex items-center justify-between flex-wrap gap-2 px-3 py-2 bg-zinc-900/70 border-t border-zinc-800/60 text-xs backdrop-blur-sm z-10">
-                                {/* Mode Putar Bebas Info */}
                                 <div className="flex items-center gap-2 text-zinc-400 text-[11px]">
                                     <span className="text-zinc-500 hidden sm:inline">
                                         • Geser kursor mouse atau sentuh layar untuk memutar 360°
                                     </span>
                                 </div>
 
-                                {/* Kontrol Bentuk 3D, Putar/Jeda, Reset */}
                                 <div className="flex items-center gap-1.5">
                                     <div className="flex rounded-lg bg-zinc-950 p-0.5 border border-zinc-800">
                                         <button
@@ -445,7 +465,6 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                                         </button>
                                     </div>
 
-                                    {/* Tombol Putar / Jeda */}
                                     <button
                                         onClick={toggleAutoRotate}
                                         title={isAutoRotating ? 'Jeda Rotasi Otomatis' : 'Mulai Rotasi Otomatis'}
@@ -468,7 +487,6 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                                         )}
                                     </button>
 
-                                    {/* Tombol Reset Posisi */}
                                     <button
                                         onClick={handleResetPosition}
                                         title="Kembalikan Kecepatan & Posisi Semula"
@@ -556,14 +574,12 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                         </table>
                     </div>
 
-                    {/* Floating Vertical Scrollbar Indicator */}
                     <div
                         ref={vThumbRef}
                         className="absolute right-0 top-0 w-1 bg-zinc-700 rounded-full pointer-events-none opacity-0 transition-opacity duration-500 ease-out z-20"
                         style={{ height: '0px' }}
                     />
 
-                    {/* Floating Horizontal Scrollbar Indicator */}
                     <div
                         ref={hThumbRef}
                         className="absolute bottom-0 left-0 h-1 bg-zinc-700 rounded-full pointer-events-none opacity-0 transition-opacity duration-500 ease-out z-20"
