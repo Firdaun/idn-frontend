@@ -515,7 +515,7 @@ export default function Analytics() {
                 <div className="space-y-3 lg:space-y-5">
                     <div className="flex flex-col lg:flex-row gap-3 lg:gap-5 items-stretch">
                         {/* Kolom Kiri: Sentimen & Statistik Performa Siaran */}
-                        <div className="w-full lg:w-[35%] flex flex-col gap-3 lg:gap-4 shrink-0">
+                        <div className="w-full lg:w-[40%] flex flex-col gap-3 lg:gap-4 shrink-0">
                             {/* Card Sentimen */}
                             <SentimentCard
                                 sentiment={activeSentiment}
@@ -586,7 +586,7 @@ export default function Analytics() {
                                             </span>
                                         </div>
 
-                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 text-xs">
                                             <div>
                                                 <span className="text-[11px] text-zinc-400 block">Durasi Saat Itu</span>
                                                 <span className="font-semibold text-zinc-200">

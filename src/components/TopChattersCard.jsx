@@ -101,7 +101,6 @@ export default function TopChattersCard({ topChatters = [], isLoading = false, s
         );
     }
 
-    // Pisahkan Top 3 untuk Podium dan sisanya untuk tabel list
     const top1 = topChatters[0];
     const top2 = topChatters[1];
     const top3 = topChatters[2];

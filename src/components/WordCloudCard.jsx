@@ -102,16 +102,24 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
             canvas.width = width;
             canvas.height = height;
 
+            const screenW = typeof window !== 'undefined' ? window.innerWidth : container.clientWidth;
+            const isMobile = screenW < 640;
+            const isTablet = screenW >= 640 && screenW < 1024;
+
+            const textHeight = isMobile ? 14 : isTablet ? 16 : 18;
+            const weightSizeMin = isMobile ? 12 : isTablet ? 15 : 16;
+            const weightSizeMax = isMobile ? 22 : isTablet ? 28 : 32;
+
             try {
                 TagCanvas.Start('wordcloud-canvas', 'wordcloud-taglist', {
                     textColour: null,
                     textFont: 'Inter, system-ui, -apple-system, sans-serif',
-                    textHeight: 18,
+                    textHeight: textHeight,
                     weight: true,
                     weightMode: 'size',
                     weightFrom: 'data-weight',
-                    weightSizeMin: 14,
-                    weightSizeMax: 32,
+                    weightSizeMin: weightSizeMin,
+                    weightSizeMax: weightSizeMax,
 
                     noSelect: true,
                     outlineMethod: 'none',
@@ -121,10 +129,10 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                     minSpeed: 0.0,
                     initial: isAutoRotating ? [0.08, -0.04] : [0, 0],
                     decel: 0.96,
-                    depth: 0.85,
+                    depth: 0.7,
                     minBrightness: 0.25,
                     maxBrightness: 1.0,
-                    zoom: 0.93,
+                    zoom: isMobile ? 0.95 : 1,
 
                     dragControl: true,
                     wheelZoom: false,
@@ -449,11 +457,11 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                     )}
                 </div>
             ) : (
-                <div className="relative rounded-xl border border-zinc-800/60 bg-zinc-950/30 overflow-hidden">
+                <div className="relative w-full flex-1 min-h-80 rounded-xl border border-zinc-800/60 bg-zinc-950/30 overflow-hidden">
                     <div
                         ref={tableContainerRef}
                         onScroll={handleTableScroll}
-                        className="overflow-auto max-h-90 no-scrollbar"
+                        className="absolute inset-0 overflow-auto no-scrollbar"
                     >
                         <table className="w-full min-w-120 table-fixed text-left text-xs">
                             <colgroup>
