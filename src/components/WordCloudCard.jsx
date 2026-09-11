@@ -344,8 +344,8 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                 </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 p-2.5 rounded-xl bg-zinc-900/60 border border-zinc-800/70 text-xs">
-                <div className="flex md:w-full items-start min-[540px]:items-center justify-between md:flex-wrap gap-2">
+            <div className="gap-2.5 p-2.5 rounded-xl bg-zinc-900/60 border border-zinc-800/70 text-xs">
+                <div className="flex w-full items-start min-[540px]:items-center justify-between md:flex-wrap gap-2">
                     <div className="flex items-center justify-evenly px-2.5 py-1 w-30 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-300 font-medium">
                         <span className="text-zinc-500">Total:</span>
                         <span className="text-zinc-100 font-semibold">{wordCloud.length} Kata</span>
@@ -353,12 +353,12 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
 
                     {topThree.length > 0 && (
                         <>
-                            <div className="flex w-1/2 min-[540px]:w-[90%] md:w-[70%] items-center justify-end flex-wrap gap-1.5">
+                            <div className="flex w-[40%] min-[540px]:w-[90%] md:w-[70%] items-center justify-end flex-wrap gap-1.5">
                                 {topThree.map((item, idx) => {
                                     const rankStyles = [
-                                        'border-amber-500/40 bg-amber-500/10 text-amber-300',     // Peringkat 1: Emas
-                                        'border-sky-500/40 bg-sky-500/10 text-sky-300',         // Peringkat 2: Biru
-                                        'border-emerald-500/40 bg-emerald-500/10 text-emerald-300' // Peringkat 3: Hijau
+                                        'border-amber-500/40 bg-amber-500/10 text-amber-300',
+                                        'border-sky-500/40 bg-sky-500/10 text-sky-300',
+                                        'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
                                     ];
                                     const medals = ['🥇', '🥈', '🥉'];
                                     return (
