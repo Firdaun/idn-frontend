@@ -523,8 +523,8 @@ export default function Analytics() {
                             />
 
                             {/* Card Statistik Performa & Snapshot Titik Terpilih */}
-                            <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-xl p-4 lg:p-5 space-y-3.5 flex-1">
-                                <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2.5">
+                            <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-xl p-4 lg:p-5 space-y-3 lg:space-y-5 flex-1">
+                                <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2.5 lg:pb-5">
                                     <span className="text-sm sm:text-base font-semibold text-zinc-100 flex items-center gap-2">
                                         <span>📊 Statistik Siaran</span>
                                     </span>
@@ -534,7 +534,7 @@ export default function Analytics() {
                                 </div>
 
                                 {/* Ringkasan Metrik 2x3 Grid */}
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-2.5 lg:gap-3">
                                     <div className="bg-zinc-950/40 border border-zinc-800/60 rounded-lg p-2.5">
                                         <span className="text-xs text-zinc-400 font-medium block truncate">Puncak Penonton</span>
                                         <span className="font-bold text-zinc-100 text-base sm:text-lg">
@@ -573,17 +573,35 @@ export default function Analytics() {
                                     </div>
                                 </div>
 
-                                {/* Snapshot Inspector (Jika user mengklik titik tertentu di grafik) */}
-                                {selectedStreamer.clickedTime && (
+                                {/* Snapshot Inspector (Titik Cuplikan Terpilih) */}
+                                {selectedStreamer.clickedTime ? (
                                     <div className="bg-indigo-950/20 border border-indigo-500/30 rounded-lg p-3 space-y-2 animate-fadeIn">
                                         <div className="flex items-center justify-between text-xs border-b border-indigo-500/20 pb-1.5">
                                             <span className="font-semibold text-indigo-300 flex items-center gap-1.5">
                                                 <span>📍</span>
                                                 <span>Titik Cuplikan Terpilih</span>
                                             </span>
-                                            <span className="text-[11px] text-zinc-400 font-mono">
-                                                {formatLiveTime(selectedStreamer.clickedTime)}
-                                            </span>
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="text-[11px] text-zinc-400 font-mono">
+                                                    {formatLiveTime(selectedStreamer.clickedTime)}
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setSelectedStreamer(prev => prev ? ({
+                                                        ...prev,
+                                                        clickedTime: null,
+                                                        clickedViewers: null,
+                                                        clickedChat: null,
+                                                        clickedPos: null,
+                                                        clickedNeu: null,
+                                                        clickedNeg: null
+                                                    }) : null)}
+                                                    className="text-zinc-400 hover:text-zinc-200 transition text-[11px] px-1 rounded hover:bg-indigo-500/20 cursor-pointer"
+                                                    title="Tutup cuplikan titik"
+                                                >
+                                                    ✕
+                                                </button>
+                                            </div>
                                         </div>
 
                                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 text-xs">
@@ -620,6 +638,16 @@ export default function Analytics() {
                                                 </div>
                                             )}
                                         </div>
+                                    </div>
+                                ) : (
+                                    <div className="bg-zinc-950/30 border border-dashed border-zinc-800/80 rounded-lg p-3 flex flex-col justify-center text-center h-[87.6px] space-y-1">
+                                        <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-zinc-400">
+                                            <span>📍</span>
+                                            <span>Titik Cuplikan Terpilih</span>
+                                        </div>
+                                        <p className="text-[11px] text-zinc-500 leading-relaxed max-w-lg mx-auto">
+                                            Nilai pada bagian ini akan terisi jika kamu mengklik salah satu titik pada garis grafik di bawah.
+                                        </p>
                                     </div>
                                 )}
                             </div>

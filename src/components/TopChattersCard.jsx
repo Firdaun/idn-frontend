@@ -1,8 +1,52 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 
 export default function TopChattersCard({ topChatters = [], isLoading = false, streamerName = '', isLive = false }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [failedAvatars, setFailedAvatars] = useState({});
+
+    const tableContainerRef = useRef(null);
+    const vThumbRef = useRef(null);
+    const hThumbRef = useRef(null);
+    const scrollTimerRef = useRef(null);
+
+    const handleTableScroll = () => {
+        const el = tableContainerRef.current;
+        if (!el) return;
+
+        if (vThumbRef.current) {
+            const { scrollTop, scrollHeight, clientHeight } = el;
+            if (scrollHeight > clientHeight) {
+                const thumbH = Math.max(24, (clientHeight / scrollHeight) * clientHeight);
+                const maxScrollTop = scrollHeight - clientHeight;
+                const top = (scrollTop / maxScrollTop) * (clientHeight - thumbH);
+                vThumbRef.current.style.height = `${thumbH}px`;
+                vThumbRef.current.style.transform = `translateY(${top}px)`;
+                vThumbRef.current.style.opacity = '1';
+            } else {
+                vThumbRef.current.style.opacity = '0';
+            }
+        }
+
+        if (hThumbRef.current) {
+            const { scrollLeft, scrollWidth, clientWidth } = el;
+            if (scrollWidth > clientWidth) {
+                const thumbW = Math.max(24, (clientWidth / scrollWidth) * clientWidth);
+                const maxScrollLeft = scrollWidth - clientWidth;
+                const left = (scrollLeft / maxScrollLeft) * (clientWidth - thumbW);
+                hThumbRef.current.style.width = `${thumbW}px`;
+                hThumbRef.current.style.transform = `translateX(${left}px)`;
+                hThumbRef.current.style.opacity = '1';
+            } else {
+                hThumbRef.current.style.opacity = '0';
+            }
+        }
+
+        clearTimeout(scrollTimerRef.current);
+        scrollTimerRef.current = setTimeout(() => {
+            if (vThumbRef.current) vThumbRef.current.style.opacity = '0';
+            if (hThumbRef.current) hThumbRef.current.style.opacity = '0';
+        }, 600);
+    };
 
     const filteredChatters = useMemo(() => {
         if (!topChatters || !topChatters.length) return [];
@@ -108,11 +152,11 @@ export default function TopChattersCard({ topChatters = [], isLoading = false, s
     return (
         <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-xl p-4 lg:p-5 space-y-5">
             {/* Header & Controls */}
-            <div className="flex flex-col min-[540px]:flex-row min-[540px]:items-center justify-between gap-3 border-b border-zinc-800/80 pb-3.5">
+            <div className="flex flex-col min-[540px]:flex-row min-[540px]:items-center justify-between gap-3 border-b border-zinc-800/80 pb-3">
                 <div>
                     <div className="flex items-center gap-2">
                         <h3 className="text-sm sm:text-base font-semibold text-zinc-100 flex items-center gap-2">
-                            <span>🏆 Top 50 Chatters</span>
+                            <span>🏆 50 Pengirim Pesan Terbanyak</span>
                         </h3>
                         <span className="text-xs text-zinc-400">
                             ({totalChattersCount} pengguna • {totalMessagesByTop.toLocaleString()} pesan)
@@ -208,111 +252,112 @@ export default function TopChattersCard({ topChatters = [], isLoading = false, s
             )}
 
             {/* Leaderboard List Table */}
-            <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs text-zinc-400 px-1">
-                    <span>Daftar Peringkat Lengkap</span>
-                    <span>Menampilkan {filteredChatters.length} penonton</span>
-                </div>
-
-                <div className="rounded-xl border border-zinc-800/60 bg-zinc-950/30 overflow-hidden">
-                    <table className="w-full table-fixed text-left text-xs bg-zinc-900 text-zinc-400 border-b border-zinc-800">
+            <div className="flex items-center justify-between text-xs text-zinc-400 px-1">
+                <span>Daftar Peringkat Lengkap</span>
+                <span>Menampilkan {filteredChatters.length} penonton</span>
+            </div>
+            <div className="relative flex-1 min-h-80 rounded-xl border border-zinc-800/60 bg-zinc-950/30 overflow-hidden">
+                <div
+                    ref={tableContainerRef}
+                    onScroll={handleTableScroll}
+                    className="absolute inset-0 overflow-auto no-scrollbar">
+                    <table className="w-full min-w-120 table-fixed text-left text-xs">
                         <colgroup>
-                            <col className="w-14 sm:w-16" />
-                            <col />
-                            <col className="w-32 sm:w-56 hidden sm:table-column" />
-                            <col className="w-24 sm:w-28" />
+                            <col className="w-20" />
+                            <col className="w-45"/>
+                            <col className="w-45" />
+                            <col className="w-30" />
                         </colgroup>
-                        <thead>
+                        <thead className="sticky top-0 z-10 bg-zinc-900 text-zinc-400 border-b border-zinc-800">
                             <tr>
-                                <th className="py-2.5 px-3 text-center font-medium">Peringkat</th>
-                                <th className="py-2.5 px-3 font-medium">Pengguna IDN</th>
-                                <th className="py-2.5 px-3 font-medium hidden sm:table-cell">Aktivitas Relatif</th>
-                                <th className="py-2.5 px-3 text-right font-medium">Total Pesan</th>
+                                <th className="py-2.5 px-2 text-center font-medium">Peringkat</th>
+                                <th className="py-2.5 px-2 font-medium">Pengguna IDN</th>
+                                <th className="py-2.5 px-2 font-medium ">Aktivitas Relatif</th>
+                                <th className="py-2.5 px-2 text-right font-medium">Total Pesan</th>
                             </tr>
                         </thead>
-                    </table>
+                        <tbody className="divide-y divide-zinc-800/40 text-zinc-300">
+                            {filteredChatters.length === 0 ? (
+                                <tr>
+                                    <td colSpan={4} className="py-2 text-center text-zinc-500 text-xs">
+                                        Tidak ditemukan penonton dengan nama "{searchQuery}"
+                                    </td>
+                                </tr>
+                            ) : (
+                                filteredChatters.map((chatter, idx) => {
+                                    // Cari ranking asli di array lengkap
+                                    const originalRank = topChatters.findIndex(c => c.userUuid === chatter.userUuid) + 1 || idx + 1;
+                                    const relativePct = maxCount > 0 ? (Number(chatter.count) / maxCount) * 100 : 0;
 
-                    <div className="overflow-y-auto max-h-96 custom-scrollbar">
-                        <table className="w-full table-fixed text-left text-xs">
-                            <colgroup>
-                                <col className="w-14 sm:w-16" />
-                                <col />
-                                <col className="w-32 sm:w-56 hidden sm:table-column" />
-                                <col className="w-24 sm:w-28" />
-                            </colgroup>
-                            <tbody className="divide-y divide-zinc-800/40 text-zinc-300">
-                                {filteredChatters.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={4} className="py-8 text-center text-zinc-500 text-xs">
-                                            Tidak ditemukan penonton dengan nama "{searchQuery}"
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    filteredChatters.map((chatter, idx) => {
-                                        // Cari ranking asli di array lengkap
-                                        const originalRank = topChatters.findIndex(c => c.userUuid === chatter.userUuid) + 1 || idx + 1;
-                                        const relativePct = maxCount > 0 ? (Number(chatter.count) / maxCount) * 100 : 0;
+                                    let rankBadge = <span className="text-zinc-400 font-semibold text-xs">#{originalRank}</span>;
+                                    if (originalRank === 1) rankBadge = <span className="text-sm">🥇</span>;
+                                    else if (originalRank === 2) rankBadge = <span className="text-sm">🥈</span>;
+                                    else if (originalRank === 3) rankBadge = <span className="text-sm">🥉</span>;
 
-                                        let rankBadge = <span className="text-zinc-400 font-semibold text-xs">#{originalRank}</span>;
-                                        if (originalRank === 1) rankBadge = <span className="text-sm">🥇</span>;
-                                        else if (originalRank === 2) rankBadge = <span className="text-sm">🥈</span>;
-                                        else if (originalRank === 3) rankBadge = <span className="text-sm">🥉</span>;
+                                    return (
+                                        <tr
+                                            key={chatter.userUuid || idx}
+                                            className="hover:bg-zinc-800/40 transition group"
+                                        >
+                                            {/* Rank */}
+                                            <td className="py-2 px-2 text-center">{rankBadge}</td>
 
-                                        return (
-                                            <tr
-                                                key={chatter.userUuid || idx}
-                                                className="hover:bg-zinc-800/40 transition group"
-                                            >
-                                                {/* Rank */}
-                                                <td className="py-2.5 px-3 text-center">{rankBadge}</td>
-
-                                                {/* User Info */}
-                                                <td className="py-2.5 px-3">
-                                                    <div className="flex items-center gap-2.5 min-w-0">
-                                                        {renderAvatar(chatter, 'w-7 h-7 text-[11px]')}
-                                                        <div className="min-w-0">
-                                                            <p className="text-xs sm:text-sm font-semibold text-zinc-100 truncate max-w-40 sm:max-w-xs" title={chatter.userName}>
-                                                                {chatter.userName}
-                                                            </p>
-                                                            <p className="text-[11px] text-zinc-500 truncate font-mono">
-                                                                {chatter.userUuid ? `${chatter.userUuid.slice(0, 8)}...` : ''}
-                                                            </p>
-                                                        </div>
+                                            {/* User Info */}
+                                            <td className="py-2 px-1.75">
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                    {renderAvatar(chatter, 'w-7 h-7 text-[11px]')}
+                                                    <div className="min-w-0">
+                                                        <p className="text-xs sm:text-sm font-semibold text-zinc-100 truncate max-w-40 sm:max-w-xs" title={chatter.userName}>
+                                                            {chatter.userName}
+                                                        </p>
+                                                        <p className="text-[11px] text-zinc-500 truncate font-mono">
+                                                            {chatter.userUuid ? `${chatter.userUuid.slice(0, 8)}...` : ''}
+                                                        </p>
                                                     </div>
-                                                </td>
+                                                </div>
+                                            </td>
 
-                                                {/* Relative Progress Bar */}
-                                                <td className="py-2.5 px-3 hidden sm:table-cell">
-                                                    <div className="w-full bg-zinc-800/80 h-2 rounded-full overflow-hidden">
-                                                        <div
-                                                            style={{ width: `${relativePct}%` }}
-                                                            className={`h-full rounded-full transition-all duration-500 ${
-                                                                originalRank === 1 ? 'bg-amber-400' :
+                                            {/* Relative Progress Bar */}
+                                            <td className="py-2 px-2 ">
+                                                <div className="w-full bg-zinc-800/80 h-2 rounded-full overflow-hidden">
+                                                    <div
+                                                        style={{ width: `${relativePct}%` }}
+                                                        className={`h-full rounded-full transition-all duration-500 ${originalRank === 1 ? 'bg-amber-400' :
                                                                 originalRank === 2 ? 'bg-zinc-300' :
-                                                                originalRank === 3 ? 'bg-amber-600' :
-                                                                'bg-indigo-400'
+                                                                    originalRank === 3 ? 'bg-amber-600' :
+                                                                        'bg-indigo-400'
                                                             }`}
-                                                        />
-                                                    </div>
-                                                </td>
+                                                    />
+                                                </div>
+                                            </td>
 
-                                                {/* Count */}
-                                                <td className="py-2.5 px-3 text-right">
-                                                    <span className="font-bold text-zinc-100 text-xs sm:text-sm">
-                                                        {Number(chatter.count).toLocaleString()}
-                                                    </span>
-                                                    <span className="text-zinc-500 text-[11px] font-normal ml-1">
-                                                        pesan
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                                            {/* Count */}
+                                            <td className="py-2 px-2 text-right">
+                                                <span className="font-bold text-zinc-100 text-xs sm:text-sm">
+                                                    {Number(chatter.count).toLocaleString()}
+                                                </span>
+                                                <span className="text-zinc-500 text-[11px] font-normal ml-1">
+                                                    pesan
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
+                            )}
+                        </tbody>
+                    </table>
                 </div>
+                <div
+                        ref={vThumbRef}
+                        className="absolute right-0 top-0 w-1 bg-zinc-700 rounded-full pointer-events-none opacity-0 transition-opacity duration-500 ease-out z-20"
+                        style={{ height: '0px' }}
+                    />
+
+                    <div
+                        ref={hThumbRef}
+                        className="absolute bottom-0 left-0 h-1 bg-zinc-700 rounded-full pointer-events-none opacity-0 transition-opacity duration-500 ease-out z-20"
+                        style={{ width: '0px' }}
+                    />
             </div>
         </div>
     );

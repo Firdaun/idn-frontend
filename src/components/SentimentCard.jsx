@@ -6,13 +6,13 @@ export default function SentimentCard({ sentiment, isLoading = false }) {
                     <div className="h-5 w-40 bg-zinc-800 rounded"></div>
                     <div className="h-5 w-24 bg-zinc-800 rounded-full"></div>
                 </div>
-                <div className="flex justify-center items-center py-2">
-                    <div className="w-32 h-32 rounded-full border-8 border-zinc-800"></div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-1 gap-2.5 pt-1">
-                    <div className="h-14 bg-zinc-800/50 rounded-xl"></div>
-                    <div className="h-14 bg-zinc-800/50 rounded-xl"></div>
-                    <div className="h-14 bg-zinc-800/50 rounded-xl"></div>
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-1">
+                    <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-zinc-800 shrink-0"></div>
+                    <div className="flex-1 w-full flex flex-col gap-2">
+                        <div className="h-8 bg-zinc-800/50 rounded-lg"></div>
+                        <div className="h-8 bg-zinc-800/50 rounded-lg"></div>
+                        <div className="h-8 bg-zinc-800/50 rounded-lg"></div>
+                    </div>
                 </div>
             </div>
         );
@@ -45,27 +45,28 @@ export default function SentimentCard({ sentiment, isLoading = false }) {
 
     if (negativePct >= 15 && negative >= 10) {
         moodBadge = {
-            label: 'Terdeteksi Kendala Teknis / Komplain',
+            label: 'Kendala / Komplain',
             color: 'bg-rose-500/15 text-rose-300 border-rose-500/30',
             icon: '🔴'
         };
     } else if (positivePct >= 50) {
         moodBadge = {
-            label: 'Audiens Sangat Positif & Antusias',
+            label: 'Sangat Positif & Antusias',
             color: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
             icon: '🟢'
         };
     } else if (positivePct > neutralPct && positivePct > negativePct) {
         moodBadge = {
-            label: 'Didominasi Respon Ceria',
+            label: 'Didominasi Ceria',
             color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
             icon: '✨'
         };
     }
 
-    // Kalkulasi Donut Chart Lingkaran Persentase
+    // Kalkulasi Full Pie Chart (Lingkaran Penuh Tanpa Lubang Donut)
     const totalMessages = positive + neutral + negative;
-    const radius = 46;
+    const radius = 27.5;
+    const strokeWidth = 55;
     const circumference = 2 * Math.PI * radius;
 
     const posLen = totalMessages > 0 ? (positive / totalMessages) * circumference : 0;
@@ -77,162 +78,124 @@ export default function SentimentCard({ sentiment, isLoading = false }) {
     const negOffset = -(posLen + neuLen);
 
     return (
-        <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-xl p-4 lg:p-5 space-y-4">
+        <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-xl p-4 lg:p-5 space-y-3.5 lg:space-y-5">
             {/* Header */}
-            <div className="flex items-center justify-between flex-wrap gap-2 border-b border-zinc-800/80 pb-3">
-                <div className="text-sm sm:text-base font-semibold text-zinc-100 flex items-center gap-2">
-                    <span>💬 Analisis Sentimen Obrolan</span>
+            <div className="flex items-center justify-between flex-wrap gap-2 border-b border-zinc-800/80 pb-2.5 lg:pb-5">
+                <div className="flex items-center gap-2">
+                    <span className="text-sm sm:text-base font-semibold text-zinc-100 flex items-center gap-1.5">
+                        <span>💬 Sentimen Obrolan</span>
+                    </span>
+                    <span className="text-xs text-zinc-400">
+                        ({totalMessages.toLocaleString()} pesan)
+                    </span>
                 </div>
-                <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border flex items-center gap-1.5 ${moodBadge.color}`}>
+                <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium border flex items-center gap-1.5 ${moodBadge.color}`}>
                     <span>{moodBadge.icon}</span>
                     <span>{moodBadge.label}</span>
                 </span>
             </div>
 
-            {/* Lingkaran Persentase (Donut Chart) & Legenda */}
-            <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-around gap-4 py-1">
-                {/* Donut Ring Chart */}
-                <div className="relative w-32 h-32 sm:w-36 sm:h-36 flex items-center justify-center shrink-0">
-                    <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
+            {/* Konten Utama: Lingkaran Penuh (Full Pie Chart) & Informasi Side-by-Side */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-5 lg:gap-3 pt-1 max-w-125 mx-auto">
+                {/* Full Pie Chart Lingkaran Penuh */}
+                <div className="relative w-40 h-40 shrink-0 flex items-center justify-center">
+                    <svg className="w-full h-full -rotate-90 drop-shadow-md" viewBox="0 0 120 120">
                         {/* Background track circle */}
                         <circle
                             cx="60"
                             cy="60"
                             r={radius}
-                            className="stroke-zinc-800/80"
-                            strokeWidth="11"
+                            className="stroke-zinc-800/90"
+                            strokeWidth={strokeWidth}
                             fill="none"
                         />
-                        {/* Arc Positif (Hijau Emerald) */}
+                        {/* Slice Positif (Hijau Emerald) */}
                         {posLen > 0 && (
                             <circle
                                 cx="60"
                                 cy="60"
                                 r={radius}
                                 stroke="#10b981"
-                                strokeWidth="11"
+                                strokeWidth={strokeWidth}
                                 strokeDasharray={`${posLen} ${circumference}`}
                                 strokeDashoffset={posOffset}
                                 fill="none"
-                                className="transition-all duration-700 hover:brightness-125 cursor-pointer"
+                                className="transition-all duration-700 hover:brightness-110 cursor-pointer"
                             >
                                 <title>{`Positif: ${positive.toLocaleString()} (${positivePct}%)`}</title>
                             </circle>
                         )}
-                        {/* Arc Netral (Biru Sky Menonjol) */}
+                        {/* Slice Netral (Biru Sky) */}
                         {neuLen > 0 && (
                             <circle
                                 cx="60"
                                 cy="60"
                                 r={radius}
                                 stroke="#38bdf8"
-                                strokeWidth="11"
+                                strokeWidth={strokeWidth}
                                 strokeDasharray={`${neuLen} ${circumference}`}
                                 strokeDashoffset={neuOffset}
                                 fill="none"
-                                className="transition-all duration-700 hover:brightness-125 cursor-pointer"
+                                className="transition-all duration-700 hover:brightness-110 cursor-pointer"
                             >
                                 <title>{`Netral: ${neutral.toLocaleString()} (${neutralPct}%)`}</title>
                             </circle>
                         )}
-                        {/* Arc Negatif (Merah Rose) */}
+                        {/* Slice Negatif (Merah Rose) */}
                         {negLen > 0 && (
                             <circle
                                 cx="60"
                                 cy="60"
                                 r={radius}
                                 stroke="#f43f5e"
-                                strokeWidth="11"
+                                strokeWidth={strokeWidth}
                                 strokeDasharray={`${negLen} ${circumference}`}
                                 strokeDashoffset={negOffset}
                                 fill="none"
-                                className="transition-all duration-700 hover:brightness-125 cursor-pointer"
+                                className="transition-all duration-700 hover:brightness-110 cursor-pointer"
                             >
-                                <title>{`Keluhan / Negatif: ${negative.toLocaleString()} (${negativePct}%)`}</title>
+                                <title>{`Negatif: ${negative.toLocaleString()} (${negativePct}%)`}</title>
                             </circle>
                         )}
                     </svg>
-
-                    {/* Teks Tengah Lingkaran */}
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center select-none pointer-events-none">
-                        <span className="text-base sm:text-lg font-bold text-zinc-100">
-                            {totalMessages > 0 ? totalMessages.toLocaleString() : '0'}
-                        </span>
-                        <span className="text-[10px] text-zinc-400 font-medium">
-                            Total Pesan
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            {/* Metric Detail Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-1 gap-2.5 pt-1">
-                {/* Positif */}
-                <div className="bg-emerald-950/20 border border-emerald-500/20 rounded-xl p-3 hover:border-emerald-500/40 transition flex items-center justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></span>
-                            <span className="text-xs sm:text-sm font-semibold text-emerald-300 truncate">
-                                Pujian & Tawa
-                            </span>
-                        </div>
-                        <p className="text-[11px] text-zinc-400 mt-0.5 pl-4.5 truncate">
-                            Pujian, tawa, antusiasme
-                        </p>
-                    </div>
-                    <div className="text-right shrink-0">
-                        <span className="text-base sm:text-lg font-bold text-zinc-100 block leading-tight">
-                            {positive.toLocaleString()}
-                        </span>
-                        <span className="text-[11px] font-semibold text-emerald-400">
-                            {positivePct}%
-                        </span>
-                    </div>
                 </div>
 
-                {/* Netral */}
-                <div className="bg-sky-950/20 border border-sky-500/20 rounded-xl p-3 hover:border-sky-500/40 transition flex items-center justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-full bg-sky-400 shrink-0"></span>
-                            <span className="text-xs sm:text-sm font-semibold text-sky-300 truncate">
-                                Obrolan Umum
-                            </span>
+                {/* Informasi Tambahan Kompak Bersebelahan */}
+                <div className="flex-1 w-full flex flex-col gap-2 min-w-0">
+                    {/* Positif */}
+                    <div className="bg-emerald-950/20 border border-emerald-500/20 rounded-lg px-2.5 py-1.5 flex items-center justify-between gap-2 hover:border-emerald-500/40 transition">
+                        <div className="flex items-center gap-2 min-w-0">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                            <span className="text-xs font-medium text-emerald-300 truncate">Positif</span>
                         </div>
-                        <p className="text-[11px] text-zinc-400 mt-0.5 pl-4.5 truncate">
-                            Sapaan & obrolan santai penonton
-                        </p>
+                        <div className="flex items-baseline gap-1.5 shrink-0">
+                            <span className="text-xs sm:text-sm font-bold text-zinc-100">{positive.toLocaleString()}</span>
+                            <span className="text-[11px] font-semibold text-emerald-400">({positivePct}%)</span>
+                        </div>
                     </div>
-                    <div className="text-right shrink-0">
-                        <span className="text-base sm:text-lg font-bold text-zinc-100 block leading-tight">
-                            {neutral.toLocaleString()}
-                        </span>
-                        <span className="text-[11px] font-semibold text-sky-400">
-                            {neutralPct}%
-                        </span>
-                    </div>
-                </div>
 
-                {/* Negatif */}
-                <div className="bg-rose-950/20 border border-rose-500/20 rounded-xl p-3 hover:border-rose-500/40 transition flex items-center justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0"></span>
-                            <span className="text-xs sm:text-sm font-semibold text-rose-300 truncate">
-                                Komentar Negatif
-                            </span>
+                    {/* Netral */}
+                    <div className="bg-sky-950/20 border border-sky-500/20 rounded-lg px-2.5 py-1.5 flex items-center justify-between gap-2 hover:border-sky-500/40 transition">
+                        <div className="flex items-center gap-2 min-w-0">
+                            <span className="w-2 h-2 rounded-full bg-sky-400 shrink-0"></span>
+                            <span className="text-xs font-medium text-sky-300 truncate">Netral</span>
                         </div>
-                        <p className="text-[11px] text-zinc-400 mt-0.5 pl-4.5 truncate">
-                            Kendala siaran, komplain, kritik
-                        </p>
+                        <div className="flex items-baseline gap-1.5 shrink-0">
+                            <span className="text-xs sm:text-sm font-bold text-zinc-100">{neutral.toLocaleString()}</span>
+                            <span className="text-[11px] font-semibold text-sky-400">({neutralPct}%)</span>
+                        </div>
                     </div>
-                    <div className="text-right shrink-0">
-                        <span className="text-base sm:text-lg font-bold text-zinc-100 block leading-tight">
-                            {negative.toLocaleString()}
-                        </span>
-                        <span className="text-[11px] font-semibold text-rose-400">
-                            {negativePct}%
-                        </span>
+
+                    {/* Negatif */}
+                    <div className="bg-rose-950/20 border border-rose-500/20 rounded-lg px-2.5 py-1.5 flex items-center justify-between gap-2 hover:border-rose-500/40 transition">
+                        <div className="flex items-center gap-2 min-w-0">
+                            <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0"></span>
+                            <span className="text-xs font-medium text-rose-300 truncate">Negatif</span>
+                        </div>
+                        <div className="flex items-baseline gap-1.5 shrink-0">
+                            <span className="text-xs sm:text-sm font-bold text-zinc-100">{negative.toLocaleString()}</span>
+                            <span className="text-[11px] font-semibold text-rose-400">({negativePct}%)</span>
+                        </div>
                     </div>
                 </div>
             </div>

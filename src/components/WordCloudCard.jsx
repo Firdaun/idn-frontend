@@ -115,8 +115,8 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
             const isTablet = screenW >= 640 && screenW < 1024;
 
             const textHeight = isMobile ? 14 : isTablet ? 16 : 18;
-            const weightSizeMin = isMobile ? 12 : isTablet ? 15 : 16;
-            const weightSizeMax = isMobile ? 22 : isTablet ? 28 : 32;
+            const weightSizeMin = isMobile ? 12 : isTablet ? 15 : 15;
+            const weightSizeMax = isMobile ? 22 : isTablet ? 28 : 28;
 
             try {
                 TagCanvas.Start('wordcloud-canvas', 'wordcloud-taglist', {
@@ -142,7 +142,7 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                     depth: 0.7,
                     minBrightness: 0.35,
                     maxBrightness: 1.0,
-                    zoom: 1,
+                    zoom: screenW >= 1280 ? 1.1 : 1,
 
                     dragControl: true,
                     wheelZoom: false,
@@ -286,8 +286,8 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
     }
 
     return (
-        <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-xl p-4 lg:p-5 flex flex-col h-full space-y-4">
-            <div className="flex flex-col md:flex-row lg:flex-col xl:flex-row md:items-center lg:items-start justify-between gap-3 border-b border-zinc-800/80 pb-3.5">
+        <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-xl p-4 lg:p-5 flex flex-col h-full space-y-3">
+            <div className="flex flex-col md:flex-row lg:flex-col xl:flex-row md:items-center lg:items-start justify-between gap-3 border-b border-zinc-800/80 pb-3">
                 <div>
                     <div className="flex items-center gap-2">
                         <h3 className="text-sm sm:text-base font-semibold text-zinc-100 flex items-center gap-2">
@@ -411,7 +411,7 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
             {viewMode === 'cloud' ? (
                 <div
                     ref={containerRef}
-                    className="relative w-full flex-1 min-h-100 rounded-xl bg-linear-to-b from-zinc-900/50 via-zinc-950/80 to-zinc-950 border border-zinc-800/60 overflow-hidden flex flex-col select-none"
+                    className="relative w-full flex-1 min-h-105 rounded-xl bg-linear-to-b from-zinc-900/50 via-zinc-950/80 to-zinc-950 border border-zinc-800/60 overflow-hidden flex flex-col select-none"
                 >
                     {filteredWords.length === 0 ? (
                         <div className="py-16 text-center text-zinc-500 text-xs m-auto">
@@ -502,7 +502,7 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                     )}
                 </div>
             ) : (
-                <div className="relative w-full flex-1 min-h-80 rounded-xl border border-zinc-800/60 bg-zinc-950/30 overflow-hidden">
+                <div className="relative w-full flex-1 min-h-105 rounded-xl border border-zinc-800/60 bg-zinc-950/30 overflow-hidden">
                     <div
                         ref={tableContainerRef}
                         onScroll={handleTableScroll}
@@ -510,12 +510,12 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                     >
                         <table className="w-full min-w-120 table-fixed text-left text-xs">
                             <colgroup>
-                                <col className="w-16" />
-                                <col className="w-32" />
-                                <col className="w-44" />
-                                <col className="w-24" />
+                                <col className="w-20" />
+                                <col className="w-30" />
+                                <col className="w-45" />
+                                <col className="w-30" />
                             </colgroup>
-                            <thead className="sticky top-0 z-10 bg-zinc-900 text-zinc-400 border-b border-zinc-800 shadow-sm">
+                            <thead className="sticky top-0 z-10 bg-zinc-900 text-zinc-400 border-b border-zinc-800">
                                 <tr>
                                     <th className="py-2.5 px-3 text-center font-medium">Peringkat</th>
                                     <th className="py-2.5 px-3 font-medium">Kata Kunci</th>
