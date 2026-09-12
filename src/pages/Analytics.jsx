@@ -26,6 +26,7 @@ export default function Analytics() {
     const statsCardRef = useRef(null);
     const detailHeaderRef = useRef(null);
     const scrollTimeoutRef = useRef(null);
+    const highlightTimeoutRef = useRef(null);
     const [isSnapshotHighlight, setIsSnapshotHighlight] = useState(false);
 
     useEffect(() => {
@@ -251,10 +252,16 @@ export default function Analytics() {
                 clickedNeg: clickedNeg ?? null
             });
 
-            setIsSnapshotHighlight(true);
-            setTimeout(() => {
-                setIsSnapshotHighlight(false);
-            }, 1000);
+            if (highlightTimeoutRef.current) {
+                clearTimeout(highlightTimeoutRef.current);
+            }
+            setIsSnapshotHighlight(false);
+            requestAnimationFrame(() => {
+                setIsSnapshotHighlight(true);
+                highlightTimeoutRef.current = setTimeout(() => {
+                    setIsSnapshotHighlight(false);
+                }, 800);
+            });
         };
 
         if (!selectedStreamer) {
@@ -643,22 +650,21 @@ export default function Analytics() {
                                 {/* Snapshot Inspector (Titik Cuplikan Terpilih) */}
                                 {selectedStreamer.clickedTime ? (
                                     <div
-                                        key={`snapshot-${selectedStreamer.clickedTime}`}
-                                        className={`border rounded-lg p-3 space-y-2 transition-all duration-300 ${isSnapshotHighlight
-                                            ? 'bg-indigo-950/40 border-indigo-400/80 ring-1 ring-indigo-400/50 shadow-[0_0_22px_rgba(99,102,241,0.3)] animate-snapshot-pop'
-                                            : 'bg-indigo-950/20 border-indigo-500/30'
+                                        className={`border rounded-lg p-3 space-y-2 transition-all duration-500 ease-out ${isSnapshotHighlight
+                                            ? 'bg-indigo-950/40 border-indigo-400/80 shadow-[0_0_24px_rgba(99,102,241,0.25)] animate-snapshot-pop'
+                                            : 'bg-indigo-950/20 border-indigo-500/30 shadow-none'
                                             }`}
                                     >
                                         <div className="flex items-center justify-between text-xs border-b border-indigo-500/20 pb-1.5">
-                                            <span className={`font-semibold flex items-center gap-1.5 transition-colors ${isSnapshotHighlight ? 'text-indigo-200' : 'text-indigo-300'
+                                            <span className={`font-semibold flex items-center gap-1.5 transition-colors duration-300 ${isSnapshotHighlight ? 'text-indigo-200' : 'text-indigo-300'
                                                 }`}>
                                                 <span>📍</span>
                                                 <span>Titik Cuplikan Terpilih</span>
                                             </span>
                                             <div className="flex items-center">
-                                                <span className={`text-[11px] font-mono px-1.5 py-0.5 rounded transition-all ${isSnapshotHighlight
-                                                    ? 'bg-indigo-500/30 text-indigo-100 font-semibold animate-flash-badge'
-                                                    : 'text-zinc-400'
+                                                <span className={`text-[11px] font-mono px-1.5 py-0.5 rounded font-semibold transition-all duration-300 ${isSnapshotHighlight
+                                                    ? 'bg-indigo-500/30 text-indigo-100 animate-flash-badge'
+                                                    : 'text-zinc-400 bg-transparent'
                                                     }`}>
                                                     {formatLiveTime(selectedStreamer.clickedTime)}
                                                 </span>
@@ -691,7 +697,7 @@ export default function Analytics() {
                                             {selectedStreamer.clickedViewers !== null && (
                                                 <div>
                                                     <span className="text-[11px] text-zinc-400 block">Penonton</span>
-                                                    <span className={`font-bold text-zinc-100 block ${isSnapshotHighlight ? 'animate-number-flip text-white font-extrabold' : ''}`}>
+                                                    <span className={`font-bold block transition-colors duration-300 ${isSnapshotHighlight ? 'animate-number-flip text-white' : 'text-zinc-100'}`}>
                                                         👥 {Number(selectedStreamer.clickedViewers).toLocaleString()}
                                                     </span>
                                                 </div>
@@ -699,7 +705,7 @@ export default function Analytics() {
                                             {selectedStreamer.clickedChat !== null && (
                                                 <div>
                                                     <span className="text-[11px] text-zinc-400 block">Pesan / 30 dtk</span>
-                                                    <span className={`font-bold text-zinc-100 block ${isSnapshotHighlight ? 'animate-number-flip text-white font-extrabold' : ''}`}>
+                                                    <span className={`font-bold block transition-colors duration-300 ${isSnapshotHighlight ? 'animate-number-flip text-white' : 'text-zinc-100'}`}>
                                                         💬 {Number(selectedStreamer.clickedChat).toLocaleString()}
                                                     </span>
                                                 </div>
