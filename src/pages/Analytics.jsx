@@ -23,6 +23,9 @@ export default function Analytics() {
         return saved ? JSON.parse(saved) : { start: getTodayStartIso(), end: null };
     });
     const [metricType, setMetricType] = useState(() => sessionStorage.getItem('analytics_metricType') || 'viewers');
+    const detailHeaderRef = useRef(null);
+    const scrollTimeoutRef = useRef(null);
+    const [isSnapshotHighlight, setIsSnapshotHighlight] = useState(false);
 
     useEffect(() => {
         sessionStorage.setItem('analytics_metricType', metricType);
@@ -229,17 +232,71 @@ export default function Analytics() {
         const clickedNeu = dataPoint[`_${streamer.name}_neu`];
         const clickedNeg = dataPoint[`_${streamer.name}_neg`];
         const matchedSession = streamer.sessions.find(s => s.slug === clickedSlug);
-        setSelectedStreamer({
-            ...matchedSession,
-            name: streamer.name,
-            isLegendClick: false,
-            clickedTime: clickedTime ?? null,
-            clickedViewers: clickedViewers ?? null,
-            clickedChat: clickedChat ?? null,
-            clickedPos: clickedPos ?? null,
-            clickedNeu: clickedNeu ?? null,
-            clickedNeg: clickedNeg ?? null
-        });
+
+        if (scrollTimeoutRef.current) {
+            clearTimeout(scrollTimeoutRef.current);
+        }
+
+        const applyNewSnapshotData = () => {
+            setSelectedStreamer({
+                ...matchedSession,
+                name: streamer.name,
+                isLegendClick: false,
+                clickedTime: clickedTime ?? null,
+                clickedViewers: clickedViewers ?? null,
+                clickedChat: clickedChat ?? null,
+                clickedPos: clickedPos ?? null,
+                clickedNeu: clickedNeu ?? null,
+                clickedNeg: clickedNeg ?? null
+            });
+
+            setIsSnapshotHighlight(true);
+            setTimeout(() => {
+                setIsSnapshotHighlight(false);
+            }, 1000);
+        };
+
+        if (!selectedStreamer) {
+            applyNewSnapshotData();
+        } else {
+            if (selectedStreamer.slug !== clickedSlug || selectedStreamer.name !== streamer.name) {
+                setSelectedStreamer(prev => ({
+                    ...matchedSession,
+                    name: streamer.name,
+                    isLegendClick: false,
+                    clickedTime: prev.clickedTime,
+                    clickedViewers: prev.clickedViewers,
+                    clickedChat: prev.clickedChat,
+                    clickedPos: prev.clickedPos,
+                    clickedNeu: prev.clickedNeu,
+                    clickedNeg: prev.clickedNeg
+                }));
+            }
+
+            let isDone = false;
+            const onFinishScroll = () => {
+                if (isDone) return;
+                isDone = true;
+                window.removeEventListener('scrollend', onFinishScroll);
+                scrollTimeoutRef.current = setTimeout(() => {
+                    applyNewSnapshotData();
+                }, 500);
+            };
+
+            if ('onscrollend' in window) {
+                window.addEventListener('scrollend', onFinishScroll, { once: true });
+            }
+
+            const rect = detailHeaderRef.current?.getBoundingClientRect();
+            const isAlreadyAtTop = rect ? Math.abs(rect.top - 80) < 30 : false;
+            const fallbackDuration = isAlreadyAtTop ? 60 : 520;
+
+            scrollTimeoutRef.current = setTimeout(onFinishScroll, fallbackDuration);
+
+            setTimeout(() => {
+                detailHeaderRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 30);
+        }
     };
 
     const filteredChartData = useMemo(() => {
@@ -422,7 +479,10 @@ export default function Analytics() {
 
             {/* Selected Detail Header */}
             {selectedStreamer && (
-                <div className="bg-zinc-900/50 border border-zinc-800/50 p-3 lg:p-5 rounded-lg lg:rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-1">
+                <div
+                    ref={detailHeaderRef}
+                    className="scroll-mt-24 bg-zinc-900/50 border border-zinc-800/50 p-3 lg:p-5 rounded-lg lg:rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-1"
+                >
                     {/* Sisi Kiri: Tombol Navigasi Sesi & Info Streamer */}
                     <div className="flex items-center justify-between gap-0 min-[375px]:gap-2 xl:gap-5 w-full md:w-auto">
                         {streamerSessions.length > 1 && (
@@ -575,14 +635,27 @@ export default function Analytics() {
 
                                 {/* Snapshot Inspector (Titik Cuplikan Terpilih) */}
                                 {selectedStreamer.clickedTime ? (
-                                    <div className="bg-indigo-950/20 border border-indigo-500/30 rounded-lg p-3 space-y-2 animate-fadeIn">
+                                    <div
+                                        key={`snapshot-${selectedStreamer.clickedTime}`}
+                                        className={`border rounded-lg p-3 space-y-2 transition-all duration-300 ${
+                                            isSnapshotHighlight
+                                                ? 'bg-indigo-950/40 border-indigo-400/80 ring-1 ring-indigo-400/50 shadow-[0_0_22px_rgba(99,102,241,0.3)] animate-snapshot-pop'
+                                                : 'bg-indigo-950/20 border-indigo-500/30'
+                                        }`}
+                                    >
                                         <div className="flex items-center justify-between text-xs border-b border-indigo-500/20 pb-1.5">
-                                            <span className="font-semibold text-indigo-300 flex items-center gap-1.5">
+                                            <span className={`font-semibold flex items-center gap-1.5 transition-colors ${
+                                                isSnapshotHighlight ? 'text-indigo-200' : 'text-indigo-300'
+                                            }`}>
                                                 <span>📍</span>
                                                 <span>Titik Cuplikan Terpilih</span>
                                             </span>
                                             <div className="flex items-center gap-1.5">
-                                                <span className="text-[11px] text-zinc-400 font-mono">
+                                                <span className={`text-[11px] font-mono px-1.5 py-0.5 rounded transition-all ${
+                                                    isSnapshotHighlight
+                                                        ? 'bg-indigo-500/30 text-indigo-100 font-semibold animate-flash-badge'
+                                                        : 'text-zinc-400'
+                                                }`}>
                                                     {formatLiveTime(selectedStreamer.clickedTime)}
                                                 </span>
                                                 <button
@@ -607,14 +680,14 @@ export default function Analytics() {
                                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 text-xs">
                                             <div>
                                                 <span className="text-[11px] text-zinc-400 block">Durasi Saat Itu</span>
-                                                <span className="font-semibold text-zinc-200">
+                                                <span className={`font-semibold text-zinc-200 block ${isSnapshotHighlight ? 'animate-number-flip' : ''}`}>
                                                     {calculateDurationAtTime(selectedStreamer.liveAt, selectedStreamer.clickedTime) || '-'}
                                                 </span>
                                             </div>
                                             {selectedStreamer.clickedViewers !== null && (
                                                 <div>
                                                     <span className="text-[11px] text-zinc-400 block">Penonton</span>
-                                                    <span className="font-bold text-zinc-100">
+                                                    <span className={`font-bold text-zinc-100 block ${isSnapshotHighlight ? 'animate-number-flip text-white font-extrabold' : ''}`}>
                                                         👥 {Number(selectedStreamer.clickedViewers).toLocaleString()}
                                                     </span>
                                                 </div>
@@ -622,7 +695,7 @@ export default function Analytics() {
                                             {selectedStreamer.clickedChat !== null && (
                                                 <div>
                                                     <span className="text-[11px] text-zinc-400 block">Pesan / 30 dtk</span>
-                                                    <span className="font-bold text-zinc-100">
+                                                    <span className={`font-bold text-zinc-100 block ${isSnapshotHighlight ? 'animate-number-flip text-white font-extrabold' : ''}`}>
                                                         💬 {Number(selectedStreamer.clickedChat).toLocaleString()}
                                                     </span>
                                                 </div>
@@ -630,7 +703,7 @@ export default function Analytics() {
                                             {selectedStreamer.clickedPos !== null && (
                                                 <div>
                                                     <span className="text-[11px] text-zinc-400 block">Sentimen</span>
-                                                    <span className="font-semibold text-[11px] text-zinc-200 flex items-center gap-1">
+                                                    <span className={`font-semibold text-[11px] text-zinc-200 flex items-center gap-1 ${isSnapshotHighlight ? 'animate-number-flip' : ''}`}>
                                                         <span className="text-emerald-400">🟢{selectedStreamer.clickedPos}</span>
                                                         <span className="text-sky-400">🔵{selectedStreamer.clickedNeu}</span>
                                                         <span className="text-rose-400">🔴{selectedStreamer.clickedNeg}</span>
@@ -640,7 +713,7 @@ export default function Analytics() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="bg-zinc-950/30 border border-dashed border-zinc-800/80 rounded-lg p-3 flex flex-col justify-center text-center h-[87.6px] space-y-1">
+                                    <div className="bg-zinc-950/30 border border-dashed border-zinc-800/80 rounded-lg p-3 flex flex-col justify-center text-center h-[90.3px] space-y-1">
                                         <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-zinc-400">
                                             <span>📍</span>
                                             <span>Titik Cuplikan Terpilih</span>

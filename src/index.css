@@ -69,3 +69,58 @@
   -ms-overflow-style: none; /* IE dan Edge */
   scrollbar-width: none;    /* Firefox */
 }
+
+/* Animasi pop & glow untuk cuplikan snapshot titik terpilih */
+@keyframes snapshotPop {
+  0% {
+    transform: scale(0.985);
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7);
+    border-color: rgba(129, 140, 248, 0.9);
+  }
+  35% {
+    transform: scale(1.02);
+    box-shadow: 0 0 25px 4px rgba(99, 102, 241, 0.45);
+    border-color: rgba(165, 180, 252, 1);
+    background-color: rgba(49, 46, 129, 0.35);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+  }
+}
+
+.animate-snapshot-pop {
+  animation: snapshotPop 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes numberFlip {
+  0% {
+    transform: translateY(8px);
+    opacity: 0;
+    filter: blur(3px);
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+.animate-number-flip {
+  animation: numberFlip 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes flashBadge {
+  0% {
+    background-color: rgba(99, 102, 241, 0.8);
+    color: #ffffff;
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-flash-badge {
+  animation: flashBadge 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
