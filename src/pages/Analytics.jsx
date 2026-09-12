@@ -499,7 +499,7 @@ export default function Analytics() {
                     className="scroll-mt-24 bg-zinc-900/50 border border-zinc-800/50 p-3 lg:p-5 rounded-lg lg:rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-1"
                 >
                     {/* Sisi Kiri: Tombol Navigasi Sesi & Info Streamer */}
-                    <div className="flex items-center justify-between gap-0 min-[375px]:gap-2 xl:gap-5 w-full md:w-auto">
+                    <div className="flex items-center justify-between gap-1 min-[375px]:gap-2 xl:gap-5 w-full md:w-auto">
                         {streamerSessions.length > 1 && (
                             <button
                                 onClick={handlePrevSession}
@@ -517,7 +517,7 @@ export default function Analytics() {
                                 <h3 className="font-semibold text-base sm:text-lg text-zinc-100 truncate">
                                     {selectedStreamer.fullName}
                                 </h3>
-                                <div className='flex pl-0.5 min-[360px]:pl-1 space-x-0.5 min-[360px]:space-x-0 min-[360px]:gap-1'>
+                                <div className='flex space-x-0.5 min-[360px]:space-x-0 min-[360px]:gap-1'>
                                     <span className={`px-2 py-0.5 rounded-sm lg:rounded-md text-[11px] font-medium border ${selectedStreamer.endAt
                                         ? "bg-zinc-800 text-zinc-400 border-zinc-700"
                                         : "bg-red-500/10 text-red-400 border-red-500/20"
@@ -549,7 +549,7 @@ export default function Analytics() {
                     </div>
 
                     {/* Sisi Kanan: Jadwal Waktu & Tombol Reset */}
-                    <div className="flex items-center justify-between gap-0 md:gap-2 xl:gap-5 w-full md:w-auto flex-wrap border-t md:border-t-0 border-zinc-800/80 pt-3 md:pt-0">
+                    <div className="flex items-center justify-between gap-0 md:gap-2 xl:gap-5 w-full md:w-auto flex-wrap border-t md:border-t-0 border-zinc-800/80 pt-1 md:pt-0">
                         <div className={`min-w-50 w-53 min-[360px]:w-57 min-[375px]:w-60 min-[412px]:w-70 min-[440px]:w-76 ${streamerSessions.length > 1 ? 'md:w-62' : 'md:w-83'
                             } lg:w-85 overflow-x-auto pb-1`}>
                             <div className="flex items-center gap-3 text-xs sm:text-sm whitespace-nowrap">
@@ -714,9 +714,9 @@ export default function Analytics() {
                                                 <div>
                                                     <span className="text-[11px] text-zinc-400 block">Sentimen</span>
                                                     <span className={`font-semibold text-[11px] text-zinc-200 flex items-center gap-1 ${isSnapshotHighlight ? 'animate-number-flip' : ''}`}>
-                                                        <span className="text-emerald-400">🟢{selectedStreamer.clickedPos}</span>
-                                                        <span className="text-sky-400">🔵{selectedStreamer.clickedNeu}</span>
-                                                        <span className="text-rose-400">🔴{selectedStreamer.clickedNeg}</span>
+                                                        <span className="text-emerald-400">🟢 {selectedStreamer.clickedPos}</span>
+                                                        <span className="text-sky-400">🔵 {selectedStreamer.clickedNeu}</span>
+                                                        <span className="text-rose-400">🔴 {selectedStreamer.clickedNeg}</span>
                                                     </span>
                                                 </div>
                                             )}
