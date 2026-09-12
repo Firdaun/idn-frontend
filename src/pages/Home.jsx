@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import { Link, useNavigate } from "react-router";
-import { getLiveStreams, getMultiLiveData } from "../../utils/backend-api";
+import { getLiveStreams, getMultiLiveData, getAnalytics } from "../../utils/backend-api";
 import { useQuery } from "@tanstack/react-query";
-export const formatDurationIndo = (durationStr) => {
+const formatDurationIndo = (durationStr) => {
     if (!durationStr) return "-";
     return durationStr
         .replace(/Hours?/gi, "Jam")
@@ -46,33 +46,12 @@ export default function Home() {
 
     const streamersList = useMemo(() => {
         const raw = analyticsData?.streamers || [];
-        return raw.map(s => {
-            const sessions = s.sessions || [];
-            const bestSession = sessions.length > 0
-                ? [...sessions].sort((a, b) => (Number(b.peakViewers) || 0) - (Number(a.peakViewers) || 0))[0]
-                : null;
-            const maxSessionPeakViewers = bestSession ? (Number(bestSession.peakViewers) || 0) : 0;
-            const maxSessionPeakChat = sessions.length > 0
-                ? Math.max(...sessions.map(sess => Number(sess.peakChat) || 0))
-                : 0;
-            const totalSessionChat = sessions.length > 0
-                ? sessions.reduce((acc, sess) => acc + (Number(sess.totalChat) || 0), 0)
-                : (Number(s.totalChat) || 0);
-
-            return {
-                ...s,
-                ...(bestSession ? {
-                    duration: bestSession.duration || s.duration,
-                    avgViewers: bestSession.avgViewers || s.avgViewers,
-                    totalSnapshots: bestSession.totalSnapshots || s.totalSnapshots,
-                    liveAt: bestSession.liveAt || s.liveAt,
-                    endAt: bestSession.endAt || s.endAt
-                } : {}),
-                peakViewers: Math.max(Number(s.peakViewers) || 0, maxSessionPeakViewers),
-                peakChat: Math.max(Number(s.peakChat) || 0, maxSessionPeakChat),
-                totalChat: s.totalChat !== undefined ? Math.max(Number(s.totalChat) || 0, totalSessionChat) : totalSessionChat
-            };
-        });
+        return raw.map(s => ({
+            name: s.name,
+            slug: s.slug,
+            peakViewers: Number(s.peakViewers) || 0,
+            peakChat: Number(s.peakChat) || 0
+        }));
     }, [analyticsData?.streamers]);
 
     const totalPeakViewers = useMemo(() => {
@@ -83,6 +62,23 @@ export default function Home() {
         if (!streamersList.length || totalPeakViewers === 0) return null;
         return [...streamersList].sort((a, b) => (b.peakViewers || 0) - (a.peakViewers || 0))[0];
     }, [streamersList, totalPeakViewers]);
+
+    const {
+        data: topStreamerAnalytics,
+        isLoading: isTopAnalyticsLoading
+    } = useQuery({
+        queryKey: ['topStreamerAnalytics', topStreamer?.slug],
+        queryFn: () => getAnalytics(topStreamer.slug),
+        enabled: !!topStreamer?.slug,
+        staleTime: 1000 * 60 * 15,
+        gcTime: 1000 * 60 * 30
+    });
+
+    const topSlug = topStreamer?.slug;
+    const topSession = useMemo(() => {
+        if (!topStreamerAnalytics?.sessions) return null;
+        return topStreamerAnalytics.sessions.find(s => s.slug === topSlug) || topStreamerAnalytics.sessions[0];
+    }, [topStreamerAnalytics, topSlug]);
 
     const liveStreams = streams.filter(s => s.status !== "scheduled")
     const scheduledStreams = streams.filter(s => s.status === "scheduled")
@@ -301,7 +297,7 @@ export default function Home() {
 
                     <div className="p-5 rounded-2xl bg-zinc-900/30 border border-zinc-800/40 space-y-3">
                         <span className="text-sm text-zinc-400 font-medium">Rata-rata Penonton (Avg)</span>
-                        {isAnalyticsLoading ? (
+                        {isAnalyticsLoading || isTopAnalyticsLoading ? (
                             <div className="space-y-2.5 animate-pulse">
                                 <div className="h-6 w-32 bg-zinc-800/60 rounded-lg"></div>
                                 <div className="h-4 w-36 bg-zinc-800/40 rounded-md"></div>
@@ -309,10 +305,10 @@ export default function Home() {
                         ) : (
                             <div>
                                 <p className="text-lg font-semibold text-zinc-100">
-                                    {topStreamer?.avgViewers !== undefined ? `${Math.round(topStreamer.avgViewers).toLocaleString()} penonton` : "-"}
+                                    {topSession?.avgViewers !== undefined ? `${Math.round(topSession.avgViewers).toLocaleString()} penonton` : "-"}
                                 </p>
                                 <p className="text-sm text-zinc-400 mt-1">
-                                    {topStreamer?.totalSnapshots ? `${topStreamer.totalSnapshots} snapshot tercatat` : "Rata-rata top streamer"}
+                                    {topStreamer?.name ? `Rata-rata ${topStreamer.name}` : "Rata-rata top streamer"}
                                 </p>
                             </div>
                         )}

@@ -65,13 +65,14 @@ export default function TopChattersCard({ topChatters = [], isLoading = false, s
         return topChatters.reduce((sum, c) => sum + (Number(c.count) || 0), 0);
     }, [topChatters]);
 
-    const handleImageError = (userUuid) => {
-        setFailedAvatars(prev => ({ ...prev, [userUuid]: true }));
+    const handleImageError = (key) => {
+        setFailedAvatars(prev => ({ ...prev, [key]: true }));
     };
 
     // Helper untuk membuat avatar inisial warna-warni jika avatar null/gagal dimuat
     const renderAvatar = (chatter, sizeClass = 'w-9 h-9 text-xs', borderClass = 'border-zinc-800') => {
-        const hasValidAvatar = chatter.userAvatar && !failedAvatars[chatter.userUuid];
+        const avatarKey = chatter.userUuid || chatter.userName || 'unknown';
+        const hasValidAvatar = chatter.userAvatar && !failedAvatars[avatarKey];
         const initial = (chatter.userName || '?').charAt(0).toUpperCase();
 
         if (hasValidAvatar) {
@@ -79,7 +80,7 @@ export default function TopChattersCard({ topChatters = [], isLoading = false, s
                 <img
                     src={chatter.userAvatar}
                     alt={chatter.userName}
-                    onError={() => handleImageError(chatter.userUuid)}
+                    onError={() => handleImageError(avatarKey)}
                     className={`${sizeClass} rounded-full object-cover border ${borderClass} shrink-0 bg-zinc-800`}
                     loading="lazy"
                 />
@@ -286,7 +287,8 @@ export default function TopChattersCard({ topChatters = [], isLoading = false, s
                             ) : (
                                 filteredChatters.map((chatter, idx) => {
                                     // Cari ranking asli di array lengkap
-                                    const originalRank = topChatters.findIndex(c => c.userUuid === chatter.userUuid) + 1 || idx + 1;
+                                    const originalIndex = topChatters.indexOf(chatter);
+                                    const originalRank = originalIndex !== -1 ? originalIndex + 1 : (idx + 1);
                                     const relativePct = maxCount > 0 ? (Number(chatter.count) / maxCount) * 100 : 0;
 
                                     let rankBadge = <span className="text-zinc-400 font-semibold text-xs">#{originalRank}</span>;
@@ -296,7 +298,7 @@ export default function TopChattersCard({ topChatters = [], isLoading = false, s
 
                                     return (
                                         <tr
-                                            key={chatter.userUuid || idx}
+                                            key={chatter.userUuid || chatter.userName || idx}
                                             className="hover:bg-zinc-800/40 transition group"
                                         >
                                             {/* Rank */}
@@ -310,9 +312,11 @@ export default function TopChattersCard({ topChatters = [], isLoading = false, s
                                                         <p className="text-xs sm:text-sm font-semibold text-zinc-100 truncate max-w-40 sm:max-w-xs" title={chatter.userName}>
                                                             {chatter.userName}
                                                         </p>
-                                                        <p className="text-[11px] text-zinc-500 truncate font-mono">
-                                                            {chatter.userUuid ? `${chatter.userUuid.slice(0, 8)}...` : ''}
-                                                        </p>
+                                                        {chatter.userUuid && (
+                                                            <p className="text-[11px] text-zinc-500 truncate font-mono">
+                                                                {chatter.userUuid.slice(0, 8)}...
+                                                            </p>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </td>

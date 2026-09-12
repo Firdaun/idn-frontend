@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Brush } from 'recharts';
 import { getMultiLiveData, getAnalytics } from '../../utils/backend-api';
 import { getMemberColor } from '../../utils/color';
@@ -23,11 +23,16 @@ export default function Analytics() {
         return saved ? JSON.parse(saved) : { start: getTodayStartIso(), end: null };
     });
     const [metricType, setMetricType] = useState(() => sessionStorage.getItem('analytics_metricType') || 'viewers');
-    const statsCardRef = useRef(null);
-    const detailHeaderRef = useRef(null);
-    const scrollTimeoutRef = useRef(null);
-    const highlightTimeoutRef = useRef(null);
+    const [now] = useState(() => Date.now());
     const [isSnapshotHighlight, setIsSnapshotHighlight] = useState(false);
+
+    useEffect(() => {
+        if (!isSnapshotHighlight) return;
+        const timer = setTimeout(() => {
+            setIsSnapshotHighlight(false);
+        }, 800);
+        return () => clearTimeout(timer);
+    }, [isSnapshotHighlight]);
 
     useEffect(() => {
         sessionStorage.setItem('analytics_metricType', metricType);
@@ -111,50 +116,23 @@ export default function Analytics() {
         if (isAnalyticsLoading || isAnalyticsFetching) return;
         if (selectedStreamer && data.streamers) {
             const updated = data.streamers.find(s => s.name === selectedStreamer.name);
-            if (updated) {
-                const sessions = updated.sessions;
-                const matchedSession = sessions.find(sess => sess.slug === selectedStreamer.slug);
-                if (matchedSession) {
-                    setSelectedStreamer(prev => ({
-                        ...matchedSession,
-                        name: updated.name,
-                        fullName: matchedSession.fullName,
-                        clickedTime: prev?.clickedTime ?? null,
-                        clickedViewers: prev?.clickedViewers ?? null,
-                        clickedChat: prev?.clickedChat ?? null,
-                        clickedPos: prev?.clickedPos ?? null,
-                        clickedNeu: prev?.clickedNeu ?? null,
-                        clickedNeg: prev?.clickedNeg ?? null
-                    }));
-                } else {
-                    setSelectedStreamer(null);
-                }
-            } else {
+            if (!updated) {
                 setSelectedStreamer(null);
             }
         }
-    }, [data, isAnalyticsLoading, isAnalyticsFetching]);
+    }, [data.streamers, isAnalyticsLoading, isAnalyticsFetching]);
 
     const streamers = useMemo(() => {
-        const rawStreamers = data.streamers;
-        return rawStreamers.map(s => {
-            const sessions = s.sessions
-            const getPeak = (key) => Math.max(...sessions.map(sess => Number(sess[key])), 0);
-
-            const maxSessionPeakViewers = getPeak('peakViewers');
-            const maxSessionPeakChat = getPeak('peakChat');
-            const totalSessionChat = s.sessions.reduce((acc, sess) => acc + (Number(sess.totalChat)), 0)
-
-            return {
-                ...s,
-                peakViewers: maxSessionPeakViewers,
-                peakChat: maxSessionPeakChat,
-                totalChat: totalSessionChat
-            };
-        });
+        const rawStreamers = data.streamers || [];
+        return rawStreamers.map(s => ({
+            name: s.name,
+            slug: s.slug,
+            peakViewers: Number(s.peakViewers) || 0,
+            peakChat: Number(s.peakChat) || 0
+        }));
     }, [data.streamers]);
 
-    const chartData = data.chartData;
+    const chartData = data.chartData || [];
     const maxPeak = useMemo(() => {
         return streamers.reduce((max, s) => Math.max(max, s.peakViewers), 0);
     }, [streamers]);
@@ -179,12 +157,30 @@ export default function Analytics() {
         }) : null);
     };
 
-    const formatDurationIndo = (durationStr) => {
-        if (!durationStr) return "-";
-        return durationStr
-            .replace(/\b(hours?|hr|hrs)\b/gi, "Jam")
-            .replace(/\b(minutes?|mins?|min)\b/gi, "Menit")
-            .replace(/\b(seconds?|secs?|sec)\b/gi, "Detik");
+    const calculateSessionDuration = (liveAt, endAt) => {
+        if (!liveAt) return "-";
+        const start = new Date(liveAt).getTime();
+        const end = endAt ? new Date(endAt).getTime() : now;
+        if (isNaN(start) || isNaN(end) || end <= start) return "-";
+
+        const diffSeconds = Math.floor((end - start) / 1000);
+        const hours = Math.floor(diffSeconds / 3600);
+        const minutes = Math.floor((diffSeconds % 3600) / 60);
+
+        if (hours > 0) {
+            return `${hours} Jam ${minutes} Menit`;
+        }
+        return `${minutes} Menit`;
+    };
+
+    const countMemberSnapshots = (chartDataList, memberName, slug) => {
+        if (!chartDataList || !memberName) return 0;
+        return chartDataList.filter(d => {
+            if (slug && d[`_${memberName}_slug`]) {
+                return d[`_${memberName}_slug`] === slug;
+            }
+            return memberName in d;
+        }).length;
     };
 
     const calculateDurationAtTime = (liveAt, timestamp) => {
@@ -229,20 +225,16 @@ export default function Analytics() {
         const clickedTime = dataPoint?.timeLabel;
         const clickedViewers = dataPoint[streamer.name];
         const clickedChat = dataPoint[`_${streamer.name}_chat`];
-        const clickedSlug = dataPoint[`_${streamer.name}_slug`];
+        const clickedSlug = dataPoint[`_${streamer.name}_slug`] || streamer.slug;
         const clickedPos = dataPoint[`_${streamer.name}_pos`];
         const clickedNeu = dataPoint[`_${streamer.name}_neu`];
         const clickedNeg = dataPoint[`_${streamer.name}_neg`];
-        const matchedSession = streamer.sessions.find(s => s.slug === clickedSlug);
-
-        if (scrollTimeoutRef.current) {
-            clearTimeout(scrollTimeoutRef.current);
-        }
 
         const applyNewSnapshotData = () => {
-            setSelectedStreamer({
-                ...matchedSession,
+            setSelectedStreamer(prev => ({
+                ...(prev?.slug === clickedSlug ? prev : {}),
                 name: streamer.name,
+                slug: clickedSlug,
                 isLegendClick: false,
                 clickedTime: clickedTime ?? null,
                 clickedViewers: clickedViewers ?? null,
@@ -250,17 +242,11 @@ export default function Analytics() {
                 clickedPos: clickedPos ?? null,
                 clickedNeu: clickedNeu ?? null,
                 clickedNeg: clickedNeg ?? null
-            });
+            }));
 
-            if (highlightTimeoutRef.current) {
-                clearTimeout(highlightTimeoutRef.current);
-            }
             setIsSnapshotHighlight(false);
             requestAnimationFrame(() => {
                 setIsSnapshotHighlight(true);
-                highlightTimeoutRef.current = setTimeout(() => {
-                    setIsSnapshotHighlight(false);
-                }, 800);
             });
         };
 
@@ -269,15 +255,15 @@ export default function Analytics() {
         } else {
             if (selectedStreamer.slug !== clickedSlug || selectedStreamer.name !== streamer.name) {
                 setSelectedStreamer(prev => ({
-                    ...matchedSession,
                     name: streamer.name,
+                    slug: clickedSlug,
                     isLegendClick: false,
-                    clickedTime: prev.clickedTime,
-                    clickedViewers: prev.clickedViewers,
-                    clickedChat: prev.clickedChat,
-                    clickedPos: prev.clickedPos,
-                    clickedNeu: prev.clickedNeu,
-                    clickedNeg: prev.clickedNeg
+                    clickedTime: prev?.clickedTime ?? null,
+                    clickedViewers: prev?.clickedViewers ?? null,
+                    clickedChat: prev?.clickedChat ?? null,
+                    clickedPos: prev?.clickedPos ?? null,
+                    clickedNeu: prev?.clickedNeu ?? null,
+                    clickedNeg: prev?.clickedNeg ?? null
                 }));
             }
 
@@ -286,7 +272,7 @@ export default function Analytics() {
                 if (isDone) return;
                 isDone = true;
                 window.removeEventListener('scrollend', onFinishScroll);
-                scrollTimeoutRef.current = setTimeout(() => {
+                setTimeout(() => {
                     applyNewSnapshotData();
                 }, 200);
             };
@@ -296,7 +282,9 @@ export default function Analytics() {
             }
 
             const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;
-            const targetEl = isMobile ? (statsCardRef.current || detailHeaderRef.current) : detailHeaderRef.current;
+            const targetEl = isMobile
+                ? (document.getElementById('analytics-stats-card') || document.getElementById('analytics-detail-header'))
+                : document.getElementById('analytics-detail-header');
 
             const rect = targetEl?.getBoundingClientRect();
             const isAlreadyAtTarget = rect
@@ -304,7 +292,7 @@ export default function Analytics() {
                 : false;
             const fallbackDuration = isAlreadyAtTarget ? 60 : 520;
 
-            scrollTimeoutRef.current = setTimeout(onFinishScroll, fallbackDuration);
+            setTimeout(onFinishScroll, fallbackDuration);
 
             // Scroll ke target: di HP dibuat 'center', di Desktop dibuat 'start'
             targetEl?.scrollIntoView({
@@ -344,11 +332,12 @@ export default function Analytics() {
         return sampled;
     }, [filteredChartData]);
 
+    const selectedMemberName = selectedStreamer?.name;
     const activeChartData = useMemo(() => {
-        if (!selectedStreamer) return sampledChartData;
+        if (!selectedMemberName) return sampledChartData;
 
         const memberPoints = filteredChartData.filter(
-            d => selectedStreamer.name in d
+            d => selectedMemberName in d
         );
 
         if (!memberPoints.length) return sampledChartData;
@@ -358,7 +347,7 @@ export default function Analytics() {
         memberPoints.forEach(d => timeMap.set(Number(d.timeLabel), d));
 
         return [...timeMap.values()].sort((a, b) => Number(a.timeLabel) - Number(b.timeLabel));
-    }, [selectedStreamer?.name, sampledChartData, filteredChartData]);
+    }, [selectedMemberName, sampledChartData, filteredChartData]);
 
     const activeStreamers = useMemo(() => {
         if (!streamers.length || !activeChartData.length) return streamers;
@@ -372,18 +361,62 @@ export default function Analytics() {
         });
     }, [streamers, activeChartData, metricType]);
 
-    const currentStreamerObj = streamers.find(s => s.name === selectedStreamer?.name);
-    const streamerSessions = currentStreamerObj?.sessions || [];
-    const currentSessionIndex = streamerSessions.findIndex(s => s.slug === selectedStreamer?.slug);
+    const memberSessionsMap = useMemo(() => {
+        const map = new Map();
+        if (!filteredChartData || !activeStreamers) return map;
+
+        activeStreamers.forEach(s => {
+            map.set(s.name, new Set());
+        });
+
+        filteredChartData.forEach(d => {
+            activeStreamers.forEach(s => {
+                const slug = d[`_${s.name}_slug`];
+                if (slug) {
+                    map.get(s.name)?.add(slug);
+                }
+            });
+        });
+
+        activeStreamers.forEach(s => {
+            const set = map.get(s.name);
+            if (set && set.size === 0 && s.slug) {
+                set.add(s.slug);
+            }
+        });
+
+        return map;
+    }, [filteredChartData, activeStreamers]);
+
+    const selectedMemberSlug = selectedStreamer?.slug;
+    const selectedStreamerName = selectedStreamer?.name;
+    const streamerSessions = useMemo(() => {
+        const allSessions = sessionAnalyticsData?.sessions || [];
+        if (!selectedStreamerName || !allSessions.length) return allSessions;
+
+        const slugSet = memberSessionsMap.get(selectedStreamerName);
+        if (!slugSet || slugSet.size === 0) {
+            return selectedMemberSlug
+                ? allSessions.filter(s => s.slug === selectedMemberSlug)
+                : allSessions;
+        }
+
+        const visibleSessions = allSessions.filter(s => slugSet.has(s.slug));
+        return visibleSessions.length > 0 ? visibleSessions : allSessions;
+    }, [sessionAnalyticsData?.sessions, selectedStreamerName, selectedMemberSlug, memberSessionsMap]);
+
+    const currentSessionIndex = streamerSessions.findIndex(s => s.slug === selectedMemberSlug);
+    const activeSession = (currentSessionIndex >= 0 ? streamerSessions[currentSessionIndex] : streamerSessions[0]) || null;
+
     const handlePrevSession = () => {
         if (streamerSessions.length <= 1) return;
         const activeIdx = currentSessionIndex >= 0 ? currentSessionIndex : 0;
         const prevIndex = (activeIdx - 1 + streamerSessions.length) % streamerSessions.length;
         const target = streamerSessions[prevIndex];
-        setSelectedStreamer({
+        setSelectedStreamer(prev => ({
+            ...prev,
             ...target,
             name: selectedStreamer.name,
-            fullName: target.fullName || selectedStreamer.fullName,
             isLegendClick: false,
             clickedTime: null,
             clickedViewers: null,
@@ -391,17 +424,18 @@ export default function Analytics() {
             clickedPos: null,
             clickedNeu: null,
             clickedNeg: null
-        });
+        }));
     };
+
     const handleNextSession = () => {
         if (streamerSessions.length <= 1) return;
         const activeIdx = currentSessionIndex >= 0 ? currentSessionIndex : 0;
         const nextIndex = (activeIdx + 1) % streamerSessions.length;
         const target = streamerSessions[nextIndex];
-        setSelectedStreamer({
+        setSelectedStreamer(prev => ({
+            ...prev,
             ...target,
             name: selectedStreamer.name,
-            fullName: target.fullName || selectedStreamer.fullName,
             isLegendClick: false,
             clickedTime: null,
             clickedViewers: null,
@@ -409,7 +443,7 @@ export default function Analytics() {
             clickedPos: null,
             clickedNeu: null,
             clickedNeg: null
-        });
+        }));
     };
 
     const activeRangeLabel = timeRange === 'all' ? 'Semua' : timeRange === 'today' ? 'Hari Ini' : timeRange === '1d' ? '1 Hari Lalu' : timeRange === '2d' ? '2 Hari Lalu' : timeRange === '1h' ? '1 Jam' : timeRange === 'custom' ? 'Kustom' : timeRange;
@@ -495,7 +529,7 @@ export default function Analytics() {
             {/* Selected Detail Header */}
             {selectedStreamer && (
                 <div
-                    ref={detailHeaderRef}
+                    id="analytics-detail-header"
                     className="scroll-mt-24 bg-zinc-900/50 border border-zinc-800/50 p-3 lg:p-5 rounded-lg lg:rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-1"
                 >
                     {/* Sisi Kiri: Tombol Navigasi Sesi & Info Streamer */}
@@ -515,14 +549,14 @@ export default function Analytics() {
                         <div className="min-w-0">
                             <div className="flex items-center min-[375px]:gap-1.5 flex-wrap">
                                 <h3 className="font-semibold text-base sm:text-lg text-zinc-100 truncate">
-                                    {selectedStreamer.fullName}
+                                    {sessionAnalyticsData?.name || selectedStreamer.fullName || selectedStreamer.name}
                                 </h3>
                                 <div className='flex space-x-0.5 min-[360px]:space-x-0 min-[360px]:gap-1'>
-                                    <span className={`px-2 py-0.5 rounded-sm lg:rounded-md text-[11px] font-medium border ${selectedStreamer.endAt
+                                    <span className={`px-2 py-0.5 rounded-sm lg:rounded-md text-[11px] font-medium border ${(activeSession ? activeSession.endAt : selectedStreamer.endAt)
                                         ? "bg-zinc-800 text-zinc-400 border-zinc-700"
                                         : "bg-red-500/10 text-red-400 border-red-500/20"
                                         }`}>
-                                        {selectedStreamer.endAt ? "Selesai Siaran" : "Sedang Siaran"}
+                                        {(activeSession ? activeSession.endAt : selectedStreamer.endAt) ? "Selesai Siaran" : "Sedang Siaran"}
                                     </span>
                                     {/* Badge penanda sesi */}
                                     {streamerSessions.length > 1 && (
@@ -556,19 +590,19 @@ export default function Analytics() {
                                 <div className='shrink-0'>
                                     <span className="text-zinc-400 block text-xs">Mulai Siaran</span>
                                     <span className="font-semibold text-zinc-200">
-                                        {formatLiveTime(selectedStreamer.liveAt)}
+                                        {formatLiveTime(activeSession?.liveAt || selectedStreamer.liveAt)}
                                     </span>
                                 </div>
                                 <div className='shrink-0'>
                                     <span className="text-zinc-400 block text-xs">Selesai Siaran</span>
                                     <span className="font-semibold text-zinc-200">
-                                        {selectedStreamer.endAt ? formatLiveTime(selectedStreamer.endAt) : '-'}
+                                        {(activeSession ? activeSession.endAt : selectedStreamer.endAt) ? formatLiveTime(activeSession?.endAt || selectedStreamer.endAt) : '-'}
                                     </span>
                                 </div>
                                 <div className='shrink-0'>
                                     <span className="text-zinc-400 block text-xs">Total Durasi</span>
                                     <span className="font-semibold text-zinc-200">
-                                        {formatDurationIndo(selectedStreamer.duration)}
+                                        {calculateSessionDuration(activeSession?.liveAt || selectedStreamer.liveAt, activeSession?.endAt ?? selectedStreamer.endAt)}
                                     </span>
                                 </div>
                             </div>
@@ -597,13 +631,13 @@ export default function Analytics() {
                             />
 
                             {/* Card Statistik Performa & Snapshot Titik Terpilih */}
-                            <div ref={statsCardRef} className="bg-zinc-900/40 border border-zinc-800/50 rounded-xl p-4 lg:p-5 space-y-3 lg:space-y-5 flex-1">
+                            <div id="analytics-stats-card" className="bg-zinc-900/40 border border-zinc-800/50 rounded-xl p-4 lg:p-5 space-y-3 lg:space-y-5 flex-1">
                                 <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2.5 lg:pb-5">
                                     <span className="text-sm sm:text-base font-semibold text-zinc-100 flex items-center gap-2">
                                         <span>📊 Statistik Siaran</span>
                                     </span>
                                     <span className="text-xs text-zinc-400">
-                                        {selectedStreamer.totalSnapshots ? `${selectedStreamer.totalSnapshots}x cuplikan` : ''}
+                                        {countMemberSnapshots(filteredChartData, selectedStreamer.name, selectedStreamer.slug) ? `${countMemberSnapshots(filteredChartData, selectedStreamer.name, selectedStreamer.slug)}x cuplikan` : ''}
                                     </span>
                                 </div>
 
@@ -612,31 +646,31 @@ export default function Analytics() {
                                     <div className="bg-zinc-950/40 border border-zinc-800/60 rounded-lg p-2.5">
                                         <span className="text-xs text-zinc-400 font-medium block truncate">Puncak Penonton</span>
                                         <span className="font-bold text-zinc-100 text-base sm:text-lg">
-                                            {Number(selectedStreamer.peakViewers ?? 0).toLocaleString()}
+                                            {Number(activeSession?.peakViewers ?? selectedStreamer.peakViewers ?? 0).toLocaleString()}
                                         </span>
                                     </div>
                                     <div className="bg-zinc-950/40 border border-zinc-800/60 rounded-lg p-2.5">
                                         <span className="text-xs text-zinc-400 font-medium block truncate">Rata-rata Penonton</span>
                                         <span className="font-bold text-zinc-100 text-base sm:text-lg">
-                                            {Math.round(selectedStreamer.avgViewers || 0).toLocaleString()}
+                                            {Math.round(activeSession?.avgViewers ?? selectedStreamer.avgViewers ?? 0).toLocaleString()}
                                         </span>
                                     </div>
                                     <div className="bg-zinc-950/40 border border-zinc-800/60 rounded-lg p-2.5">
                                         <span className="text-xs text-zinc-400 font-medium block truncate">Total Pesan</span>
                                         <span className="font-bold text-zinc-100 text-base sm:text-lg">
-                                            {selectedStreamer.totalChat !== undefined ? Number(selectedStreamer.totalChat).toLocaleString() : '-'}
+                                            {activeSentiment?.totalChat !== undefined ? Number(activeSentiment.totalChat).toLocaleString() : (activeSession?.totalChat !== undefined ? Number(activeSession.totalChat).toLocaleString() : (selectedStreamer.totalChat !== undefined ? Number(selectedStreamer.totalChat).toLocaleString() : '-'))}
                                         </span>
                                     </div>
                                     <div className="bg-zinc-950/40 border border-zinc-800/60 rounded-lg p-2.5">
                                         <span className="text-xs text-zinc-400 font-medium block truncate">Puncak Pesan / 30 dtk</span>
                                         <span className="font-bold text-zinc-100 text-base sm:text-lg">
-                                            {selectedStreamer.peakChat !== undefined ? `${Number(selectedStreamer.peakChat).toLocaleString()}` : '-'}
+                                            {activeSession?.peakChat !== undefined ? `${Number(activeSession.peakChat).toLocaleString()}` : (selectedStreamer.peakChat !== undefined ? `${Number(selectedStreamer.peakChat).toLocaleString()}` : '-')}
                                         </span>
                                     </div>
                                     <div className="bg-zinc-950/40 border border-zinc-800/60 rounded-lg p-2.5">
                                         <span className="text-xs text-zinc-400 font-medium block truncate">Rata-rata Pesan / 30 dtk</span>
                                         <span className="font-bold text-zinc-100 text-base sm:text-lg">
-                                            {selectedStreamer.avgChat !== undefined ? `${selectedStreamer.avgChat}` : '-'}
+                                            {activeSession?.avgChat !== undefined ? `${activeSession.avgChat}` : (selectedStreamer.avgChat !== undefined ? `${selectedStreamer.avgChat}` : '-')}
                                         </span>
                                     </div>
                                     <div className="bg-zinc-950/40 border border-zinc-800/60 rounded-lg p-2.5">
@@ -691,7 +725,7 @@ export default function Analytics() {
                                             <div>
                                                 <span className="text-[11px] text-zinc-400 block">Durasi Saat Itu</span>
                                                 <span className={`font-semibold text-zinc-200 block ${isSnapshotHighlight ? 'animate-number-flip' : ''}`}>
-                                                    {calculateDurationAtTime(selectedStreamer.liveAt, selectedStreamer.clickedTime) || '-'}
+                                                    {calculateDurationAtTime(activeSession?.liveAt || selectedStreamer.liveAt, selectedStreamer.clickedTime) || '-'}
                                                 </span>
                                             </div>
                                             {selectedStreamer.clickedViewers !== null && (
@@ -741,8 +775,8 @@ export default function Analytics() {
                             <WordCloudCard
                                 wordCloud={activeWordCloud}
                                 isLoading={isSessionLoading && (!activeWordCloud || activeWordCloud.length === 0)}
-                                streamerName={selectedStreamer.fullName || selectedStreamer.name}
-                                isLive={!selectedStreamer.endAt}
+                                streamerName={sessionAnalyticsData?.name || selectedStreamer.fullName || selectedStreamer.name}
+                                isLive={!(activeSession ? activeSession.endAt : selectedStreamer.endAt)}
                             />
                         </div>
                     </div>
@@ -973,16 +1007,18 @@ export default function Analytics() {
                                                                 if (isSelected) {
                                                                     setSelectedStreamer(null);
                                                                 } else {
-                                                                    const bestSession = streamer.sessions && streamer.sessions.length > 0
-                                                                        ? [...streamer.sessions].sort((a, b) => (b.peakViewers || 0) - (a.peakViewers || 0))[0]
-                                                                        : streamer;
                                                                     setSelectedStreamer({
-                                                                        ...bestSession,
                                                                         name: streamer.name,
-                                                                        fullName: bestSession.fullName || streamer.fullName,
+                                                                        slug: streamer.slug,
+                                                                        peakViewers: streamer.peakViewers,
+                                                                        peakChat: streamer.peakChat,
                                                                         isLegendClick: true,
                                                                         clickedTime: null,
-                                                                        clickedViewers: null
+                                                                        clickedViewers: null,
+                                                                        clickedChat: null,
+                                                                        clickedPos: null,
+                                                                        clickedNeu: null,
+                                                                        clickedNeg: null
                                                                     });
                                                                 }
                                                             }}
@@ -1016,9 +1052,12 @@ export default function Analytics() {
 
 
                                 {activeStreamers.flatMap((streamer, streamerIndex) => {
-                                    return streamer.sessions.map((session, sessionIndex) => {
+                                    const slugSet = memberSessionsMap.get(streamer.name);
+                                    const sessionSlugs = slugSet && slugSet.size > 0 ? Array.from(slugSet) : (streamer.slug ? [streamer.slug] : ['default']);
+
+                                    return sessionSlugs.map((sessionSlug, sessionIndex) => {
                                         const isSameMember = selectedStreamer?.name === streamer.name;
-                                        const isExactSessionSelected = selectedStreamer?.slug === session.slug;
+                                        const isExactSessionSelected = selectedStreamer?.slug === sessionSlug;
 
                                         const isLegendClick = isSameMember && selectedStreamer?.isLegendClick;
                                         let strokeOpacity = 1;
@@ -1044,10 +1083,10 @@ export default function Analytics() {
 
                                         return (
                                             <Line
-                                                key={`${streamer.name}-${session.slug || sessionIndex}`}
+                                                key={`${streamer.name}-${sessionSlug || sessionIndex}`}
                                                 type="linear"
                                                 dataKey={(d) => {
-                                                    if (d[`_${streamer.name}_slug`] !== session.slug) return null;
+                                                    if (d[`_${streamer.name}_slug`] !== sessionSlug) return null;
                                                     if (metricType === 'chat') {
                                                         return d[`_${streamer.name}_chat`] ?? 0;
                                                     }
@@ -1062,13 +1101,13 @@ export default function Analytics() {
                                                 connectNulls={false}
                                                 activeDot={shouldShowActiveDot ? {
                                                     r: isExactSessionSelected ? 6 : 4,
-                                                    onClick: (e, payload) => handleDotClick(streamer, payload),
+                                                    onClick: (_e, payload) => handleDotClick({ ...streamer, slug: sessionSlug }, payload),
                                                     cursor: 'pointer',
                                                     strokeWidth: 0
                                                 } : false}
                                             />
-                                        )
-                                    })
+                                        );
+                                    });
                                 })}
 
                                 {activeChartData.length > 5 && (
