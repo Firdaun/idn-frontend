@@ -23,6 +23,7 @@ export default function Analytics() {
         return saved ? JSON.parse(saved) : { start: getTodayStartIso(), end: null };
     });
     const [metricType, setMetricType] = useState(() => sessionStorage.getItem('analytics_metricType') || 'viewers');
+    const statsCardRef = useRef(null);
     const detailHeaderRef = useRef(null);
     const scrollTimeoutRef = useRef(null);
     const [isSnapshotHighlight, setIsSnapshotHighlight] = useState(false);
@@ -280,22 +281,29 @@ export default function Analytics() {
                 window.removeEventListener('scrollend', onFinishScroll);
                 scrollTimeoutRef.current = setTimeout(() => {
                     applyNewSnapshotData();
-                }, 500);
+                }, 200);
             };
 
             if ('onscrollend' in window) {
                 window.addEventListener('scrollend', onFinishScroll, { once: true });
             }
 
-            const rect = detailHeaderRef.current?.getBoundingClientRect();
-            const isAlreadyAtTop = rect ? Math.abs(rect.top - 80) < 30 : false;
-            const fallbackDuration = isAlreadyAtTop ? 60 : 520;
+            const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;
+            const targetEl = isMobile ? (statsCardRef.current || detailHeaderRef.current) : detailHeaderRef.current;
+
+            const rect = targetEl?.getBoundingClientRect();
+            const isAlreadyAtTarget = rect
+                ? (isMobile ? (rect.top >= 50 && rect.bottom <= window.innerHeight) : Math.abs(rect.top - 80) < 30)
+                : false;
+            const fallbackDuration = isAlreadyAtTarget ? 60 : 520;
 
             scrollTimeoutRef.current = setTimeout(onFinishScroll, fallbackDuration);
 
-            setTimeout(() => {
-                detailHeaderRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 30);
+            // Scroll ke target: di HP dibuat 'center', di Desktop dibuat 'start'
+            targetEl?.scrollIntoView({
+                behavior: 'smooth',
+                block: isMobile ? 'center' : 'start'
+            });
         }
     };
 
@@ -444,8 +452,8 @@ export default function Analytics() {
                     <div className="flex items-center justify-between gap-2">
                         <span className="text-xs text-zinc-400 font-medium">Total Cuplikan Waktu</span>
                         <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium border ${filteredChartData.length > 400
-                                ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                                : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                            ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                            : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                             }`}>
                             {filteredChartData.length > 400 ? '> 400 (Disampel)' : '≤ 400 (Lengkap)'}
                         </span>
@@ -463,8 +471,8 @@ export default function Analytics() {
                 <div className="flex items-center justify-center gap-2">
                     <span className="text-xs text-zinc-400 font-medium">Total Cuplikan Waktu</span>
                     <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium border ${filteredChartData.length > 400
-                            ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                            : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                        ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                        : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                         }`}>
                         {filteredChartData.length > 400 ? '> 400 (Disampel)' : '≤ 400 (Lengkap)'}
                     </span>
@@ -506,7 +514,7 @@ export default function Analytics() {
                                     <span className={`px-2 py-0.5 rounded-sm lg:rounded-md text-[11px] font-medium border ${selectedStreamer.endAt
                                         ? "bg-zinc-800 text-zinc-400 border-zinc-700"
                                         : "bg-red-500/10 text-red-400 border-red-500/20"
-                                            }`}>
+                                        }`}>
                                         {selectedStreamer.endAt ? "Selesai Siaran" : "Sedang Siaran"}
                                     </span>
                                     {/* Badge penanda sesi */}
@@ -535,9 +543,8 @@ export default function Analytics() {
 
                     {/* Sisi Kanan: Jadwal Waktu & Tombol Reset */}
                     <div className="flex items-center justify-between gap-0 md:gap-2 xl:gap-5 w-full md:w-auto flex-wrap border-t md:border-t-0 border-zinc-800/80 pt-3 md:pt-0">
-                        <div className={`min-w-50 w-53 min-[360px]:w-57 min-[375px]:w-60 min-[412px]:w-70 min-[440px]:w-76 ${
-                            streamerSessions.length > 1 ? 'md:w-67' : 'md:w-83'
-                        } lg:w-85 overflow-x-auto pb-1`}>
+                        <div className={`min-w-50 w-53 min-[360px]:w-57 min-[375px]:w-60 min-[412px]:w-70 min-[440px]:w-76 ${streamerSessions.length > 1 ? 'md:w-62' : 'md:w-83'
+                            } lg:w-85 overflow-x-auto pb-1`}>
                             <div className="flex items-center gap-3 text-xs sm:text-sm whitespace-nowrap">
                                 <div className='shrink-0'>
                                     <span className="text-zinc-400 block text-xs">Mulai Siaran</span>
@@ -583,7 +590,7 @@ export default function Analytics() {
                             />
 
                             {/* Card Statistik Performa & Snapshot Titik Terpilih */}
-                            <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-xl p-4 lg:p-5 space-y-3 lg:space-y-5 flex-1">
+                            <div ref={statsCardRef} className="bg-zinc-900/40 border border-zinc-800/50 rounded-xl p-4 lg:p-5 space-y-3 lg:space-y-5 flex-1">
                                 <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2.5 lg:pb-5">
                                     <span className="text-sm sm:text-base font-semibold text-zinc-100 flex items-center gap-2">
                                         <span>📊 Statistik Siaran</span>
@@ -637,25 +644,22 @@ export default function Analytics() {
                                 {selectedStreamer.clickedTime ? (
                                     <div
                                         key={`snapshot-${selectedStreamer.clickedTime}`}
-                                        className={`border rounded-lg p-3 space-y-2 transition-all duration-300 ${
-                                            isSnapshotHighlight
-                                                ? 'bg-indigo-950/40 border-indigo-400/80 ring-1 ring-indigo-400/50 shadow-[0_0_22px_rgba(99,102,241,0.3)] animate-snapshot-pop'
-                                                : 'bg-indigo-950/20 border-indigo-500/30'
-                                        }`}
+                                        className={`border rounded-lg p-3 space-y-2 transition-all duration-300 ${isSnapshotHighlight
+                                            ? 'bg-indigo-950/40 border-indigo-400/80 ring-1 ring-indigo-400/50 shadow-[0_0_22px_rgba(99,102,241,0.3)] animate-snapshot-pop'
+                                            : 'bg-indigo-950/20 border-indigo-500/30'
+                                            }`}
                                     >
                                         <div className="flex items-center justify-between text-xs border-b border-indigo-500/20 pb-1.5">
-                                            <span className={`font-semibold flex items-center gap-1.5 transition-colors ${
-                                                isSnapshotHighlight ? 'text-indigo-200' : 'text-indigo-300'
-                                            }`}>
+                                            <span className={`font-semibold flex items-center gap-1.5 transition-colors ${isSnapshotHighlight ? 'text-indigo-200' : 'text-indigo-300'
+                                                }`}>
                                                 <span>📍</span>
                                                 <span>Titik Cuplikan Terpilih</span>
                                             </span>
-                                            <div className="flex items-center gap-1.5">
-                                                <span className={`text-[11px] font-mono px-1.5 py-0.5 rounded transition-all ${
-                                                    isSnapshotHighlight
-                                                        ? 'bg-indigo-500/30 text-indigo-100 font-semibold animate-flash-badge'
-                                                        : 'text-zinc-400'
-                                                }`}>
+                                            <div className="flex items-center">
+                                                <span className={`text-[11px] font-mono px-1.5 py-0.5 rounded transition-all ${isSnapshotHighlight
+                                                    ? 'bg-indigo-500/30 text-indigo-100 font-semibold animate-flash-badge'
+                                                    : 'text-zinc-400'
+                                                    }`}>
                                                     {formatLiveTime(selectedStreamer.clickedTime)}
                                                 </span>
                                                 <button
