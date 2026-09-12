@@ -641,7 +641,7 @@ export default function Analytics() {
                                     </div>
                                     <div className="bg-zinc-950/40 border border-zinc-800/60 rounded-lg p-2.5">
                                         <span className="text-xs text-zinc-400 font-medium block truncate">Sentimen Positif</span>
-                                        <span className="font-bold text-emerald-400 text-base sm:text-lg">
+                                        <span className="font-bold text-zinc-100 text-base sm:text-lg">
                                             {activeSentiment?.positivePercentage !== undefined ? `${activeSentiment.positivePercentage}%` : '-'}
                                         </span>
                                     </div>
