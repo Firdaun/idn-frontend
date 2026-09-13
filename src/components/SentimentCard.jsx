@@ -28,6 +28,7 @@ export default function SentimentCard({ sentiment, isLoading = false }) {
     }
 
     const {
+        totalChat = 0,
         positive = 0,
         neutral = 0,
         negative = 0,
@@ -64,14 +65,13 @@ export default function SentimentCard({ sentiment, isLoading = false }) {
     }
 
     // Kalkulasi Full Pie Chart (Lingkaran Penuh Tanpa Lubang Donut)
-    const totalMessages = positive + neutral + negative;
     const radius = 27.5;
     const strokeWidth = 55;
     const circumference = 2 * Math.PI * radius;
 
-    const posLen = totalMessages > 0 ? (positive / totalMessages) * circumference : 0;
-    const neuLen = totalMessages > 0 ? (neutral / totalMessages) * circumference : 0;
-    const negLen = totalMessages > 0 ? (negative / totalMessages) * circumference : 0;
+    const posLen = (positivePct / 100) * circumference;
+    const neuLen = (neutralPct / 100) * circumference;
+    const negLen = (negativePct / 100) * circumference;
 
     const posOffset = 0;
     const neuOffset = -posLen;
@@ -86,7 +86,7 @@ export default function SentimentCard({ sentiment, isLoading = false }) {
                         <span>💬 Sentimen Obrolan</span>
                     </span>
                     <span className="text-xs text-zinc-400">
-                        ({totalMessages.toLocaleString()} pesan)
+                        ({totalChat.toLocaleString()} pesan)
                     </span>
                 </div>
                 <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium border flex items-center gap-1.5 ${moodBadge.color}`}>

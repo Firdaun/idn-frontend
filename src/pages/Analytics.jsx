@@ -6,12 +6,8 @@ import { useQuery } from '@tanstack/react-query';
 import SentimentCard from '../components/SentimentCard';
 import WordCloudCard from '../components/WordCloudCard';
 import TopChattersCard from '../components/TopChattersCard';
-
-const getTodayStartIso = () => {
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-    return start.toISOString();
-};
+import AnalyticsDetailHeader from '../components/AnalyticsDetailHeader';
+import { calculateDurationAtTime, countMemberSnapshots, formatAxisTime, formatLiveTime, getDaysAgoIsoRange, getTodayStartIso } from '../../utils/analyticsHelpers';
 
 export default function Analytics() {
     const [selectedStreamer, setSelectedStreamer] = useState(null);
@@ -23,7 +19,6 @@ export default function Analytics() {
         return saved ? JSON.parse(saved) : { start: getTodayStartIso(), end: null };
     });
     const [metricType, setMetricType] = useState(() => sessionStorage.getItem('analytics_metricType') || 'viewers');
-    const [now] = useState(() => Date.now());
     const [isSnapshotHighlight, setIsSnapshotHighlight] = useState(false);
 
     useEffect(() => {
@@ -58,21 +53,6 @@ export default function Analytics() {
     useEffect(() => {
         sessionStorage.setItem('analytics_appliedCustom', JSON.stringify(appliedCustom));
     }, [appliedCustom]);
-
-
-    const getDaysAgoIsoRange = (daysAgo) => {
-        const start = new Date();
-        start.setDate(start.getDate() - daysAgo);
-        start.setHours(0, 0, 0, 0);
-
-        const end = new Date();
-        end.setDate(end.getDate() - daysAgo)
-        end.setHours(23, 59, 59, 999);
-        return {
-            start: start.toISOString(),
-            end: end.toISOString()
-        };
-    };
 
     const { start: activeStart, end: activeEnd } = useMemo(() => {
         if (timeRange === 'today' || timeRange === '1h') return { start: getTodayStartIso(), end: null };
@@ -157,75 +137,12 @@ export default function Analytics() {
         }) : null);
     };
 
-    const calculateSessionDuration = (liveAt, endAt) => {
-        if (!liveAt) return "-";
-        const start = new Date(liveAt).getTime();
-        const end = endAt ? new Date(endAt).getTime() : now;
-        if (isNaN(start) || isNaN(end) || end <= start) return "-";
-
-        const diffSeconds = Math.floor((end - start) / 1000);
-        const hours = Math.floor(diffSeconds / 3600);
-        const minutes = Math.floor((diffSeconds % 3600) / 60);
-
-        if (hours > 0) {
-            return `${hours} Jam ${minutes} Menit`;
-        }
-        return `${minutes} Menit`;
-    };
-
-    const countMemberSnapshots = (chartDataList, memberName, slug) => {
-        if (!chartDataList || !memberName) return 0;
-        return chartDataList.filter(d => {
-            if (slug && d[`_${memberName}_slug`]) {
-                return d[`_${memberName}_slug`] === slug;
-            }
-            return memberName in d;
-        }).length;
-    };
-
-    const calculateDurationAtTime = (liveAt, timestamp) => {
-        if (!liveAt || !timestamp) return null;
-        const startTime = new Date(liveAt).getTime();
-        if (isNaN(startTime)) return null;
-
-        const diffMs = Number(timestamp) - startTime;
-        if (diffMs <= 0) return "0 Detik";
-
-        const totalSeconds = Math.floor(diffMs / 1000);
-        if (totalSeconds < 60) return `${totalSeconds} Detik`;
-
-        const totalMinutes = Math.floor(totalSeconds / 60);
-        if (totalMinutes < 60) return `${totalMinutes} Menit`;
-
-        const hours = Math.floor(totalMinutes / 60);
-        const minutes = totalMinutes % 60;
-        return minutes > 0 ? `${hours} Jam ${minutes} Menit` : `${hours} Jam`;
-    };
-
-    const formatLiveTime = (dateStrOrMs) => {
-        if (!dateStrOrMs) return "-";
-        const d = new Date(Number(dateStrOrMs) || dateStrOrMs);
-        if (isNaN(d.getTime())) return "-";
-        const time = d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).replace(/\./g, ":");
-        const date = d.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
-        return `${time} (${date})`;
-    };
-
-    const formatAxisTime = (rawTime) => {
-        if (!rawTime) return "";
-        const d = new Date(Number(rawTime) || rawTime);
-        if (isNaN(d.getTime())) return "";
-        const time = d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }).replace(/\./g, ":");
-        const date = d.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
-        return `${time} ${date}`;
-    };
-
     const handleDotClick = (streamer, dotPayload) => {
         const dataPoint = dotPayload?.payload;
         const clickedTime = dataPoint?.timeLabel;
         const clickedViewers = dataPoint[streamer.name];
         const clickedChat = dataPoint[`_${streamer.name}_chat`];
-        const clickedSlug = dataPoint[`_${streamer.name}_slug`] || streamer.slug;
+        const clickedSlug = dataPoint[`_${streamer.name}_slug`];
         const clickedPos = dataPoint[`_${streamer.name}_pos`];
         const clickedNeu = dataPoint[`_${streamer.name}_neu`];
         const clickedNeg = dataPoint[`_${streamer.name}_neg`];
@@ -378,13 +295,6 @@ export default function Analytics() {
             });
         });
 
-        activeStreamers.forEach(s => {
-            const set = map.get(s.name);
-            if (set && set.size === 0 && s.slug) {
-                set.add(s.slug);
-            }
-        });
-
         return map;
     }, [filteredChartData, activeStreamers]);
 
@@ -405,46 +315,12 @@ export default function Analytics() {
     }, [sessionAnalyticsData?.sessions, selectedStreamer?.name, selectedMemberSlug, memberSessionsMap]);
 
     const currentSessionIndex = streamerSessions.findIndex(s => s.slug === selectedMemberSlug);
-    const activeSession = (currentSessionIndex >= 0 ? streamerSessions[currentSessionIndex] : streamerSessions[0]) || null;
+    const activeSession = (currentSessionIndex >= 0 ? streamerSessions[currentSessionIndex] : null)
+    console.log('activeSession', activeSession);
+    console.log('selectedStreamer', selectedStreamer);
+
+
     const isSessionTimeLoading = isSessionLoading || !sessionAnalyticsData || !activeSession;
-
-    const handlePrevSession = () => {
-        if (streamerSessions.length <= 1) return;
-        const activeIdx = currentSessionIndex >= 0 ? currentSessionIndex : 0;
-        const prevIndex = (activeIdx - 1 + streamerSessions.length) % streamerSessions.length;
-        const target = streamerSessions[prevIndex];
-        setSelectedStreamer(prev => ({
-            ...prev,
-            ...target,
-            name: selectedStreamer.name,
-            isLegendClick: false,
-            clickedTime: null,
-            clickedViewers: null,
-            clickedChat: null,
-            clickedPos: null,
-            clickedNeu: null,
-            clickedNeg: null
-        }));
-    };
-
-    const handleNextSession = () => {
-        if (streamerSessions.length <= 1) return;
-        const activeIdx = currentSessionIndex >= 0 ? currentSessionIndex : 0;
-        const nextIndex = (activeIdx + 1) % streamerSessions.length;
-        const target = streamerSessions[nextIndex];
-        setSelectedStreamer(prev => ({
-            ...prev,
-            ...target,
-            name: selectedStreamer.name,
-            isLegendClick: false,
-            clickedTime: null,
-            clickedViewers: null,
-            clickedChat: null,
-            clickedPos: null,
-            clickedNeu: null,
-            clickedNeg: null
-        }));
-    };
 
     const activeRangeLabel = timeRange === 'all' ? 'Semua' : timeRange === 'today' ? 'Hari Ini' : timeRange === '1d' ? '1 Hari Lalu' : timeRange === '2d' ? '2 Hari Lalu' : timeRange === '1h' ? '1 Jam' : timeRange === 'custom' ? 'Kustom' : timeRange;
 
@@ -527,112 +403,15 @@ export default function Analytics() {
             </div>
 
             {/* Selected Detail Header */}
-            {selectedStreamer && (
-                <div
-                    id="analytics-detail-header"
-                    className="scroll-mt-24 bg-zinc-900/50 border border-zinc-800/50 p-3 lg:p-5 rounded-lg lg:rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-1"
-                >
-                    {/* Sisi Kiri: Tombol Navigasi Sesi & Info Streamer */}
-                    <div className="flex items-center justify-between gap-1 min-[375px]:gap-2 xl:gap-5 w-full md:w-auto">
-                        {streamerSessions.length > 1 && (
-                            <button
-                                onClick={handlePrevSession}
-                                title="Sesi Sebelumnya"
-                                className="p-2 rounded-md lg:rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition cursor-pointer shrink-0"
-                            >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                                </svg>
-                            </button>
-                        )}
-
-                        <div className="min-w-0">
-                            <div className="flex items-center min-[375px]:gap-1.5 flex-wrap">
-                                <h3 className="font-semibold text-base sm:text-lg text-zinc-100 truncate">
-                                    {sessionAnalyticsData?.name || selectedStreamer.fullName || selectedStreamer.name}
-                                </h3>
-                                <div className='flex space-x-0.5 min-[360px]:space-x-0 min-[360px]:gap-1'>
-                                    {isSessionTimeLoading ? (
-                                        <span className="inline-block h-5 w-18 bg-zinc-800/80 rounded-sm lg:rounded-md animate-pulse" />
-                                    ) : (
-                                        <span className={`px-2 py-0.5 rounded-sm lg:rounded-md text-[11px] font-medium border ${(activeSession ? activeSession.endAt : selectedStreamer.endAt)
-                                            ? "bg-zinc-800 text-zinc-400 border-zinc-700"
-                                            : "bg-red-500/10 text-red-400 border-red-500/20"
-                                            }`}>
-                                            {(activeSession ? activeSession.endAt : selectedStreamer.endAt) ? "Selesai Siaran" : "Sedang Siaran"}
-                                        </span>
-                                    )}
-                                    {/* Badge penanda sesi */}
-                                    {streamerSessions.length > 1 && (
-                                        <span className="px-2 py-0.5 rounded-sm lg:rounded-md text-[11px] font-medium bg-zinc-800 text-zinc-300 border border-zinc-700">
-                                            Sesi {(currentSessionIndex >= 0 ? currentSessionIndex : 0) + 1} dari {streamerSessions.length}
-                                        </span>
-                                    )}
-                                </div>
-                            </div>
-                            <p className="text-zinc-400 text-xs mt-0.5 truncate">{selectedStreamer.slug}</p>
-                        </div>
-
-                        {streamerSessions.length > 1 && (
-                            <button
-                                onClick={handleNextSession}
-                                title="Sesi Berikutnya"
-                                className="p-2 rounded-md lg:rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition cursor-pointer shrink-0"
-                            >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                </svg>
-                            </button>
-                        )}
-                    </div>
-
-                    {/* Sisi Kanan: Jadwal Waktu & Tombol Reset */}
-                    <div className="flex items-center justify-between gap-0 md:gap-2 xl:gap-5 w-full md:w-auto flex-wrap border-t md:border-t-0 border-zinc-800/80 pt-1 md:pt-0">
-                        <div className={`min-w-50 w-53 min-[360px]:w-57 min-[375px]:w-60 min-[412px]:w-70 min-[440px]:w-76 ${streamerSessions.length > 1 ? 'md:w-62' : 'md:w-83'
-                            } lg:w-85 overflow-x-auto pb-1`}>
-                            <div className="flex items-center gap-3 text-xs sm:text-sm whitespace-nowrap">
-                                <div className='shrink-0'>
-                                    <span className="text-zinc-400 block text-xs">Mulai Siaran</span>
-                                    {isSessionTimeLoading ? (
-                                        <div className="h-4.5 sm:h-5 w-20 sm:w-24 bg-zinc-800/80 rounded-md animate-pulse mt-0.5" />
-                                    ) : (
-                                        <span className="font-semibold text-zinc-200 block">
-                                            {formatLiveTime(activeSession?.liveAt || selectedStreamer.liveAt)}
-                                        </span>
-                                    )}
-                                </div>
-                                <div className='shrink-0'>
-                                    <span className="text-zinc-400 block text-xs">Selesai Siaran</span>
-                                    {isSessionTimeLoading ? (
-                                        <div className="h-4.5 sm:h-5 w-20 sm:w-24 bg-zinc-800/80 rounded-md animate-pulse mt-0.5" />
-                                    ) : (
-                                        <span className="font-semibold text-zinc-200 block">
-                                            {(activeSession ? activeSession.endAt : selectedStreamer.endAt) ? formatLiveTime(activeSession?.endAt || selectedStreamer.endAt) : '-'}
-                                        </span>
-                                    )}
-                                </div>
-                                <div className='shrink-0'>
-                                    <span className="text-zinc-400 block text-xs">Total Durasi</span>
-                                    {isSessionTimeLoading ? (
-                                        <div className="h-4.5 sm:h-5 w-22 sm:w-26 bg-zinc-800/80 rounded-md animate-pulse mt-0.5" />
-                                    ) : (
-                                        <span className="font-semibold text-zinc-200 block">
-                                            {calculateSessionDuration(activeSession?.liveAt || selectedStreamer.liveAt, activeSession?.endAt ?? selectedStreamer.endAt)}
-                                        </span>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        <button
-                            onClick={() => setSelectedStreamer(null)}
-                            className="text-xs text-zinc-400 hover:text-white px-3 py-1.5 rounded-md lg:rounded-lg bg-zinc-800 hover:bg-zinc-700 transition cursor-pointer shrink-0 font-medium"
-                        >
-                            Atur Ulang
-                        </button>
-                    </div>
-                </div>
-            )}
+            <AnalyticsDetailHeader
+                selectedStreamer={selectedStreamer}
+                setSelectedStreamer={setSelectedStreamer}
+                streamerSessions={streamerSessions}
+                currentSessionIndex={currentSessionIndex}
+                activeSession={activeSession}
+                isSessionTimeLoading={isSessionTimeLoading}
+                streamerName={sessionAnalyticsData?.name}
+            />
 
             {/* Sentiment, Stream Stats & Word Cloud Section */}
             {selectedStreamer && (
@@ -678,48 +457,27 @@ export default function Analytics() {
                                             <span>📊 Statistik Siaran</span>
                                         </span>
                                         <span className="text-xs text-zinc-400">
-                                            {countMemberSnapshots(filteredChartData, selectedStreamer.name, activeSession?.slug || selectedStreamer.slug) ? `${countMemberSnapshots(filteredChartData, selectedStreamer.name, activeSession?.slug || selectedStreamer.slug)}x cuplikan` : ''}
+                                            {`${countMemberSnapshots(filteredChartData, selectedStreamer.name, activeSession.slug)}x cuplikan`}
                                         </span>
                                     </div>
 
                                     {/* Ringkasan Metrik 2x3 Grid */}
                                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-2.5 lg:gap-3">
-                                        <div className="bg-zinc-950/40 border border-zinc-800/60 rounded-lg p-2.5">
-                                            <span className="text-xs text-zinc-400 font-medium block truncate">Puncak Penonton</span>
-                                            <span className="font-bold text-zinc-100 text-base sm:text-lg">
-                                                {Number(activeSession?.peakViewers ?? selectedStreamer.peakViewers ?? 0).toLocaleString()}
-                                            </span>
-                                        </div>
-                                        <div className="bg-zinc-950/40 border border-zinc-800/60 rounded-lg p-2.5">
-                                            <span className="text-xs text-zinc-400 font-medium block truncate">Rata-rata Penonton</span>
-                                            <span className="font-bold text-zinc-100 text-base sm:text-lg">
-                                                {Math.round(activeSession?.avgViewers ?? selectedStreamer.avgViewers ?? 0).toLocaleString()}
-                                            </span>
-                                        </div>
-                                        <div className="bg-zinc-950/40 border border-zinc-800/60 rounded-lg p-2.5">
-                                            <span className="text-xs text-zinc-400 font-medium block truncate">Total Pesan</span>
-                                            <span className="font-bold text-zinc-100 text-base sm:text-lg">
-                                                {activeSentiment?.totalChat !== undefined ? Number(activeSentiment.totalChat).toLocaleString() : (activeSession?.totalChat !== undefined ? Number(activeSession.totalChat).toLocaleString() : (selectedStreamer.totalChat !== undefined ? Number(selectedStreamer.totalChat).toLocaleString() : '-'))}
-                                            </span>
-                                        </div>
-                                        <div className="bg-zinc-950/40 border border-zinc-800/60 rounded-lg p-2.5">
-                                            <span className="text-xs text-zinc-400 font-medium block truncate">Puncak Pesan / 30 dtk</span>
-                                            <span className="font-bold text-zinc-100 text-base sm:text-lg">
-                                                {activeSession?.peakChat !== undefined ? `${Number(activeSession.peakChat).toLocaleString()}` : (selectedStreamer.peakChat !== undefined ? `${Number(selectedStreamer.peakChat).toLocaleString()}` : '-')}
-                                            </span>
-                                        </div>
-                                        <div className="bg-zinc-950/40 border border-zinc-800/60 rounded-lg p-2.5">
-                                            <span className="text-xs text-zinc-400 font-medium block truncate">Rata-rata Pesan / 30 dtk</span>
-                                            <span className="font-bold text-zinc-100 text-base sm:text-lg">
-                                                {activeSession?.avgChat !== undefined ? `${activeSession.avgChat}` : (selectedStreamer.avgChat !== undefined ? `${selectedStreamer.avgChat}` : '-')}
-                                            </span>
-                                        </div>
-                                        <div className="bg-zinc-950/40 border border-zinc-800/60 rounded-lg p-2.5">
-                                            <span className="text-xs text-zinc-400 font-medium block truncate">Sentimen Positif</span>
-                                            <span className="font-bold text-zinc-100 text-base sm:text-lg">
-                                                {activeSentiment?.positivePercentage !== undefined ? `${activeSentiment.positivePercentage}%` : '-'}
-                                            </span>
-                                        </div>
+                                        {[
+                                            { label: 'Puncak Penonton', value: activeSession.peakViewers.toLocaleString() },
+                                            { label: 'Rata-rata Penonton', value: activeSession.avgViewers.toLocaleString() },
+                                            { label: 'Total Pesan', value: activeSentiment.totalChat },
+                                            { label: 'Puncak Pesan / 30 dtk', value: activeSession.peakChat },
+                                            { label: 'Rata-rata Pesan / 30 dtk', value: activeSession.avgChat },
+                                            { label: 'Sentimen Positif', value: activeSentiment.positivePercentage }
+                                        ].map((metric) => (
+                                            <div key={metric.label} className="bg-zinc-950/40 border border-zinc-800/60 rounded-lg p-2.5">
+                                                <span className="text-xs text-zinc-400 font-medium block truncate">{metric.label}</span>
+                                                <span className="font-bold text-zinc-100 text-base sm:text-lg">
+                                                    {metric.value}
+                                                </span>
+                                            </div>
+                                        ))}
                                     </div>
 
                                     {/* Snapshot Inspector (Titik Cuplikan Terpilih) */}
@@ -766,35 +524,29 @@ export default function Analytics() {
                                                 <div>
                                                     <span className="text-[11px] text-zinc-400 block">Durasi Saat Itu</span>
                                                     <span className={`font-semibold text-zinc-200 block ${isSnapshotHighlight ? 'animate-number-flip' : ''}`}>
-                                                        {calculateDurationAtTime(activeSession?.liveAt || selectedStreamer.liveAt, selectedStreamer.clickedTime) || '-'}
+                                                        {calculateDurationAtTime(activeSession.liveAt, selectedStreamer.clickedTime)}
                                                     </span>
                                                 </div>
-                                                {selectedStreamer.clickedViewers !== null && (
-                                                    <div>
-                                                        <span className="text-[11px] text-zinc-400 block">Penonton</span>
-                                                        <span className={`font-bold block transition-colors duration-300 ${isSnapshotHighlight ? 'animate-number-flip text-white' : 'text-zinc-100'}`}>
-                                                            👥 {Number(selectedStreamer.clickedViewers).toLocaleString()}
-                                                        </span>
-                                                    </div>
-                                                )}
-                                                {selectedStreamer.clickedChat !== null && (
-                                                    <div>
-                                                        <span className="text-[11px] text-zinc-400 block">Pesan / 30 dtk</span>
-                                                        <span className={`font-bold block transition-colors duration-300 ${isSnapshotHighlight ? 'animate-number-flip text-white' : 'text-zinc-100'}`}>
-                                                            💬 {Number(selectedStreamer.clickedChat).toLocaleString()}
-                                                        </span>
-                                                    </div>
-                                                )}
-                                                {selectedStreamer.clickedPos !== null && (
-                                                    <div>
-                                                        <span className="text-[11px] text-zinc-400 block">Sentimen</span>
-                                                        <span className={`font-semibold text-[11px] text-zinc-200 flex items-center gap-1 ${isSnapshotHighlight ? 'animate-number-flip' : ''}`}>
-                                                            <span className="text-emerald-400">🟢 {selectedStreamer.clickedPos}</span>
-                                                            <span className="text-sky-400">🔵 {selectedStreamer.clickedNeu}</span>
-                                                            <span className="text-rose-400">🔴 {selectedStreamer.clickedNeg}</span>
-                                                        </span>
-                                                    </div>
-                                                )}
+                                                <div>
+                                                    <span className="text-[11px] text-zinc-400 block">Penonton</span>
+                                                    <span className={`font-bold block transition-colors duration-300 ${isSnapshotHighlight ? 'animate-number-flip text-white' : 'text-zinc-100'}`}>
+                                                        👥 {selectedStreamer.clickedViewers}
+                                                    </span>
+                                                </div>
+                                                <div>
+                                                    <span className="text-[11px] text-zinc-400 block">Pesan / 30 dtk</span>
+                                                    <span className={`font-bold block transition-colors duration-300 ${isSnapshotHighlight ? 'animate-number-flip text-white' : 'text-zinc-100'}`}>
+                                                        💬 {selectedStreamer.clickedChat}
+                                                    </span>
+                                                </div>
+                                                <div>
+                                                    <span className="text-[11px] text-zinc-400 block">Sentimen</span>
+                                                    <span className={`font-semibold text-[11px] text-zinc-200 flex items-center gap-1 ${isSnapshotHighlight ? 'animate-number-flip' : ''}`}>
+                                                        <span className="text-emerald-400">🟢 {selectedStreamer.clickedPos}</span>
+                                                        <span className="text-sky-400">🔵 {selectedStreamer.clickedNeu}</span>
+                                                        <span className="text-rose-400">🔴 {selectedStreamer.clickedNeg}</span>
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                     ) : (
