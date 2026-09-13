@@ -389,12 +389,11 @@ export default function Analytics() {
     }, [filteredChartData, activeStreamers]);
 
     const selectedMemberSlug = selectedStreamer?.slug;
-    const selectedStreamerName = selectedStreamer?.name;
     const streamerSessions = useMemo(() => {
         const allSessions = sessionAnalyticsData?.sessions || [];
-        if (!selectedStreamerName || !allSessions.length) return allSessions;
+        if (!selectedStreamer?.name || !allSessions.length) return allSessions;
 
-        const slugSet = memberSessionsMap.get(selectedStreamerName);
+        const slugSet = memberSessionsMap.get(selectedStreamer?.name);
         if (!slugSet || slugSet.size === 0) {
             return selectedMemberSlug
                 ? allSessions.filter(s => s.slug === selectedMemberSlug)
@@ -403,10 +402,11 @@ export default function Analytics() {
 
         const visibleSessions = allSessions.filter(s => slugSet.has(s.slug));
         return visibleSessions.length > 0 ? visibleSessions : allSessions;
-    }, [sessionAnalyticsData?.sessions, selectedStreamerName, selectedMemberSlug, memberSessionsMap]);
+    }, [sessionAnalyticsData?.sessions, selectedStreamer?.name, selectedMemberSlug, memberSessionsMap]);
 
     const currentSessionIndex = streamerSessions.findIndex(s => s.slug === selectedMemberSlug);
     const activeSession = (currentSessionIndex >= 0 ? streamerSessions[currentSessionIndex] : streamerSessions[0]) || null;
+    const isSessionTimeLoading = isSessionLoading || !sessionAnalyticsData || !activeSession;
 
     const handlePrevSession = () => {
         if (streamerSessions.length <= 1) return;
@@ -552,12 +552,16 @@ export default function Analytics() {
                                     {sessionAnalyticsData?.name || selectedStreamer.fullName || selectedStreamer.name}
                                 </h3>
                                 <div className='flex space-x-0.5 min-[360px]:space-x-0 min-[360px]:gap-1'>
-                                    <span className={`px-2 py-0.5 rounded-sm lg:rounded-md text-[11px] font-medium border ${(activeSession ? activeSession.endAt : selectedStreamer.endAt)
-                                        ? "bg-zinc-800 text-zinc-400 border-zinc-700"
-                                        : "bg-red-500/10 text-red-400 border-red-500/20"
-                                        }`}>
-                                        {(activeSession ? activeSession.endAt : selectedStreamer.endAt) ? "Selesai Siaran" : "Sedang Siaran"}
-                                    </span>
+                                    {isSessionTimeLoading ? (
+                                        <span className="inline-block h-5 w-18 bg-zinc-800/80 rounded-sm lg:rounded-md animate-pulse border border-zinc-700/50" />
+                                    ) : (
+                                        <span className={`px-2 py-0.5 rounded-sm lg:rounded-md text-[11px] font-medium border ${(activeSession ? activeSession.endAt : selectedStreamer.endAt)
+                                            ? "bg-zinc-800 text-zinc-400 border-zinc-700"
+                                            : "bg-red-500/10 text-red-400 border-red-500/20"
+                                            }`}>
+                                            {(activeSession ? activeSession.endAt : selectedStreamer.endAt) ? "Selesai Siaran" : "Sedang Siaran"}
+                                        </span>
+                                    )}
                                     {/* Badge penanda sesi */}
                                     {streamerSessions.length > 1 && (
                                         <span className="px-2 py-0.5 rounded-sm lg:rounded-md text-[11px] font-medium bg-zinc-800 text-zinc-300 border border-zinc-700">
@@ -589,21 +593,33 @@ export default function Analytics() {
                             <div className="flex items-center gap-3 text-xs sm:text-sm whitespace-nowrap">
                                 <div className='shrink-0'>
                                     <span className="text-zinc-400 block text-xs">Mulai Siaran</span>
-                                    <span className="font-semibold text-zinc-200">
-                                        {formatLiveTime(activeSession?.liveAt || selectedStreamer.liveAt)}
-                                    </span>
+                                    {isSessionTimeLoading ? (
+                                        <div className="h-4.5 sm:h-5 w-20 sm:w-24 bg-zinc-800/80 rounded-md animate-pulse mt-0.5" />
+                                    ) : (
+                                        <span className="font-semibold text-zinc-200 block">
+                                            {formatLiveTime(activeSession?.liveAt || selectedStreamer.liveAt)}
+                                        </span>
+                                    )}
                                 </div>
                                 <div className='shrink-0'>
                                     <span className="text-zinc-400 block text-xs">Selesai Siaran</span>
-                                    <span className="font-semibold text-zinc-200">
-                                        {(activeSession ? activeSession.endAt : selectedStreamer.endAt) ? formatLiveTime(activeSession?.endAt || selectedStreamer.endAt) : '-'}
-                                    </span>
+                                    {isSessionTimeLoading ? (
+                                        <div className="h-4.5 sm:h-5 w-20 sm:w-24 bg-zinc-800/80 rounded-md animate-pulse mt-0.5" />
+                                    ) : (
+                                        <span className="font-semibold text-zinc-200 block">
+                                            {(activeSession ? activeSession.endAt : selectedStreamer.endAt) ? formatLiveTime(activeSession?.endAt || selectedStreamer.endAt) : '-'}
+                                        </span>
+                                    )}
                                 </div>
                                 <div className='shrink-0'>
                                     <span className="text-zinc-400 block text-xs">Total Durasi</span>
-                                    <span className="font-semibold text-zinc-200">
-                                        {calculateSessionDuration(activeSession?.liveAt || selectedStreamer.liveAt, activeSession?.endAt ?? selectedStreamer.endAt)}
-                                    </span>
+                                    {isSessionTimeLoading ? (
+                                        <div className="h-4.5 sm:h-5 w-22 sm:w-26 bg-zinc-800/80 rounded-md animate-pulse mt-0.5" />
+                                    ) : (
+                                        <span className="font-semibold text-zinc-200 block">
+                                            {calculateSessionDuration(activeSession?.liveAt || selectedStreamer.liveAt, activeSession?.endAt ?? selectedStreamer.endAt)}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -631,143 +647,169 @@ export default function Analytics() {
                             />
 
                             {/* Card Statistik Performa & Snapshot Titik Terpilih */}
-                            <div id="analytics-stats-card" className="bg-zinc-900/40 border border-zinc-800/50 rounded-xl p-4 lg:p-5 space-y-3 lg:space-y-5 flex-1">
-                                <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2.5 lg:pb-5">
-                                    <span className="text-sm sm:text-base font-semibold text-zinc-100 flex items-center gap-2">
-                                        <span>📊 Statistik Siaran</span>
-                                    </span>
-                                    <span className="text-xs text-zinc-400">
-                                        {countMemberSnapshots(filteredChartData, selectedStreamer.name, selectedStreamer.slug) ? `${countMemberSnapshots(filteredChartData, selectedStreamer.name, selectedStreamer.slug)}x cuplikan` : ''}
-                                    </span>
-                                </div>
+                            {isSessionTimeLoading ? (
+                                <div id="analytics-stats-card" className="bg-zinc-900/40 border border-zinc-800/50 rounded-xl p-4 lg:p-5 space-y-3 lg:space-y-5 flex-1 animate-pulse">
+                                    {/* Header Skeleton */}
+                                    <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2.5 lg:pb-5">
+                                        <div className="h-5 sm:h-6 w-36 bg-zinc-800 rounded" />
+                                        <div className="h-4 w-20 bg-zinc-800/80 rounded" />
+                                    </div>
 
-                                {/* Ringkasan Metrik 2x3 Grid */}
-                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-2.5 lg:gap-3">
-                                    <div className="bg-zinc-950/40 border border-zinc-800/60 rounded-lg p-2.5">
-                                        <span className="text-xs text-zinc-400 font-medium block truncate">Puncak Penonton</span>
-                                        <span className="font-bold text-zinc-100 text-base sm:text-lg">
-                                            {Number(activeSession?.peakViewers ?? selectedStreamer.peakViewers ?? 0).toLocaleString()}
-                                        </span>
+                                    {/* 6 Grid Metrik Skeleton */}
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-2.5 lg:gap-3">
+                                        {[...Array(6)].map((_, i) => (
+                                            <div key={i} className="bg-zinc-950/40 border border-zinc-800/60 rounded-lg p-2.5 space-y-2">
+                                                <div className="h-3.5 w-24 bg-zinc-800/80 rounded" />
+                                                <div className="h-5 sm:h-6 w-16 bg-zinc-800/90 rounded" />
+                                            </div>
+                                        ))}
                                     </div>
-                                    <div className="bg-zinc-950/40 border border-zinc-800/60 rounded-lg p-2.5">
-                                        <span className="text-xs text-zinc-400 font-medium block truncate">Rata-rata Penonton</span>
-                                        <span className="font-bold text-zinc-100 text-base sm:text-lg">
-                                            {Math.round(activeSession?.avgViewers ?? selectedStreamer.avgViewers ?? 0).toLocaleString()}
-                                        </span>
-                                    </div>
-                                    <div className="bg-zinc-950/40 border border-zinc-800/60 rounded-lg p-2.5">
-                                        <span className="text-xs text-zinc-400 font-medium block truncate">Total Pesan</span>
-                                        <span className="font-bold text-zinc-100 text-base sm:text-lg">
-                                            {activeSentiment?.totalChat !== undefined ? Number(activeSentiment.totalChat).toLocaleString() : (activeSession?.totalChat !== undefined ? Number(activeSession.totalChat).toLocaleString() : (selectedStreamer.totalChat !== undefined ? Number(selectedStreamer.totalChat).toLocaleString() : '-'))}
-                                        </span>
-                                    </div>
-                                    <div className="bg-zinc-950/40 border border-zinc-800/60 rounded-lg p-2.5">
-                                        <span className="text-xs text-zinc-400 font-medium block truncate">Puncak Pesan / 30 dtk</span>
-                                        <span className="font-bold text-zinc-100 text-base sm:text-lg">
-                                            {activeSession?.peakChat !== undefined ? `${Number(activeSession.peakChat).toLocaleString()}` : (selectedStreamer.peakChat !== undefined ? `${Number(selectedStreamer.peakChat).toLocaleString()}` : '-')}
-                                        </span>
-                                    </div>
-                                    <div className="bg-zinc-950/40 border border-zinc-800/60 rounded-lg p-2.5">
-                                        <span className="text-xs text-zinc-400 font-medium block truncate">Rata-rata Pesan / 30 dtk</span>
-                                        <span className="font-bold text-zinc-100 text-base sm:text-lg">
-                                            {activeSession?.avgChat !== undefined ? `${activeSession.avgChat}` : (selectedStreamer.avgChat !== undefined ? `${selectedStreamer.avgChat}` : '-')}
-                                        </span>
-                                    </div>
-                                    <div className="bg-zinc-950/40 border border-zinc-800/60 rounded-lg p-2.5">
-                                        <span className="text-xs text-zinc-400 font-medium block truncate">Sentimen Positif</span>
-                                        <span className="font-bold text-zinc-100 text-base sm:text-lg">
-                                            {activeSentiment?.positivePercentage !== undefined ? `${activeSentiment.positivePercentage}%` : '-'}
-                                        </span>
+
+                                    {/* Snapshot Inspector Skeleton */}
+                                    <div className="bg-zinc-950/30 border border-zinc-800/60 rounded-lg p-3 flex flex-col justify-center items-center h-[90.3px] space-y-2">
+                                        <div className="h-3.5 w-36 bg-zinc-800/80 rounded" />
+                                        <div className="h-3 w-52 sm:w-64 bg-zinc-800/50 rounded" />
                                     </div>
                                 </div>
+                            ) : (
+                                <div id="analytics-stats-card" className="bg-zinc-900/40 border border-zinc-800/50 rounded-xl p-4 lg:p-5 space-y-3 lg:space-y-5 flex-1">
+                                    <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2.5 lg:pb-5">
+                                        <span className="text-sm sm:text-base font-semibold text-zinc-100 flex items-center gap-2">
+                                            <span>📊 Statistik Siaran</span>
+                                        </span>
+                                        <span className="text-xs text-zinc-400">
+                                            {countMemberSnapshots(filteredChartData, selectedStreamer.name, activeSession?.slug || selectedStreamer.slug) ? `${countMemberSnapshots(filteredChartData, selectedStreamer.name, activeSession?.slug || selectedStreamer.slug)}x cuplikan` : ''}
+                                        </span>
+                                    </div>
 
-                                {/* Snapshot Inspector (Titik Cuplikan Terpilih) */}
-                                {selectedStreamer.clickedTime ? (
-                                    <div
-                                        className={`border rounded-lg p-3 space-y-2 transition-all duration-500 ease-out ${isSnapshotHighlight
-                                            ? 'bg-indigo-950/40 border-indigo-400/80 shadow-[0_0_24px_rgba(99,102,241,0.25)] animate-snapshot-pop'
-                                            : 'bg-indigo-950/20 border-indigo-500/30 shadow-none'
-                                            }`}
-                                    >
-                                        <div className="flex items-center justify-between text-xs border-b border-indigo-500/20 pb-1.5">
-                                            <span className={`font-semibold flex items-center gap-1.5 transition-colors duration-300 ${isSnapshotHighlight ? 'text-indigo-200' : 'text-indigo-300'
-                                                }`}>
+                                    {/* Ringkasan Metrik 2x3 Grid */}
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-2.5 lg:gap-3">
+                                        <div className="bg-zinc-950/40 border border-zinc-800/60 rounded-lg p-2.5">
+                                            <span className="text-xs text-zinc-400 font-medium block truncate">Puncak Penonton</span>
+                                            <span className="font-bold text-zinc-100 text-base sm:text-lg">
+                                                {Number(activeSession?.peakViewers ?? selectedStreamer.peakViewers ?? 0).toLocaleString()}
+                                            </span>
+                                        </div>
+                                        <div className="bg-zinc-950/40 border border-zinc-800/60 rounded-lg p-2.5">
+                                            <span className="text-xs text-zinc-400 font-medium block truncate">Rata-rata Penonton</span>
+                                            <span className="font-bold text-zinc-100 text-base sm:text-lg">
+                                                {Math.round(activeSession?.avgViewers ?? selectedStreamer.avgViewers ?? 0).toLocaleString()}
+                                            </span>
+                                        </div>
+                                        <div className="bg-zinc-950/40 border border-zinc-800/60 rounded-lg p-2.5">
+                                            <span className="text-xs text-zinc-400 font-medium block truncate">Total Pesan</span>
+                                            <span className="font-bold text-zinc-100 text-base sm:text-lg">
+                                                {activeSentiment?.totalChat !== undefined ? Number(activeSentiment.totalChat).toLocaleString() : (activeSession?.totalChat !== undefined ? Number(activeSession.totalChat).toLocaleString() : (selectedStreamer.totalChat !== undefined ? Number(selectedStreamer.totalChat).toLocaleString() : '-'))}
+                                            </span>
+                                        </div>
+                                        <div className="bg-zinc-950/40 border border-zinc-800/60 rounded-lg p-2.5">
+                                            <span className="text-xs text-zinc-400 font-medium block truncate">Puncak Pesan / 30 dtk</span>
+                                            <span className="font-bold text-zinc-100 text-base sm:text-lg">
+                                                {activeSession?.peakChat !== undefined ? `${Number(activeSession.peakChat).toLocaleString()}` : (selectedStreamer.peakChat !== undefined ? `${Number(selectedStreamer.peakChat).toLocaleString()}` : '-')}
+                                            </span>
+                                        </div>
+                                        <div className="bg-zinc-950/40 border border-zinc-800/60 rounded-lg p-2.5">
+                                            <span className="text-xs text-zinc-400 font-medium block truncate">Rata-rata Pesan / 30 dtk</span>
+                                            <span className="font-bold text-zinc-100 text-base sm:text-lg">
+                                                {activeSession?.avgChat !== undefined ? `${activeSession.avgChat}` : (selectedStreamer.avgChat !== undefined ? `${selectedStreamer.avgChat}` : '-')}
+                                            </span>
+                                        </div>
+                                        <div className="bg-zinc-950/40 border border-zinc-800/60 rounded-lg p-2.5">
+                                            <span className="text-xs text-zinc-400 font-medium block truncate">Sentimen Positif</span>
+                                            <span className="font-bold text-zinc-100 text-base sm:text-lg">
+                                                {activeSentiment?.positivePercentage !== undefined ? `${activeSentiment.positivePercentage}%` : '-'}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Snapshot Inspector (Titik Cuplikan Terpilih) */}
+                                    {selectedStreamer.clickedTime ? (
+                                        <div
+                                            className={`border rounded-lg p-3 space-y-2 transition-all duration-500 ease-out ${isSnapshotHighlight
+                                                ? 'bg-indigo-950/40 border-indigo-400/80 shadow-[0_0_24px_rgba(99,102,241,0.25)] animate-snapshot-pop'
+                                                : 'bg-indigo-950/20 border-indigo-500/30 shadow-none'
+                                                }`}
+                                        >
+                                            <div className="flex items-center justify-between text-xs border-b border-indigo-500/20 pb-1.5">
+                                                <span className={`font-semibold flex items-center gap-1.5 transition-colors duration-300 ${isSnapshotHighlight ? 'text-indigo-200' : 'text-indigo-300'
+                                                    }`}>
+                                                    <span>📍</span>
+                                                    <span>Titik Cuplikan Terpilih</span>
+                                                </span>
+                                                <div className="flex items-center">
+                                                    <span className={`text-[11px] font-mono px-1.5 py-0.5 rounded font-semibold transition-all duration-300 ${isSnapshotHighlight
+                                                        ? 'bg-indigo-500/30 text-indigo-100 animate-flash-badge'
+                                                        : 'text-zinc-400 bg-transparent'
+                                                        }`}>
+                                                        {formatLiveTime(selectedStreamer.clickedTime)}
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setSelectedStreamer(prev => prev ? ({
+                                                            ...prev,
+                                                            clickedTime: null,
+                                                            clickedViewers: null,
+                                                            clickedChat: null,
+                                                            clickedPos: null,
+                                                            clickedNeu: null,
+                                                            clickedNeg: null
+                                                        }) : null)}
+                                                        className="text-zinc-400 hover:text-zinc-200 transition text-[11px] px-1 rounded hover:bg-indigo-500/20 cursor-pointer"
+                                                        title="Tutup cuplikan titik"
+                                                    >
+                                                        ✕
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 text-xs">
+                                                <div>
+                                                    <span className="text-[11px] text-zinc-400 block">Durasi Saat Itu</span>
+                                                    <span className={`font-semibold text-zinc-200 block ${isSnapshotHighlight ? 'animate-number-flip' : ''}`}>
+                                                        {calculateDurationAtTime(activeSession?.liveAt || selectedStreamer.liveAt, selectedStreamer.clickedTime) || '-'}
+                                                    </span>
+                                                </div>
+                                                {selectedStreamer.clickedViewers !== null && (
+                                                    <div>
+                                                        <span className="text-[11px] text-zinc-400 block">Penonton</span>
+                                                        <span className={`font-bold block transition-colors duration-300 ${isSnapshotHighlight ? 'animate-number-flip text-white' : 'text-zinc-100'}`}>
+                                                            👥 {Number(selectedStreamer.clickedViewers).toLocaleString()}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                {selectedStreamer.clickedChat !== null && (
+                                                    <div>
+                                                        <span className="text-[11px] text-zinc-400 block">Pesan / 30 dtk</span>
+                                                        <span className={`font-bold block transition-colors duration-300 ${isSnapshotHighlight ? 'animate-number-flip text-white' : 'text-zinc-100'}`}>
+                                                            💬 {Number(selectedStreamer.clickedChat).toLocaleString()}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                {selectedStreamer.clickedPos !== null && (
+                                                    <div>
+                                                        <span className="text-[11px] text-zinc-400 block">Sentimen</span>
+                                                        <span className={`font-semibold text-[11px] text-zinc-200 flex items-center gap-1 ${isSnapshotHighlight ? 'animate-number-flip' : ''}`}>
+                                                            <span className="text-emerald-400">🟢 {selectedStreamer.clickedPos}</span>
+                                                            <span className="text-sky-400">🔵 {selectedStreamer.clickedNeu}</span>
+                                                            <span className="text-rose-400">🔴 {selectedStreamer.clickedNeg}</span>
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="bg-zinc-950/30 border border-dashed border-zinc-800/80 rounded-lg p-3 flex flex-col justify-center text-center h-[90.3px] space-y-1">
+                                            <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-zinc-400">
                                                 <span>📍</span>
                                                 <span>Titik Cuplikan Terpilih</span>
-                                            </span>
-                                            <div className="flex items-center">
-                                                <span className={`text-[11px] font-mono px-1.5 py-0.5 rounded font-semibold transition-all duration-300 ${isSnapshotHighlight
-                                                    ? 'bg-indigo-500/30 text-indigo-100 animate-flash-badge'
-                                                    : 'text-zinc-400 bg-transparent'
-                                                    }`}>
-                                                    {formatLiveTime(selectedStreamer.clickedTime)}
-                                                </span>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setSelectedStreamer(prev => prev ? ({
-                                                        ...prev,
-                                                        clickedTime: null,
-                                                        clickedViewers: null,
-                                                        clickedChat: null,
-                                                        clickedPos: null,
-                                                        clickedNeu: null,
-                                                        clickedNeg: null
-                                                    }) : null)}
-                                                    className="text-zinc-400 hover:text-zinc-200 transition text-[11px] px-1 rounded hover:bg-indigo-500/20 cursor-pointer"
-                                                    title="Tutup cuplikan titik"
-                                                >
-                                                    ✕
-                                                </button>
                                             </div>
+                                            <p className="text-[11px] text-zinc-500 leading-relaxed max-w-lg mx-auto">
+                                                Nilai pada bagian ini akan terisi jika kamu mengklik salah satu titik pada garis grafik di bawah.
+                                            </p>
                                         </div>
-
-                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 text-xs">
-                                            <div>
-                                                <span className="text-[11px] text-zinc-400 block">Durasi Saat Itu</span>
-                                                <span className={`font-semibold text-zinc-200 block ${isSnapshotHighlight ? 'animate-number-flip' : ''}`}>
-                                                    {calculateDurationAtTime(activeSession?.liveAt || selectedStreamer.liveAt, selectedStreamer.clickedTime) || '-'}
-                                                </span>
-                                            </div>
-                                            {selectedStreamer.clickedViewers !== null && (
-                                                <div>
-                                                    <span className="text-[11px] text-zinc-400 block">Penonton</span>
-                                                    <span className={`font-bold block transition-colors duration-300 ${isSnapshotHighlight ? 'animate-number-flip text-white' : 'text-zinc-100'}`}>
-                                                        👥 {Number(selectedStreamer.clickedViewers).toLocaleString()}
-                                                    </span>
-                                                </div>
-                                            )}
-                                            {selectedStreamer.clickedChat !== null && (
-                                                <div>
-                                                    <span className="text-[11px] text-zinc-400 block">Pesan / 30 dtk</span>
-                                                    <span className={`font-bold block transition-colors duration-300 ${isSnapshotHighlight ? 'animate-number-flip text-white' : 'text-zinc-100'}`}>
-                                                        💬 {Number(selectedStreamer.clickedChat).toLocaleString()}
-                                                    </span>
-                                                </div>
-                                            )}
-                                            {selectedStreamer.clickedPos !== null && (
-                                                <div>
-                                                    <span className="text-[11px] text-zinc-400 block">Sentimen</span>
-                                                    <span className={`font-semibold text-[11px] text-zinc-200 flex items-center gap-1 ${isSnapshotHighlight ? 'animate-number-flip' : ''}`}>
-                                                        <span className="text-emerald-400">🟢 {selectedStreamer.clickedPos}</span>
-                                                        <span className="text-sky-400">🔵 {selectedStreamer.clickedNeu}</span>
-                                                        <span className="text-rose-400">🔴 {selectedStreamer.clickedNeg}</span>
-                                                    </span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="bg-zinc-950/30 border border-dashed border-zinc-800/80 rounded-lg p-3 flex flex-col justify-center text-center h-[90.3px] space-y-1">
-                                        <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-zinc-400">
-                                            <span>📍</span>
-                                            <span>Titik Cuplikan Terpilih</span>
-                                        </div>
-                                        <p className="text-[11px] text-zinc-500 leading-relaxed max-w-lg mx-auto">
-                                            Nilai pada bagian ini akan terisi jika kamu mengklik salah satu titik pada garis grafik di bawah.
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                         {/* Kolom Kanan: Word Cloud (Topik Hangat) */}

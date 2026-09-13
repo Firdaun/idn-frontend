@@ -250,13 +250,45 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
 
     if (isLoading) {
         return (
-            <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-xl p-4 lg:p-5 space-y-4 animate-pulse">
-                <div className="flex justify-between items-center">
-                    <div className="h-5 w-48 bg-zinc-800 rounded"></div>
-                    <div className="h-8 w-32 bg-zinc-800 rounded-lg"></div>
+            <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-xl p-4 lg:p-5 flex flex-col h-full space-y-3 animate-pulse">
+                {/* Header Skeleton */}
+                <div className="flex flex-col md:flex-row lg:flex-col xl:flex-row md:items-center lg:items-start justify-between gap-3 border-b border-zinc-800/80 pb-3">
+                    <div className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                            <div className="h-5 sm:h-6 w-44 sm:w-48 bg-zinc-800 rounded" />
+                            <div className="h-4 w-24 bg-zinc-800/70 rounded" />
+                        </div>
+                        <div className="h-3.5 w-64 sm:w-80 bg-zinc-800/50 rounded" />
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-col min-[540px]:flex-row md:flex-col lg:flex-row xl:flex-col lg:w-full xl:w-85">
+                        <div className="h-7 w-full min-[540px]:w-[45%] md:w-64.75 lg:w-[90%] xl:w-80 bg-zinc-800/60 rounded-lg" />
+                        <div className="h-7 w-full min-[540px]:w-[55%] md:w-64.75 lg:w-full xl:w-80 bg-zinc-800/50 rounded-lg" />
+                    </div>
                 </div>
-                <div className="h-72 bg-zinc-800/30 rounded-xl flex items-center justify-center">
-                    <div className="w-7 h-7 border-2 border-zinc-600 border-t-transparent rounded-full animate-spin"></div>
+
+                {/* Top 3 & Total Bar Skeleton */}
+                <div className="p-2.5 rounded-xl bg-zinc-900/60 border border-zinc-800/70 flex items-center justify-between gap-2">
+                    <div className="h-6 w-28 bg-zinc-800/80 rounded-lg" />
+                    <div className="flex items-center gap-2">
+                        <div className="h-6 w-24 bg-zinc-800/60 rounded-lg hidden min-[540px]:block" />
+                        <div className="h-6 w-24 bg-zinc-800/60 rounded-lg hidden sm:block" />
+                        <div className="h-6 w-24 bg-zinc-800/60 rounded-lg" />
+                    </div>
+                </div>
+
+                {/* Canvas 3D Skeleton Area */}
+                <div className="relative w-full flex-1 min-h-72 lg:min-h-0 rounded-xl bg-linear-to-b from-zinc-900/50 via-zinc-950/80 to-zinc-950 border border-zinc-800/60 flex items-center justify-center overflow-hidden">
+                    <div className="flex flex-wrap items-center justify-center gap-3 p-6 max-w-md opacity-35">
+                        <div className="h-5 w-16 bg-zinc-700/60 rounded-full" />
+                        <div className="h-8 w-28 bg-zinc-700/80 rounded-full" />
+                        <div className="h-4 w-14 bg-zinc-700/50 rounded-full" />
+                        <div className="h-10 w-36 bg-zinc-700 rounded-full" />
+                        <div className="h-6 w-20 bg-zinc-700/70 rounded-full" />
+                        <div className="h-4 w-16 bg-zinc-700/50 rounded-full" />
+                        <div className="h-7 w-24 bg-zinc-700/70 rounded-full" />
+                        <div className="h-5 w-18 bg-zinc-700/60 rounded-full" />
+                    </div>
                 </div>
             </div>
         );
