@@ -130,6 +130,7 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                     weightSizeMax: weightSizeMax,
 
                     txtOpt: false,
+                    hideTags: false,
 
                     noSelect: true,
                     outlineMethod: 'none',
@@ -278,16 +279,37 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                 </div>
 
                 {/* Canvas 3D Skeleton Area */}
-                <div className="relative w-full flex-1 min-h-72 lg:min-h-0 rounded-xl bg-linear-to-b from-zinc-900/50 via-zinc-950/80 to-zinc-950 border border-zinc-800/60 flex items-center justify-center overflow-hidden">
-                    <div className="flex flex-wrap items-center justify-center gap-3 p-6 max-w-md opacity-35">
-                        <div className="h-5 w-16 bg-zinc-700/60 rounded-full" />
-                        <div className="h-8 w-28 bg-zinc-700/80 rounded-full" />
-                        <div className="h-4 w-14 bg-zinc-700/50 rounded-full" />
-                        <div className="h-10 w-36 bg-zinc-700 rounded-full" />
-                        <div className="h-6 w-20 bg-zinc-700/70 rounded-full" />
-                        <div className="h-4 w-16 bg-zinc-700/50 rounded-full" />
-                        <div className="h-7 w-24 bg-zinc-700/70 rounded-full" />
-                        <div className="h-5 w-18 bg-zinc-700/60 rounded-full" />
+                <div
+                    style={{ display: 'flex' }}
+                    className="relative w-full flex-1 min-h-105 rounded-xl bg-zinc-950/40 border border-zinc-800/60 flex flex-col justify-between overflow-hidden"
+                >
+                    {/* Cloud Tag Pills Cluster (Simulasi Bola Kata 3D) */}
+                    <div className="flex-1 flex flex-col items-center justify-center p-6 my-auto">
+                        <div className="flex flex-wrap items-center justify-center gap-2.5 max-w-md">
+                            <div className="h-5 w-16 bg-zinc-800/50 rounded-full" />
+                            <div className="h-8 w-28 bg-zinc-800/60 rounded-full" />
+                            <div className="h-4 w-14 bg-zinc-800/40 rounded-full" />
+                            <div className="h-6 w-24 bg-zinc-800/60 rounded-full" />
+                            <div className="h-10 w-36 bg-zinc-800/70 rounded-full" />
+                            <div className="h-5 w-20 bg-zinc-800/50 rounded-full" />
+                            <div className="h-7 w-32 bg-zinc-800/60 rounded-full" />
+                            <div className="h-4 w-16 bg-zinc-800/40 rounded-full" />
+                            <div className="h-6 w-22 bg-zinc-800/50 rounded-full" />
+                            <div className="h-8 w-24 bg-zinc-800/60 rounded-full" />
+                            <div className="h-5 w-18 bg-zinc-800/50 rounded-full" />
+                            <div className="h-4 w-14 bg-zinc-800/40 rounded-full" />
+                            <div className="h-6 w-28 bg-zinc-800/60 rounded-full" />
+                        </div>
+                    </div>
+
+                    {/* Bottom Toolbar Skeleton */}
+                    <div className="w-full shrink-0 flex items-center justify-between flex-wrap gap-2 px-3 py-2 bg-zinc-900/40 border-t border-zinc-800/60">
+                        <div className="h-3.5 w-48 sm:w-64 bg-zinc-800/50 rounded" />
+                        <div className="flex items-center gap-1.5 ml-auto">
+                            <div className="h-6 w-32 bg-zinc-800/50 rounded-lg hidden sm:block" />
+                            <div className="h-6 w-16 bg-zinc-800/50 rounded-lg" />
+                            <div className="h-6 w-12 bg-zinc-800/50 rounded-lg" />
+                        </div>
                     </div>
                 </div>
             </div>

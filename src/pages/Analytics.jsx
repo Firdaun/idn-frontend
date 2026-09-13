@@ -553,7 +553,7 @@ export default function Analytics() {
                                 </h3>
                                 <div className='flex space-x-0.5 min-[360px]:space-x-0 min-[360px]:gap-1'>
                                     {isSessionTimeLoading ? (
-                                        <span className="inline-block h-5 w-18 bg-zinc-800/80 rounded-sm lg:rounded-md animate-pulse border border-zinc-700/50" />
+                                        <span className="inline-block h-5 w-18 bg-zinc-800/80 rounded-sm lg:rounded-md animate-pulse" />
                                     ) : (
                                         <span className={`px-2 py-0.5 rounded-sm lg:rounded-md text-[11px] font-medium border ${(activeSession ? activeSession.endAt : selectedStreamer.endAt)
                                             ? "bg-zinc-800 text-zinc-400 border-zinc-700"
@@ -643,7 +643,7 @@ export default function Analytics() {
                             {/* Card Sentimen */}
                             <SentimentCard
                                 sentiment={activeSentiment}
-                                isLoading={isSessionLoading && !activeSentiment}
+                                isLoading={isSessionTimeLoading}
                             />
 
                             {/* Card Statistik Performa & Snapshot Titik Terpilih */}
@@ -816,7 +816,7 @@ export default function Analytics() {
                         <div className="w-full lg:flex-1 flex flex-col min-w-0">
                             <WordCloudCard
                                 wordCloud={activeWordCloud}
-                                isLoading={isSessionLoading && (!activeWordCloud || activeWordCloud.length === 0)}
+                                isLoading={isSessionTimeLoading}
                                 streamerName={sessionAnalyticsData?.name || selectedStreamer.fullName || selectedStreamer.name}
                                 isLive={!(activeSession ? activeSession.endAt : selectedStreamer.endAt)}
                             />
@@ -826,7 +826,7 @@ export default function Analytics() {
                     {/* Leaderboard Top 50 Chatters */}
                     <TopChattersCard
                         topChatters={activeTopChatters}
-                        isLoading={isSessionLoading && (!activeTopChatters || activeTopChatters.length === 0)}
+                        isLoading={isSessionTimeLoading}
                         streamerName={selectedStreamer.fullName || selectedStreamer.name}
                         isLive={!selectedStreamer.endAt}
                     />
