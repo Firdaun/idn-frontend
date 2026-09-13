@@ -364,7 +364,7 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
                             <span>🌐 Awan Kata 3D</span>
                         </button>
                         <button
-                            onClick={() => {setViewMode('list'), setIsAutoRotating(false)}}
+                            onClick={() => { setViewMode('list'), setIsAutoRotating(false) }}
                             className={`px-2.5 py-1 rounded-md text-xs font-medium transition cursor-pointer flex justify-center w-full gap-1 ${viewMode === 'list'
                                 ? 'bg-zinc-800 text-white shadow-sm'
                                 : 'text-zinc-400 hover:text-zinc-200'
@@ -377,35 +377,36 @@ export default function WordCloudCard({ wordCloud = [], isLoading = false, strea
             </div>
 
             <div className="gap-2.5 p-2.5 rounded-xl bg-zinc-900/60 border border-zinc-800/70 text-xs">
-                <div className="flex w-full items-start min-[540px]:items-center justify-between md:flex-wrap gap-2">
-                    <div className="flex items-center justify-evenly px-2.5 py-1 w-30 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-300 font-medium">
-                        <span className="text-zinc-500">Total:</span>
-                        <span className="text-zinc-100 font-semibold">{wordCloud.length} Kata</span>
+                <div className="flex w-full items-stretch min-[540px]:items-center justify-between md:flex-wrap gap-2">
+                    <div className='flex flex-col flex-1 justify-evenly'>
+                        <div className="flex items-center justify-evenly px-2.5 py-1 w-30 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-300 font-medium">
+                            <span className="text-zinc-500">Total:</span>
+                            <span className="text-zinc-100 font-semibold">{wordCloud.length} Kata</span>
+                        </div>
+                        <p className='text-[11px] text-zinc-400/80 mt-1 min-[540px]:hidden'>Kata kunci yang paling sering disebut penonton</p>
                     </div>
 
                     {topThree.length > 0 && (
-                        <>
-                            <div className="flex w-[40%] min-[540px]:w-[90%] md:w-[70%] items-center justify-end flex-wrap gap-1.5">
-                                {topThree.map((item, idx) => {
-                                    const rankStyles = [
-                                        'border-amber-500/40 bg-amber-500/10 text-amber-300',
-                                        'border-sky-500/40 bg-sky-500/10 text-sky-300',
-                                        'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
-                                    ];
-                                    const medals = ['🥇', '🥈', '🥉'];
-                                    return (
-                                        <div
-                                            key={item.text}
-                                            className={`flex items-center gap-1.5 px-2 py-0.5 rounded-lg border text-xs ${rankStyles[idx] || 'border-zinc-700 bg-zinc-800 text-zinc-300'}`}
-                                        >
-                                            <span>{medals[idx]}</span>
-                                            <span className="font-semibold text-zinc-100">"{item.text}"</span>
-                                            <span className="text-[11px] opacity-80">{Number(item.value).toLocaleString()}x</span>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </>
+                        <div className="flex w-[40%] min-[540px]:w-[90%] md:w-[70%] items-center justify-end flex-wrap gap-1.5">
+                            {topThree.map((item, idx) => {
+                                const rankStyles = [
+                                    'border-amber-500/40 bg-amber-500/10 text-amber-300',
+                                    'border-sky-500/40 bg-sky-500/10 text-sky-300',
+                                    'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
+                                ];
+                                const medals = ['🥇', '🥈', '🥉'];
+                                return (
+                                    <div
+                                        key={item.text}
+                                        className={`flex items-center gap-1.5 px-2 py-0.5 rounded-lg border text-xs ${rankStyles[idx] || 'border-zinc-700 bg-zinc-800 text-zinc-300'}`}
+                                    >
+                                        <span>{medals[idx]}</span>
+                                        <span className="font-semibold text-zinc-100">"{item.text}"</span>
+                                        <span className="text-[11px] opacity-80">{Number(item.value).toLocaleString()}x</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     )}
                 </div>
             </div>
