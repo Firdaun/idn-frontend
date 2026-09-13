@@ -302,13 +302,7 @@ export default function Analytics() {
     const streamerSessions = useMemo(() => {
         const allSessions = sessionAnalyticsData?.sessions || [];
         if (!selectedStreamer?.name || !allSessions.length) return allSessions;
-
         const slugSet = memberSessionsMap.get(selectedStreamer?.name);
-        if (!slugSet || slugSet.size === 0) {
-            return selectedMemberSlug
-                ? allSessions.filter(s => s.slug === selectedMemberSlug)
-                : allSessions;
-        }
 
         const visibleSessions = allSessions.filter(s => slugSet.has(s.slug));
         return visibleSessions.length > 0 ? visibleSessions : allSessions;
@@ -316,10 +310,6 @@ export default function Analytics() {
 
     const currentSessionIndex = streamerSessions.findIndex(s => s.slug === selectedMemberSlug);
     const activeSession = (currentSessionIndex >= 0 ? streamerSessions[currentSessionIndex] : null)
-    console.log('activeSession', activeSession);
-    console.log('selectedStreamer', selectedStreamer);
-
-
     const isSessionTimeLoading = isSessionLoading || !sessionAnalyticsData || !activeSession;
 
     const activeRangeLabel = timeRange === 'all' ? 'Semua' : timeRange === 'today' ? 'Hari Ini' : timeRange === '1d' ? '1 Hari Lalu' : timeRange === '2d' ? '2 Hari Lalu' : timeRange === '1h' ? '1 Jam' : timeRange === 'custom' ? 'Kustom' : timeRange;
@@ -721,8 +711,6 @@ export default function Analytics() {
                                             items = items.filter(item => item.name === selectedStreamer.name);
                                         }
 
-                                        // Jika tidak ada data member (misal sedang hover di luar sesi member yang dipilih),
-                                        // hanya tampilkan informasi waktu saja
                                         if (!items.length) {
                                             return (
                                                 <div className="bg-zinc-900/95 border border-zinc-800 text-zinc-100 text-xs rounded-xl p-2.5 px-3 shadow-xl">
