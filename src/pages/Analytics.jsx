@@ -148,8 +148,7 @@ export default function Analytics() {
         const clickedNeg = dataPoint[`_${streamer.name}_neg`];
 
         const applyNewSnapshotData = () => {
-            setSelectedStreamer(prev => ({
-                ...(prev?.slug === clickedSlug ? prev : {}),
+            setSelectedStreamer({
                 name: streamer.name,
                 slug: clickedSlug,
                 isLegendClick: false,
@@ -159,7 +158,7 @@ export default function Analytics() {
                 clickedPos: clickedPos ?? null,
                 clickedNeu: clickedNeu ?? null,
                 clickedNeg: clickedNeg ?? null
-            }));
+            });
 
             setIsSnapshotHighlight(false);
             requestAnimationFrame(() => {
@@ -454,9 +453,9 @@ export default function Analytics() {
                                     {/* Ringkasan Metrik 2x3 Grid */}
                                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-2.5 lg:gap-3">
                                         {[
-                                            { label: 'Puncak Penonton', value: activeSession.peakViewers.toLocaleString() },
-                                            { label: 'Rata-rata Penonton', value: activeSession.avgViewers.toLocaleString() },
-                                            { label: 'Total Pesan', value: activeSentiment.totalChat },
+                                            { label: 'Puncak Penonton', value: activeSession.peakViewers.toLocaleString('id-ID') },
+                                            { label: 'Rata-rata Penonton', value: Math.round(activeSession.avgViewers).toLocaleString('id-ID') },
+                                            { label: 'Total Pesan', value: activeSentiment.totalChat.toLocaleString('id-ID') },
                                             { label: 'Puncak Pesan / 30 dtk', value: activeSession.peakChat },
                                             { label: 'Rata-rata Pesan / 30 dtk', value: activeSession.avgChat },
                                             { label: 'Sentimen Positif', value: activeSentiment.positivePercentage }
@@ -792,8 +791,6 @@ export default function Analytics() {
                                                                     setSelectedStreamer({
                                                                         name: streamer.name,
                                                                         slug: streamer.slug,
-                                                                        peakViewers: streamer.peakViewers,
-                                                                        peakChat: streamer.peakChat,
                                                                         isLegendClick: true,
                                                                         clickedTime: null,
                                                                         clickedViewers: null,

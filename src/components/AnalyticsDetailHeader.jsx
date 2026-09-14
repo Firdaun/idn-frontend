@@ -10,8 +10,8 @@ export default function AnalyticsDetailHeader({
     streamerName = ''
 }) {
     if (!selectedStreamer) return null;
+    console.log('selectedStreamer', selectedStreamer);
 
-    // Logic ganti sesi (Prev / Next) sekarang tinggal di sini!
     const handleSwitchSession = (direction) => {
         if (streamerSessions.length <= 1) return;
         const activeIdx = currentSessionIndex >= 0 ? currentSessionIndex : 0;
@@ -19,10 +19,9 @@ export default function AnalyticsDetailHeader({
         const targetIndex = (activeIdx + offset + streamerSessions.length) % streamerSessions.length;
         const target = streamerSessions[targetIndex];
 
-        setSelectedStreamer(prev => ({
-            ...prev,
-            ...target,
+        setSelectedStreamer({
             name: selectedStreamer.name,
+            slug: target.slug,
             isLegendClick: false,
             clickedTime: null,
             clickedViewers: null,
@@ -30,10 +29,10 @@ export default function AnalyticsDetailHeader({
             clickedPos: null,
             clickedNeu: null,
             clickedNeg: null
-        }));
+        })
     };
 
-    const isLive = !(activeSession ? activeSession.endAt : selectedStreamer.endAt);
+    const isLive = !activeSession?.endAt
 
     return (
         <div
@@ -57,7 +56,7 @@ export default function AnalyticsDetailHeader({
                 <div className="min-w-0">
                     <div className="flex items-center min-[375px]:gap-1.5 flex-wrap">
                         <h3 className="font-semibold text-base sm:text-lg text-zinc-100 truncate">
-                            {streamerName || selectedStreamer.name}
+                            {streamerName}
                         </h3>
                         <div className="flex space-x-0.5 min-[360px]:space-x-0 min-[360px]:gap-1">
                             {isSessionTimeLoading ? (
@@ -78,7 +77,7 @@ export default function AnalyticsDetailHeader({
                             )}
                         </div>
                     </div>
-                    <p className="text-zinc-400 text-xs mt-0.5 truncate">{selectedStreamer.slug}</p>
+                    <p className="text-zinc-400 text-xs mt-0.5 truncate">{activeSession?.slug}</p>
                 </div>
 
                 {streamerSessions.length > 1 && (
@@ -105,7 +104,7 @@ export default function AnalyticsDetailHeader({
                                 <div className="h-4.5 sm:h-5 w-20 sm:w-24 bg-zinc-800/80 rounded-md animate-pulse mt-0.5" />
                             ) : (
                                 <span className="font-semibold text-zinc-200 block">
-                                    {formatLiveTime(activeSession?.liveAt || selectedStreamer.liveAt)}
+                                    {formatLiveTime(activeSession?.liveAt)}
                                 </span>
                             )}
                         </div>
@@ -115,7 +114,17 @@ export default function AnalyticsDetailHeader({
                                 <div className="h-4.5 sm:h-5 w-20 sm:w-24 bg-zinc-800/80 rounded-md animate-pulse mt-0.5" />
                             ) : (
                                 <span className="font-semibold text-zinc-200 block">
-                                    {(activeSession ? activeSession.endAt : selectedStreamer.endAt) ? formatLiveTime(activeSession?.endAt || selectedStreamer.endAt) : '-'}
+                                    {activeSession?.endAt ? (
+                                        formatLiveTime(activeSession.endAt)
+                                    ) : (
+                                        <span className="inline-flex items-center gap-1.5 text-red-400 font-medium text-xs">
+                                            <span className="relative flex h-2 w-2">
+                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                                            </span>
+                                            <span>Berlangsung</span>
+                                        </span>
+                                    )}
                                 </span>
                             )}
                         </div>
@@ -125,7 +134,7 @@ export default function AnalyticsDetailHeader({
                                 <div className="h-4.5 sm:h-5 w-22 sm:w-26 bg-zinc-800/80 rounded-md animate-pulse mt-0.5" />
                             ) : (
                                 <span className="font-semibold text-zinc-200 block">
-                                    {calculateSessionDuration(activeSession?.liveAt || selectedStreamer.liveAt, activeSession?.endAt ?? selectedStreamer.endAt)}
+                                    {calculateSessionDuration(activeSession?.liveAt, activeSession?.endAt)}
                                 </span>
                             )}
                         </div>

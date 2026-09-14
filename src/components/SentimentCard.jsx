@@ -86,7 +86,7 @@ export default function SentimentCard({ sentiment, isLoading = false }) {
                         <span>💬 Sentimen Obrolan</span>
                     </span>
                     <span className="text-xs text-zinc-400">
-                        ({totalChat.toLocaleString()} pesan)
+                        ({totalChat.toLocaleString('id-ID')} pesan)
                     </span>
                 </div>
                 <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium border flex items-center gap-1.5 ${moodBadge.color}`}>
