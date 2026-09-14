@@ -1,4 +1,4 @@
-export default function SentimentCard({ sentiment, isLoading = false }) {
+export default function SentimentCard({ sentiment, isLoading = false, isLive = false }) {
     if (isLoading) {
         return (
             <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-xl p-4 lg:p-5 space-y-4 animate-pulse">
@@ -20,9 +20,23 @@ export default function SentimentCard({ sentiment, isLoading = false }) {
 
     if (!sentiment) {
         return (
-            <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-xl p-5 text-center text-zinc-400 text-sm">
-                <p className="text-zinc-300 font-medium">Belum ada data sentimen untuk siaran ini.</p>
-                <p className="text-xs text-zinc-500 mt-1">Data sentimen akan dihitung secara langsung berdasarkan pesan penonton.</p>
+            <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-xl p-5 text-center text-zinc-400 text-sm space-y-2">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border bg-zinc-800/80 border-zinc-700/80 text-zinc-300">
+                    <span>💬 Sentimen Obrolan</span>
+                </div>
+                {isLive ? (
+                    <div>
+                        <p className="text-zinc-200 font-medium text-sm">🔴 Siaran Sedang Berlangsung</p>
+                        <p className="text-xs text-zinc-400 mt-1 max-w-md mx-auto">
+                            Analisis sentimen obrolan sedang diproses secara langsung dan akan otomatis tersedia setelah sesi siaran ini selesai.
+                        </p>
+                    </div>
+                ) : (
+                    <div>
+                        <p className="text-zinc-300 font-medium text-sm">Belum ada data sentimen untuk siaran ini.</p>
+                        <p className="text-xs text-zinc-500 mt-1">Data sentimen akan dihitung secara langsung berdasarkan pesan penonton.</p>
+                    </div>
+                )}
             </div>
         );
     }

@@ -310,6 +310,7 @@ export default function Analytics() {
     const currentSessionIndex = streamerSessions.findIndex(s => s.slug === selectedMemberSlug);
     const activeSession = (currentSessionIndex >= 0 ? streamerSessions[currentSessionIndex] : null)
     const isSessionTimeLoading = isSessionLoading || !sessionAnalyticsData || !activeSession;
+    const isCurrentSessionLive = Boolean(activeSession && !activeSession.endAt);
 
     const activeRangeLabel = timeRange === 'all' ? 'Semua' : timeRange === 'today' ? 'Hari Ini' : timeRange === '1d' ? '1 Hari Lalu' : timeRange === '2d' ? '2 Hari Lalu' : timeRange === '1h' ? '1 Jam' : timeRange === 'custom' ? 'Kustom' : timeRange;
 
@@ -412,6 +413,7 @@ export default function Analytics() {
                             <SentimentCard
                                 sentiment={activeSentiment}
                                 isLoading={isSessionTimeLoading}
+                                isLive={isCurrentSessionLive}
                             />
 
                             {/* Card Statistik Performa & Snapshot Titik Terpilih */}
@@ -450,24 +452,33 @@ export default function Analytics() {
                                         </span>
                                     </div>
 
-                                    {/* Ringkasan Metrik 2x3 Grid */}
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-2.5 lg:gap-3">
-                                        {[
+                                    {/* Ringkasan Metrik / Pemberitahuan Siaran Sedang Berlangsung */}
+                                    {isCurrentSessionLive ? (
+                                        <div className="bg-zinc-950/40 border border-zinc-800/60 rounded-lg p-5 text-center space-y-1">
+                                            <p className="text-zinc-200 font-medium text-sm">🔴 Siaran Sedang Berlangsung</p>
+                                            <p className="text-xs text-zinc-400 max-w-md mx-auto">
+                                                Ringkasan statistik siaran (puncak & rata-rata penonton serta pesan) sedang dikumpulkan dan akan otomatis tersedia setelah sesi siaran ini selesai.
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-2.5 lg:gap-3">
+                                            {[
                                             { label: 'Puncak Penonton', value: activeSession.peakViewers.toLocaleString('id-ID') },
                                             { label: 'Rata-rata Penonton', value: Math.round(activeSession.avgViewers).toLocaleString('id-ID') },
                                             { label: 'Total Pesan', value: activeSentiment.totalChat.toLocaleString('id-ID') },
                                             { label: 'Puncak Pesan / 30 dtk', value: activeSession.peakChat },
                                             { label: 'Rata-rata Pesan / 30 dtk', value: activeSession.avgChat },
                                             { label: 'Sentimen Positif', value: activeSentiment.positivePercentage }
-                                        ].map((metric) => (
-                                            <div key={metric.label} className="bg-zinc-950/40 border border-zinc-800/60 rounded-lg p-2.5">
-                                                <span className="text-xs text-zinc-400 font-medium block truncate">{metric.label}</span>
-                                                <span className="font-bold text-zinc-100 text-base sm:text-lg">
-                                                    {metric.value}
-                                                </span>
-                                            </div>
-                                        ))}
-                                    </div>
+                                            ].map((metric) => (
+                                                <div key={metric.label} className="bg-zinc-950/40 border border-zinc-800/60 rounded-lg p-2.5">
+                                                    <span className="text-xs text-zinc-400 font-medium block truncate">{metric.label}</span>
+                                                    <span className="font-bold text-zinc-100 text-base sm:text-lg">
+                                                        {metric.value}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
 
                                     {/* Snapshot Inspector (Titik Cuplikan Terpilih) */}
                                     {selectedStreamer.clickedTime ? (
@@ -559,7 +570,7 @@ export default function Analytics() {
                                 wordCloud={activeWordCloud}
                                 isLoading={isSessionTimeLoading}
                                 streamerName={sessionAnalyticsData?.name || selectedStreamer.fullName || selectedStreamer.name}
-                                isLive={!(activeSession ? activeSession.endAt : selectedStreamer.endAt)}
+                                isLive={isCurrentSessionLive}
                             />
                         </div>
                     </div>
@@ -569,7 +580,7 @@ export default function Analytics() {
                         topChatters={activeTopChatters}
                         isLoading={isSessionTimeLoading}
                         streamerName={selectedStreamer.fullName || selectedStreamer.name}
-                        isLive={!selectedStreamer.endAt}
+                        isLive={isCurrentSessionLive}
                     />
                 </div>
             )}
