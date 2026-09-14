@@ -10,7 +10,6 @@ export default function AnalyticsDetailHeader({
     streamerName = ''
 }) {
     if (!selectedStreamer) return null;
-    console.log('selectedStreamer', selectedStreamer);
 
     const handleSwitchSession = (direction) => {
         if (streamerSessions.length <= 1) return;
