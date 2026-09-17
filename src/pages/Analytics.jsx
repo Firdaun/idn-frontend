@@ -88,6 +88,8 @@ export default function Analytics() {
     const activeSentiment = sessionAnalyticsData?.sentiment || null;
     const activeWordCloud = sessionAnalyticsData?.wordCloud || [];
     const activeTopChatters = sessionAnalyticsData?.topChatters || [];
+    const activeTopGifters = sessionAnalyticsData?.topGifters || [];
+    const activeTopGifts = sessionAnalyticsData?.topGifts || [];
 
     const loading = isAnalyticsLoading
     const refreshing = isAnalyticsFetching
@@ -575,9 +577,11 @@ export default function Analytics() {
                         </div>
                     </div>
 
-                    {/* Leaderboard Top 50 Chatters */}
+                    {/* Leaderboard Top 50 Chatters & Gifters */}
                     <TopChattersCard
                         topChatters={activeTopChatters}
+                        topGifters={activeTopGifters}
+                        topGifts={activeTopGifts}
                         isLoading={isSessionTimeLoading}
                         streamerName={selectedStreamer.fullName || selectedStreamer.name}
                         isLive={isCurrentSessionLive}

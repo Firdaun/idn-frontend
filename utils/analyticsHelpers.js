@@ -21,10 +21,14 @@ export const getDaysAgoIsoRange = (daysAgo) => {
 export const calculateSessionDuration = (liveAt, endAt) => {
     if (!liveAt) return "-";
     const start = new Date(liveAt).getTime();
-    const end = endAt ? new Date(endAt).getTime() : Date.now()
-    if (isNaN(start) || isNaN(end) || end <= start) return "-";
+    const end = endAt ? new Date(endAt).getTime() : Date.now();
+    if (isNaN(start) || isNaN(end) || end < start) return "-";
 
     const diffSeconds = Math.floor((end - start) / 1000);
+    if (diffSeconds < 60) {
+        return `${diffSeconds} Detik`;
+    }
+
     const hours = Math.floor(diffSeconds / 3600);
     const minutes = Math.floor((diffSeconds % 3600) / 60);
 
