@@ -4,6 +4,139 @@ import Hls from "hls.js";
 import { getLiveStreams, getStreamDetail } from "../../utils/backend-api";
 import { parseIdnChatMessage } from "../../utils/chatParser";
 
+// =========================================================================
+// PENGATURAN DURASI & POLLING:
+// =========================================================================
+// 1. Durasi animasi perpindahan angka penonton agar transisi berhitung mulus dan TIDAK loncat (dalam milidetik)
+//    Ubah angka ini sesuai selera (contoh: 500 = 0.5 detik, 800 = 0.8 detik, 1000 = 1 detik)
+export const VIEWER_COUNT_ANIMATION_DURATION_MS = 1000;
+
+// 2. Interval polling pembaruan data penonton dari server (dalam milidetik: 5000 = 5 detik)
+export const POLLING_INTERVAL_MS = 10000;
+// =========================================================================
+
+// Hook untuk interpolasi angka bertahap (smooth counter) menggunakan requestAnimationFrame
+// Nilai bergerak mengalir mulus dari angka lama ke angka baru tanpa loncat
+function useSmoothCounter(targetValue, duration = VIEWER_COUNT_ANIMATION_DURATION_MS) {
+    const num = Math.max(0, Math.round(Number(targetValue) || 0));
+    const [displayValue, setDisplayValue] = useState(num);
+    const currentValRef = useRef(num);
+    const animRef = useRef(null);
+    const isInitial = useRef(true);
+
+    useEffect(() => {
+        // Pada saat render pertama (load awal), langsung gunakan angka target
+        if (isInitial.current) {
+            isInitial.current = false;
+            currentValRef.current = num;
+            setDisplayValue(num);
+            return;
+        }
+
+        const startVal = currentValRef.current;
+        const endVal = num;
+
+        // Jika nilainya sama, tidak perlu animasi
+        if (startVal === endVal) {
+            if (animRef.current) cancelAnimationFrame(animRef.current);
+            setDisplayValue(endVal);
+            return;
+        }
+
+        // Jika nilai awal sebelumnya 0 (karena baru pertama kali data masuk), langsung tampilkan target
+        if (startVal === 0) {
+            currentValRef.current = endVal;
+            setDisplayValue(endVal);
+            return;
+        }
+
+        const startTime = performance.now();
+
+        const animate = (currentTime) => {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+
+            // Easing cubic out: transisi cepat di awal lalu melambat halus di akhir (mulus, tidak loncat)
+            const easeOut = 1 - Math.pow(1 - progress, 3);
+            const current = Math.round(startVal + (endVal - startVal) * easeOut);
+
+            currentValRef.current = current;
+            setDisplayValue(current);
+
+            if (progress < 1) {
+                animRef.current = requestAnimationFrame(animate);
+            } else {
+                currentValRef.current = endVal;
+                setDisplayValue(endVal);
+            }
+        };
+
+        if (animRef.current) {
+            cancelAnimationFrame(animRef.current);
+        }
+        animRef.current = requestAnimationFrame(animate);
+
+        return () => {
+            if (animRef.current) {
+                cancelAnimationFrame(animRef.current);
+            }
+        };
+    }, [num, duration]);
+
+    return displayValue;
+}
+
+// Komponen Badge Jumlah Penonton (Angka bergerak bertahap secara mulus, tanpa loncat)
+function AnimatedViewerBadge({ value = 0, isActive = false }) {
+    const displayValue = useSmoothCounter(value);
+    const targetValue = Math.max(0, Math.round(Number(value) || 0));
+
+    return (
+        <span
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-semibold border font-mono shrink-0 select-none bg-zinc-800/80 text-zinc-300 border-zinc-700/40`}
+            title={`${targetValue.toLocaleString('id-ID')} penonton`}
+        >
+            <svg
+                className="w-3 h-3 text-zinc-400 shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+            >
+                <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+                <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                />
+            </svg>
+            <span className="tabular-nums">
+                {displayValue.toLocaleString('id-ID')}
+            </span>
+        </span>
+    );
+}
+
+// Komponen Jumlah Penonton untuk Banner Streamer Aktif (Mulus bertahap, tidak loncat)
+function ActiveStreamViewerCount({ viewCount = 0, isScheduled = false }) {
+    const displayValue = useSmoothCounter(viewCount);
+
+    if (isScheduled) {
+        return <span>Dijadwalkan</span>;
+    }
+
+    return (
+        <span className="font-mono">
+            {displayValue.toLocaleString('id-ID')} penonton
+        </span>
+    );
+}
+
 export default function Streaming() {
     const [searchParams, setSearchParams] = useSearchParams();
     const slugFromUrl = searchParams.get("slug");
@@ -21,35 +154,70 @@ export default function Streaming() {
     const videoRef = useRef(null);
     const chatContainerRef = useRef(null);
 
-    // 1. Ambil list semua live yang sedang aktif saat pertama load
+    // 1. Ambil list semua live yang sedang aktif & polling otomatis setiap 5 detik
     useEffect(() => {
-        const fetchRooms = async () => {
+        let isMounted = true;
+
+        const fetchRooms = async (isInitial = false) => {
             try {
-                setLoading(true);
+                if (isInitial) setLoading(true);
                 const data = await getLiveStreams();
+                if (!isMounted) return;
+
                 const streamList = Array.isArray(data) ? data : [];
                 setStreams(streamList);
 
                 if (streamList.length > 0) {
-                    const found = streamList.find(s => s.slug === slugFromUrl);
-                    if (found) {
-                        setActiveSlug(found.slug);
-                    } else if (!activeSlug) {
-                        setActiveSlug(streamList[0].slug);
-                    }
-                } else {
+                    setError(null);
+                    setActiveSlug((currentActive) => {
+                        if (slugFromUrl && isInitial) {
+                            const found = streamList.find(s => s.slug === slugFromUrl);
+                            if (found) return found.slug;
+                        }
+                        if (!currentActive) {
+                            return streamList[0].slug;
+                        }
+                        const exists = streamList.some(s => s.slug === currentActive);
+                        return exists ? currentActive : streamList[0].slug;
+                    });
+                } else if (isInitial) {
                     setError("Sedang tidak ada live yang aktif.");
                 }
             } catch (err) {
-                setError("Gagal terhubung ke backend: " + err.message);
-                console.error(err);
+                if (isInitial) {
+                    setError("Gagal terhubung ke backend: " + err.message);
+                }
+                console.error("Gagal polling streams:", err);
             } finally {
-                setLoading(false);
+                if (isInitial && isMounted) {
+                    setLoading(false);
+                }
             }
         };
 
-        fetchRooms();
+        fetchRooms(true);
+
+        const pollInterval = setInterval(() => {
+            fetchRooms(false);
+        }, POLLING_INTERVAL_MS);
+
+        return () => {
+            isMounted = false;
+            clearInterval(pollInterval);
+        };
     }, [slugFromUrl]);
+
+    // Sinkronkan view_count pada streamData aktif dari polling streams
+    useEffect(() => {
+        if (!activeSlug || !streams.length) return;
+        const current = streams.find(s => s.slug === activeSlug);
+        if (current && current.view_count !== undefined) {
+            setStreamData(prev => {
+                if (!prev || prev.view_count === current.view_count) return prev;
+                return { ...prev, view_count: current.view_count };
+            });
+        }
+    }, [streams, activeSlug]);
 
     const handleSelectStream = (slug) => {
         setActiveSlug(slug);
@@ -182,13 +350,12 @@ export default function Streaming() {
     const isScheduled = streamData?.status === "scheduled" || (!streamData?.playback_url && streamData);
 
     const getIdnLiveUrl = (stream) => {
-        if (!stream) return "https://www.idn.app/";
-        const username = stream.creator?.username
-        const slug = stream.slug
-
+        const username = stream?.creator?.username;
+        const slug = stream?.slug;
         if (username && slug) {
             return `https://www.idn.app/${username}/live/${slug}`;
         }
+        return "https://www.idn.app/";
     };
 
     return (
@@ -205,16 +372,21 @@ export default function Streaming() {
                                 key={s.slug}
                                 onClick={() => handleSelectStream(s.slug)}
                                 className={`px-4 py-2 rounded-xl text-sm font-medium transition flex items-center gap-2 shrink-0 cursor-pointer ${activeSlug === s.slug
-                                        ? "bg-zinc-800 text-white shadow-sm"
-                                        : "bg-zinc-900/70 text-zinc-400 hover:text-zinc-200 border border-transparent hover:border-zinc-800"
+                                        ? "bg-zinc-900 text-white shadow-sm border border-red-500"
+                                        : "bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-transparent hover:border-zinc-800"
                                     }`}
                             >
                                 <span className={`w-2 h-2 rounded-full ${isStreamScheduled ? "bg-zinc-500" : "bg-red-500"}`}></span>
                                 <span>{s.creator?.name || s.title}</span>
-                                {isStreamScheduled && (
+                                {isStreamScheduled ? (
                                     <span className="text-xs px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 font-normal">
                                         Jadwal
                                     </span>
+                                ) : (
+                                    <AnimatedViewerBadge
+                                        value={s.view_count ?? s.views ?? s.viewers ?? 0}
+                                        isActive={activeSlug === s.slug}
+                                    />
                                 )}
                             </button>
                         );
@@ -313,8 +485,12 @@ export default function Streaming() {
                                 </a>
 
                                 <div className="px-3.5 sm:px-4 py-2 rounded-xl bg-zinc-900/80 border border-zinc-800/50 text-xs sm:text-sm font-medium text-zinc-200 flex items-center gap-2">
-                                    <span className={`w-2 h-2 rounded-full ${isScheduled ? "bg-zinc-500" : "bg-red-500 animate-pulse"}`}></span>
-                                    <span>{isScheduled ? "Dijadwalkan" : `${Number(streamData.view_count || 0).toLocaleString('id-ID')} penonton`}</span>
+                                    <span className={`w-2 h-2 rounded-full ${isScheduled ? "bg-zinc-500" : "bg-red-500"}`}></span>
+                                    <ActiveStreamViewerCount
+                                        key={streamData?.slug || activeSlug}
+                                        viewCount={streamData?.view_count || 0}
+                                        isScheduled={isScheduled}
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -332,8 +508,8 @@ export default function Streaming() {
                         <button
                             onClick={() => setIsChatConnected((prev) => !prev)}
                             className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition flex items-center gap-1.5 cursor-pointer ${isChatConnected
-                                    ? "bg-zinc-900 hover:bg-zinc-850 text-zinc-400 hover:text-zinc-200 border-zinc-800"
-                                    : "bg-zinc-800 hover:bg-zinc-750 text-emerald-400 border-zinc-700"
+                                ? "bg-zinc-900 hover:bg-zinc-850 text-zinc-400 hover:text-zinc-200 border-zinc-800"
+                                : "bg-zinc-800 hover:bg-zinc-750 text-emerald-400 border-zinc-700"
                                 }`}
                             title={isChatConnected ? "Hentikan koneksi live chat" : "Hubungkan kembali live chat"}
                         >

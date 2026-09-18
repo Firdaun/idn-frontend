@@ -36,7 +36,7 @@ export default function AnalyticsDetailHeader({
     return (
         <div
             id="analytics-detail-header"
-            className="scroll-mt-24 bg-zinc-900/50 border border-zinc-800/50 p-3 lg:p-5 rounded-lg lg:rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-1"
+            className="scroll-mt-17 bg-zinc-900/50 border border-zinc-800/50 p-3 lg:p-5 rounded-lg lg:rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-1"
         >
             {/* Sisi Kiri: Tombol Navigasi Sesi & Info Streamer */}
             <div className="flex items-center justify-between gap-1 min-[375px]:gap-2 xl:gap-5 w-full md:w-auto">
