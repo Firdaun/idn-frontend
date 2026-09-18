@@ -122,7 +122,7 @@ export default function TopGiftersTab({
                                     <span className="text-[11px] font-normal text-zinc-400">Gold</span>
                                 </div>
                                 <span className="text-[11px] text-zinc-400">
-                                    Rp {Number(top2Gifter.totalIdr ?? (top2Gifter.totalGold || 0) * 1500).toLocaleString('id-ID')}
+                                    Rp {top2Gifter.totalIdr.toLocaleString('id-ID')}
                                 </span>
                             </div>
                         ) : <div />}
@@ -144,7 +144,7 @@ export default function TopGiftersTab({
                                 <span className="text-[11px] font-normal text-amber-300/80">Gold</span>
                             </div>
                             <span className="text-[11px] text-zinc-400">
-                                Rp {Number(top1Gifter.totalIdr ?? (top1Gifter.totalGold || 0) * 1500).toLocaleString('id-ID')}
+                                Rp {top1Gifter.totalIdr.toLocaleString('id-ID')}
                             </span>
                         </div>
 

@@ -314,31 +314,6 @@ export default function Analytics() {
     const isSessionTimeLoading = isSessionLoading || !sessionAnalyticsData || !activeSession;
     const isCurrentSessionLive = Boolean(activeSession && !activeSession.endAt);
 
-    const sessionTotalGold = useMemo(() => {
-        if (!activeSession) return 0;
-        if (activeSession.totalGold !== undefined && activeSession.totalGold !== null) {
-            return Number(activeSession.totalGold);
-        }
-        if (activeTopGifts?.length) {
-            return activeTopGifts.reduce((sum, g) => sum + (Number(g.totalGold) || 0), 0);
-        }
-        return 0;
-    }, [activeSession, activeTopGifts]);
-
-    const sessionTotalIdr = useMemo(() => {
-        if (!activeSession) return 0;
-        if (activeSession.totalIdr !== undefined && activeSession.totalIdr !== null) {
-            return Number(activeSession.totalIdr);
-        }
-        if (sessionTotalGold > 0) {
-            return sessionTotalGold * 1500;
-        }
-        if (activeTopGifts?.length) {
-            return activeTopGifts.reduce((sum, g) => sum + (Number(g.totalIdr) || (Number(g.totalGold || 0) * 1500)), 0);
-        }
-        return 0;
-    }, [activeSession, sessionTotalGold, activeTopGifts]);
-
     const activeRangeLabel = timeRange === 'all' ? 'Semua' : timeRange === 'today' ? 'Hari Ini' : timeRange === '1d' ? '1 Hari Lalu' : timeRange === '2d' ? '2 Hari Lalu' : timeRange === '1h' ? '1 Jam' : timeRange === 'custom' ? 'Kustom' : timeRange;
 
     return (
@@ -486,13 +461,6 @@ export default function Analytics() {
                                             <p className="text-xs text-zinc-400 max-w-md mx-auto">
                                                 Ringkasan statistik siaran (puncak & rata-rata penonton serta pesan) sedang dikumpulkan dan akan otomatis tersedia setelah sesi siaran ini selesai.
                                             </p>
-                                            {sessionTotalIdr > 0 && (
-                                                <div className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs">
-                                                    <span>💰 Total Donasi Sementara:</span>
-                                                    <span className="font-bold">Rp {sessionTotalIdr.toLocaleString('id-ID')}</span>
-                                                    <span className="text-zinc-400">({sessionTotalGold.toLocaleString('id-ID')} Gold)</span>
-                                                </div>
-                                            )}
                                         </div>
                                     ) : (
                                         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-2.5 lg:gap-3">
@@ -501,7 +469,7 @@ export default function Analytics() {
                                                 label: 'Total Nilai Rupiah',
                                                 value: (
                                                     <span className="text-emerald-400 font-bold truncate block">
-                                                        Rp {sessionTotalIdr.toLocaleString('id-ID')}
+                                                        Rp {activeSession?.totalIdr.toLocaleString('id-ID')}
                                                     </span>
                                                 )
                                             },
@@ -514,7 +482,7 @@ export default function Analytics() {
                                                             src="https://cdn.idntimes.com/content-images/icons/virtual-gifts/icons-db4c48e5772bbb084699019e4903ed5c.png"
                                                             alt="GOLD"
                                                         />
-                                                        <span>{sessionTotalGold.toLocaleString('id-ID')}</span>
+                                                        <span>{activeSession?.totalGold.toLocaleString('id-ID')}</span>
                                                         <span className="text-[11px] font-normal text-amber-400/80">Gold</span>
                                                     </div>
                                                 )
