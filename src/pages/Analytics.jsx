@@ -5,7 +5,7 @@ import { getMemberColor } from '../../utils/color';
 import { useQuery } from '@tanstack/react-query';
 import SentimentCard from '../components/SentimentCard';
 import WordCloudCard from '../components/WordCloudCard';
-import TopChattersCard from '../components/TopChattersCard';
+import TopChattersCard from '../components/TopChatters';
 import AnalyticsDetailHeader from '../components/AnalyticsDetailHeader';
 import { calculateDurationAtTime, countMemberSnapshots, formatAxisTime, formatLiveTime, getDaysAgoIsoRange, getTodayStartIso } from '../../utils/analyticsHelpers';
 
