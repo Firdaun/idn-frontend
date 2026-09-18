@@ -181,6 +181,16 @@ export default function Streaming() {
 
     const isScheduled = streamData?.status === "scheduled" || (!streamData?.playback_url && streamData);
 
+    const getIdnLiveUrl = (stream) => {
+        if (!stream) return "https://www.idn.app/";
+        const username = stream.creator?.username
+        const slug = stream.slug
+
+        if (username && slug) {
+            return `https://www.idn.app/${username}/live/${slug}`;
+        }
+    };
+
     return (
         <div className="space-y-5 pb-16">
             {/* Stream Selector Bar */}
@@ -275,7 +285,7 @@ export default function Streaming() {
 
                     {/* Info Banner Streamer */}
                     {streamData && (
-                        <div className="bg-zinc-900/40 p-4 sm:p-5 rounded-2xl border border-zinc-800/40 flex items-center justify-between gap-4">
+                        <div className="bg-zinc-900/40 p-4 sm:p-5 rounded-2xl border border-zinc-800/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div className="flex items-center gap-4 min-w-0">
                                 <img
                                     src={streamData.creator?.avatar || "https://cdn.idn.media/idnaccount/avatar/default.png"}
@@ -288,9 +298,24 @@ export default function Streaming() {
                                 </div>
                             </div>
 
-                            <div className="px-4 py-2 rounded-xl bg-zinc-900/80 border border-zinc-800/50 text-sm font-medium text-zinc-200 shrink-0 flex items-center gap-2">
-                                <span className={`w-2 h-2 rounded-full ${isScheduled ? "bg-zinc-500" : "bg-red-500"}`}></span>
-                                <span>{isScheduled ? "Dijadwalkan" : `${Number(streamData.view_count || 0).toLocaleString()} penonton`}</span>
+                            <div className="flex items-center gap-2.5 shrink-0 flex-wrap sm:flex-nowrap">
+                                <a
+                                    href={getIdnLiveUrl(streamData)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs sm:text-sm font-semibold transition flex items-center gap-2 shadow-lg shadow-red-600/20 hover:shadow-red-600/30 hover:scale-[1.02] cursor-pointer"
+                                    title={`Tonton siaran ${streamData.creator?.name || 'member'} langsung di IDN`}
+                                >
+                                    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                    </svg>
+                                    <span>Nonton di IDN</span>
+                                </a>
+
+                                <div className="px-3.5 sm:px-4 py-2 rounded-xl bg-zinc-900/80 border border-zinc-800/50 text-xs sm:text-sm font-medium text-zinc-200 flex items-center gap-2">
+                                    <span className={`w-2 h-2 rounded-full ${isScheduled ? "bg-zinc-500" : "bg-red-500 animate-pulse"}`}></span>
+                                    <span>{isScheduled ? "Dijadwalkan" : `${Number(streamData.view_count || 0).toLocaleString('id-ID')} penonton`}</span>
+                                </div>
                             </div>
                         </div>
                     )}
