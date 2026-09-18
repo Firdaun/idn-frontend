@@ -122,7 +122,7 @@ export default function TopGiftersTab({
                                     <span className="text-[11px] font-normal text-zinc-400">Gold</span>
                                 </div>
                                 <span className="text-[11px] text-zinc-400">
-                                    {Number(top2Gifter.giftCount || 0).toLocaleString('id-ID')} gift
+                                    Rp {Number(top2Gifter.totalIdr ?? (top2Gifter.totalGold || 0) * 1500).toLocaleString('id-ID')}
                                 </span>
                             </div>
                         ) : <div />}
@@ -144,7 +144,7 @@ export default function TopGiftersTab({
                                 <span className="text-[11px] font-normal text-amber-300/80">Gold</span>
                             </div>
                             <span className="text-[11px] text-zinc-400">
-                                {Number(top1Gifter.giftCount || 0).toLocaleString('id-ID')} virtual gift
+                                Rp {Number(top1Gifter.totalIdr ?? (top1Gifter.totalGold || 0) * 1500).toLocaleString('id-ID')}
                             </span>
                         </div>
 
@@ -166,7 +166,7 @@ export default function TopGiftersTab({
                                     <span className="text-[11px] font-normal text-zinc-400">Gold</span>
                                 </div>
                                 <span className="text-[11px] text-zinc-400">
-                                    {Number(top3Gifter.giftCount || 0).toLocaleString('id-ID')} gift
+                                    Rp {top3Gifter.totalIdr.toLocaleString('id-ID')}
                                 </span>
                             </div>
                         ) : <div />}
@@ -290,7 +290,7 @@ export default function TopGiftersTab({
                                                     <span className="text-[11px] font-normal text-amber-400/80">Gold</span>
                                                 </div>
                                                 <span className="text-zinc-500 text-[11px] font-normal block">
-                                                    {Number(gifter.giftCount || 0).toLocaleString('id-ID')} gift
+                                                    Rp {gifter?.totalIdr.toLocaleString('id-ID')}
                                                 </span>
                                             </td>
                                         </tr>
