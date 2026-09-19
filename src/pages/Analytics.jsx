@@ -305,7 +305,7 @@ export default function Analytics() {
         if (!selectedStreamer?.name || !allSessions.length) return allSessions;
         const slugSet = memberSessionsMap.get(selectedStreamer?.name);
 
-        const visibleSessions = allSessions.filter(s => slugSet.has(s.slug));
+        const visibleSessions = allSessions.filter(s => slugSet?.has(s.slug));
         return visibleSessions.length > 0 ? visibleSessions : allSessions;
     }, [sessionAnalyticsData?.sessions, selectedStreamer?.name, selectedMemberSlug, memberSessionsMap]);
 
