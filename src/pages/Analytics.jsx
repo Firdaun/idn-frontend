@@ -330,7 +330,6 @@ export default function Analytics() {
         const visibleSessions = allSessions.filter(s => slugSet?.has(s.slug));
         return visibleSessions.length > 0 ? visibleSessions : allSessions;
     }, [sessionAnalyticsData?.sessions, selectedStreamer?.name, selectedMemberSlug, memberSessionsMap]);
-console.log(streamerSessions);
 
     const matchedSessionIndex = streamerSessions.findIndex(s => s.slug === selectedMemberSlug);
     const currentSessionIndex = matchedSessionIndex >= 0 ? matchedSessionIndex : 0;
