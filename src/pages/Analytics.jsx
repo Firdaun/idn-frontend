@@ -12,6 +12,7 @@ import { formatAxisTime, getDaysAgoIsoRange, getTodayStartIso } from '../../util
 
 export default function Analytics() {
     const [selectedStreamer, setSelectedStreamer] = useState(null);
+
     const [timeRange, setTimeRange] = useState(() => sessionStorage.getItem('analytics_timeRange') || 'today');
     const [customStart, setCustomStart] = useState(() => sessionStorage.getItem('analytics_customStart') || '');
     const [customEnd, setCustomEnd] = useState(() => sessionStorage.getItem('analytics_customEnd') || '');
@@ -76,7 +77,13 @@ export default function Analytics() {
     })
 
     const {
-        data: sessionAnalyticsData,
+        data: sessionAnalyticsData = {
+            sentiment: null,
+            wordCloud: [],
+            topChatters: [],
+            topGifters: [],
+            topGifts: []
+        },
         isLoading: isSessionLoading
     } = useQuery({
         queryKey: ['sessionAnalytics', selectedStreamer?.slug],
@@ -86,36 +93,17 @@ export default function Analytics() {
         gcTime: 1000 * 60 * 15
     });
 
-    const activeSentiment = sessionAnalyticsData?.sentiment || null;
-    const activeWordCloud = sessionAnalyticsData?.wordCloud || [];
-    const activeTopChatters = sessionAnalyticsData?.topChatters || [];
-    const activeTopGifters = sessionAnalyticsData?.topGifters || [];
-    const activeTopGifts = sessionAnalyticsData?.topGifts || [];
+    const activeSentiment = sessionAnalyticsData.sentiment;
+    const activeWordCloud = sessionAnalyticsData.wordCloud;
+    const activeTopChatters = sessionAnalyticsData.topChatters;
+    const activeTopGifters = sessionAnalyticsData.topGifters;
+    const activeTopGifts = sessionAnalyticsData.topGifts;
 
     const loading = isAnalyticsLoading
     const refreshing = isAnalyticsFetching
 
-    useEffect(() => {
-        if (isAnalyticsLoading || isAnalyticsFetching) return;
-        if (selectedStreamer && data.streamers) {
-            const updated = data.streamers.find(s => s.name === selectedStreamer.name);
-            if (!updated) {
-                setSelectedStreamer(null);
-            }
-        }
-    }, [data.streamers, isAnalyticsLoading, isAnalyticsFetching]);
-
-    const streamers = useMemo(() => {
-        const rawStreamers = data.streamers || [];
-        return rawStreamers.map(s => ({
-            name: s.name,
-            slug: s.slug,
-            peakViewers: Number(s.peakViewers) || 0,
-            peakChat: Number(s.peakChat) || 0
-        }));
-    }, [data.streamers]);
-
-    const chartData = data.chartData || [];
+    const streamers = data.streamers;
+    const chartData = data.chartData;
     const maxPeak = useMemo(() => {
         return streamers.reduce((max, s) => Math.max(max, s.peakViewers), 0);
     }, [streamers]);
@@ -155,12 +143,12 @@ export default function Analytics() {
                 name: streamer.name,
                 slug: clickedSlug,
                 isLegendClick: false,
-                clickedTime: clickedTime ?? null,
-                clickedViewers: clickedViewers ?? null,
-                clickedChat: clickedChat ?? null,
-                clickedPos: clickedPos ?? null,
-                clickedNeu: clickedNeu ?? null,
-                clickedNeg: clickedNeg ?? null
+                clickedTime,
+                clickedViewers,
+                clickedChat,
+                clickedPos,
+                clickedNeu,
+                clickedNeg
             });
 
             setIsSnapshotHighlight(false);
@@ -171,19 +159,26 @@ export default function Analytics() {
 
         if (!selectedStreamer) {
             applyNewSnapshotData();
+            setTimeout(() => {
+                const targetEl = document.getElementById('analytics-stats-card');
+                targetEl?.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+            }, 60);
         } else {
             if (selectedStreamer.slug !== clickedSlug || selectedStreamer.name !== streamer.name) {
-                setSelectedStreamer(prev => ({
+                setSelectedStreamer({
                     name: streamer.name,
                     slug: clickedSlug,
                     isLegendClick: false,
-                    clickedTime: prev?.clickedTime ?? null,
-                    clickedViewers: prev?.clickedViewers ?? null,
-                    clickedChat: prev?.clickedChat ?? null,
-                    clickedPos: prev?.clickedPos ?? null,
-                    clickedNeu: prev?.clickedNeu ?? null,
-                    clickedNeg: prev?.clickedNeg ?? null
-                }));
+                    clickedTime: null,
+                    clickedViewers: null,
+                    clickedChat: null,
+                    clickedPos: null,
+                    clickedNeu: null,
+                    clickedNeg: null
+                });
             }
 
             let isDone = false;
@@ -200,15 +195,10 @@ export default function Analytics() {
                 window.addEventListener('scrollend', onFinishScroll, { once: true });
             }
 
-            const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;
-            const targetEl = isMobile
-                ? (document.getElementById('analytics-stats-card') || document.getElementById('analytics-detail-header'))
-                : document.getElementById('analytics-detail-header');
+            const targetEl = document.getElementById('analytics-stats-card');
 
             const rect = targetEl?.getBoundingClientRect();
-            const isAlreadyAtTarget = rect
-                ? (isMobile ? (rect.top >= 50 && rect.bottom <= window.innerHeight) : Math.abs(rect.top - 80) < 30)
-                : false;
+            const isAlreadyAtTarget = rect ? (rect.top >= 50 && rect.bottom <= window.innerHeight) : false;
             const fallbackDuration = isAlreadyAtTarget ? 60 : 520;
 
             setTimeout(onFinishScroll, fallbackDuration);
@@ -216,7 +206,7 @@ export default function Analytics() {
             // Scroll ke target: di HP dibuat 'center', di Desktop dibuat 'start'
             targetEl?.scrollIntoView({
                 behavior: 'smooth',
-                block: isMobile ? 'center' : 'start'
+                block: 'center'
             });
         }
     };
@@ -225,14 +215,10 @@ export default function Analytics() {
         if (!chartData.length || timeRange !== '1h') return chartData;
 
         const lastItem = chartData[chartData.length - 1];
-        const lastTime = Number(lastItem?.timeLabel);
+        const lastTime = lastItem?.timeLabel
 
-        if (!lastTime || isNaN(lastTime)) {
-            console.error("Format waktu pada data snapshot terakhir tidak valid:", lastItem);
-            throw new Error("Gagal memfilter 1 jam: Nilai timeLabel pada data terakhir tidak valid atau kosong.");
-        }
         const threshold = lastTime - 60 * 60 * 1000;
-        return chartData.filter(d => (Number(d.timeLabel) || 0) >= threshold);
+        return chartData.filter(d => d.timeLabel >= threshold);
     }, [chartData, timeRange]);
 
     const sampledChartData = useMemo(() => {
@@ -269,20 +255,19 @@ export default function Analytics() {
     }, [selectedMemberName, sampledChartData, filteredChartData]);
 
     const activeStreamers = useMemo(() => {
-        if (!streamers.length || !activeChartData.length) return streamers;
+        if (!streamers.length) return []
         const present = streamers.filter(s => activeChartData.some(d => s.name in d));
-        const list = present.length > 0 ? present : streamers;
-        return [...list].sort((a, b) => {
+        return [...present].sort((a, b) => {
             if (metricType === 'chat') {
-                return (b.peakChat || 0) - (a.peakChat || 0);
+                return (b.peakChat) - (a.peakChat);
             }
-            return (b.peakViewers || 0) - (a.peakViewers || 0);
+            return (b.peakViewers) - (a.peakViewers);
         });
     }, [streamers, activeChartData, metricType]);
 
     const memberSessionsMap = useMemo(() => {
         const map = new Map();
-        if (!filteredChartData || !activeStreamers) return map;
+        if (!filteredChartData.length || !activeStreamers.length) return map
 
         activeStreamers.forEach(s => {
             map.set(s.name, new Set());
@@ -300,6 +285,42 @@ export default function Analytics() {
         return map;
     }, [filteredChartData, activeStreamers]);
 
+    useEffect(() => {
+        if (isAnalyticsLoading || isAnalyticsFetching) return;
+        if (selectedStreamer && streamers) {
+            const updated = streamers.find(s => s.name === selectedStreamer.name);
+            
+            if (!updated) {
+                setSelectedStreamer(null);
+            } else {
+                if (timeRange === '1h') {
+                    const hasPointsIn1h = filteredChartData.some(d => selectedStreamer.name in d);
+                    if (!hasPointsIn1h) {
+                        setSelectedStreamer(null);
+                        return;
+                    }
+                }
+
+                const slugSet = memberSessionsMap.get(selectedStreamer.name);
+                
+                const isCurrentSlugValid = slugSet?.has(selectedStreamer.slug)
+
+                if (!isCurrentSlugValid && updated.slug !== selectedStreamer.slug) {
+                    setSelectedStreamer(prev => prev ? ({
+                        ...prev,
+                        slug: updated.slug,
+                        clickedTime: null,
+                        clickedViewers: null,
+                        clickedChat: null,
+                        clickedPos: null,
+                        clickedNeu: null,
+                        clickedNeg: null
+                    }) : null);
+                }
+            }
+        }
+    }, [data.streamers, isAnalyticsLoading, isAnalyticsFetching, memberSessionsMap, selectedStreamer?.name, selectedStreamer?.slug, timeRange, filteredChartData]);
+
     const selectedMemberSlug = selectedStreamer?.slug;
     const streamerSessions = useMemo(() => {
         const allSessions = sessionAnalyticsData?.sessions || [];
@@ -309,9 +330,11 @@ export default function Analytics() {
         const visibleSessions = allSessions.filter(s => slugSet?.has(s.slug));
         return visibleSessions.length > 0 ? visibleSessions : allSessions;
     }, [sessionAnalyticsData?.sessions, selectedStreamer?.name, selectedMemberSlug, memberSessionsMap]);
+console.log(streamerSessions);
 
-    const currentSessionIndex = streamerSessions.findIndex(s => s.slug === selectedMemberSlug);
-    const activeSession = (currentSessionIndex >= 0 ? streamerSessions[currentSessionIndex] : null)
+    const matchedSessionIndex = streamerSessions.findIndex(s => s.slug === selectedMemberSlug);
+    const currentSessionIndex = matchedSessionIndex >= 0 ? matchedSessionIndex : 0;
+    const activeSession = streamerSessions.length > 0 ? streamerSessions[currentSessionIndex] : null;
     const isSessionTimeLoading = isSessionLoading || !sessionAnalyticsData || !activeSession;
     const isCurrentSessionLive = Boolean(activeSession && !activeSession.endAt);
 
