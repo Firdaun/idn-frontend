@@ -1,4 +1,4 @@
-import { formatLiveTime, calculateSessionDuration } from '../../utils/analyticsHelpers';
+import { formatLiveTime, calculateSessionDuration } from '../../../utils/analyticsHelpers';
 
 export default function AnalyticsDetailHeader({
     selectedStreamer,

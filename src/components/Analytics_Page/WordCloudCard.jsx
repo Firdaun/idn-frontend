@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import TagCanvas from '../lib/tagcanvas.js';
+import TagCanvas from '../../lib/tagcanvas.js';
 
 export default function WordCloudCard({ wordCloud = [], isLoading = false, streamerName = '', isLive = false }) {
     const [viewMode, setViewMode] = useState('cloud');
