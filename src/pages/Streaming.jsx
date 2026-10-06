@@ -152,6 +152,11 @@ export default function Streaming() {
     const [isChatConnected, setIsChatConnected] = useState(true);
 
     const videoRef = useRef(null);
+    const [videoEl, setVideoEl] = useState(null)
+    const setVideoRefs = (el) => {
+        videoRef.current = el;
+        setVideoEl(el);
+    }
     const chatContainerRef = useRef(null);
 
     // 1. Ambil list semua live yang sedang aktif & polling otomatis setiap 5 detik
@@ -353,6 +358,28 @@ export default function Streaming() {
         return "https://www.idn.app/";
     };
 
+    useEffect(() => {
+        if (!videoEl) return
+        const savedVolume = localStorage.getItem("videoVolume")
+
+        if (savedVolume !== null) {
+            const vol = Number(savedVolume);
+            if (!isNaN(vol) && vol >= 0 && vol <= 1) {
+                videoEl.volume = vol;
+            }
+        }
+
+        const handleVolumeChange = () => {
+            localStorage.setItem("videoVolume", String(videoEl.volume));
+        };
+
+        videoEl.addEventListener("volumechange", handleVolumeChange);
+
+        return () => {
+            videoEl.removeEventListener("volumechange", handleVolumeChange);
+        };
+    }, [videoEl]);
+
     return (
         <div className="space-y-5 pb-16">
             {/* Stream Selector Bar */}
@@ -367,8 +394,8 @@ export default function Streaming() {
                                 key={s.slug}
                                 onClick={() => handleSelectStream(s.slug)}
                                 className={`px-4 py-2 rounded-xl text-sm font-medium transition flex items-center gap-2 shrink-0 cursor-pointer ${activeSlug === s.slug
-                                        ? "bg-zinc-900 text-white shadow-sm border border-red-500"
-                                        : "bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-transparent hover:border-zinc-800"
+                                    ? "bg-zinc-900 text-white shadow-sm border border-red-500"
+                                    : "bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-transparent hover:border-zinc-800"
                                     }`}
                             >
                                 <span className={`w-2 h-2 rounded-full ${isStreamScheduled ? "bg-zinc-500" : "bg-red-500"}`}></span>
@@ -441,7 +468,7 @@ export default function Streaming() {
                             </div>
                         ) : (
                             <video
-                                ref={videoRef}
+                                ref={setVideoRefs}
                                 controls
                                 playsInline
                                 poster={streamData?.image_url}
