@@ -169,17 +169,8 @@ export default function Streaming() {
 
                 if (streamList.length > 0) {
                     setError(null);
-                    setActiveSlug((currentActive) => {
-                        if (slugFromUrl && isInitial) {
-                            const found = streamList.find(s => s.slug === slugFromUrl);
-                            if (found) return found.slug;
-                        }
-                        if (!currentActive) {
-                            return streamList[0].slug;
-                        }
-                        const exists = streamList.some(s => s.slug === currentActive);
-                        return exists ? currentActive : streamList[0].slug;
-                    });
+                    const found = streamList.find(s => s.slug === slugFromUrl);
+                    setActiveSlug(found.slug);
                 } else if (isInitial) {
                     setError("Sedang tidak ada live yang aktif.");
                 }
@@ -439,7 +430,7 @@ export default function Streaming() {
                                     </p>
                                     {streamData.live_at && (
                                         <p className="text-xs text-zinc-500 font-mono">
-                                            Waktu Jadwal: {new Date(streamData.live_at).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}
+                                            Waktu Jadwal: {new Date(streamData.scheduled_at).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}
                                         </p>
                                     )}
                                 </div>
