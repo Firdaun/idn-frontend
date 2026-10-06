@@ -170,7 +170,11 @@ export default function Streaming() {
                 if (streamList.length > 0) {
                     setError(null);
                     const found = streamList.find(s => s.slug === slugFromUrl);
-                    setActiveSlug(found.slug);
+                    if (!found) {
+                        setActiveSlug(streamList[0].slug)
+                    } else {
+                        setActiveSlug(found.slug);
+                    }
                 } else if (isInitial) {
                     setError("Sedang tidak ada live yang aktif.");
                 }
