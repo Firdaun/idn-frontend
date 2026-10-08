@@ -175,11 +175,7 @@ export default function Streaming() {
                 if (streamList.length > 0) {
                     setError(null);
                     const found = streamList.find(s => s.slug === slugFromUrl);
-                    if (!found) {
-                        setActiveSlug(streamList[0].slug)
-                    } else {
-                        setActiveSlug(found.slug);
-                    }
+                    setActiveSlug(found.slug);
                 } else if (isInitial) {
                     setError("Sedang tidak ada live yang aktif.");
                 }
@@ -262,6 +258,8 @@ export default function Streaming() {
         socket.onopen = () => {
             const randomGuestId = Math.random().toString(36).substring(2, 9);
             const guestUser = `idn-web-${randomGuestId}`;
+            socket.send("CAP REQ :message-tags server-time\r\n")
+            socket.send("CAP END\r\n")
 
             socket.send(`NICK ${guestUser}\r\n`);
             socket.send(`USER ${guestUser} 0 * :${guestUser}\r\n`);
@@ -270,10 +268,11 @@ export default function Streaming() {
         socket.onmessage = (event) => {
             if (!isSubscribed) return;
             const message = event.data;
-
-            if (message.startsWith("PING")) {
-                socket.send(message.replace("PING", "PONG\r\n"));
-                return;
+            
+            if (message.includes("PING")) {
+                const reply = message.replace("PING", "PONG")
+                socket.send(reply + '\r\n')
+                return
             }
 
             if (message.includes(" 001 ") || message.includes(" 376 ")) {
