@@ -65,3 +65,12 @@ export const getTopChatters = async (slug) => {
     const result = await response.json();
     return result.data || [];
 };
+
+export const getGiftDistribution = async (slug) => {
+    const response = await fetch(`${BASE_URL}/idn/analytics/${slug}/gift-distribution`);
+    if (!response.ok) {
+        throw new Error(`HTTP Error: ${response.status}`);
+    }
+    const result = await response.json();
+    return result.data || null;
+};

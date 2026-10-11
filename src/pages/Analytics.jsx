@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Brush } from 'recharts';
-import { getMultiLiveData, getAnalytics } from '../../utils/backend-api';
+import { getMultiLiveData, getAnalytics, getGiftDistribution } from '../../utils/backend-api';
 import { getMemberColor } from '../../utils/color';
 import { useQuery } from '@tanstack/react-query';
 import SentimentCard from '../components/Analytics_Page/SentimentCard';
@@ -8,6 +8,7 @@ import WordCloudCard from '../components/Analytics_Page/WordCloudCard';
 import TopChattersCard from '../components/Analytics_Page/TopChatters';
 import AnalyticsDetailHeader from '../components/Analytics_Page/AnalyticsDetailHeader';
 import StreamStatsCard from '../components/Analytics_Page/StreamStatsCard';
+import GiftDistributionCard from '../components/Analytics_Page/GiftDistributionCard';
 import { formatAxisTime, getDaysAgoIsoRange, getTodayStartIso } from '../../utils/analyticsHelpers';
 
 export default function Analytics() {
@@ -98,6 +99,17 @@ export default function Analytics() {
     const activeTopChatters = sessionAnalyticsData.topChatters;
     const activeTopGifters = sessionAnalyticsData.topGifters;
     const activeTopGifts = sessionAnalyticsData.topGifts;
+
+    const {
+        data: giftDistributionData = null,
+        isLoading: isGiftDistributionLoading
+    } = useQuery({
+        queryKey: ['giftDistribution', selectedStreamer?.slug],
+        queryFn: () => getGiftDistribution(selectedStreamer.slug),
+        enabled: !!selectedStreamer?.slug,
+        staleTime: 1000 * 60 * 5,
+        gcTime: 1000 * 60 * 15
+    });
 
     const loading = isAnalyticsLoading
     const refreshing = isAnalyticsFetching
@@ -473,6 +485,13 @@ export default function Analytics() {
                         isLoading={isSessionTimeLoading}
                         streamerName={selectedStreamer.fullName || selectedStreamer.name}
                         isLive={isCurrentSessionLive}
+                    />
+
+                    {/* Distribusi Donasi & Pola Gift */}
+                    <GiftDistributionCard
+                        giftData={giftDistributionData}
+                        isLoading={isGiftDistributionLoading || isSessionTimeLoading}
+                        streamerName={sessionAnalyticsData?.name || selectedStreamer.fullName || selectedStreamer.name}
                     />
                 </div>
             )}

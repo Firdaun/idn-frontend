@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 .env
 dataBaru.md
+gift-distribution.json
+top-gifters.json
+top-gifts.json
