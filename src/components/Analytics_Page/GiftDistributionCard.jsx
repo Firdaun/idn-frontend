@@ -1,8 +1,70 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Brush } from 'recharts';
 import UserAvatar from './TopChatters/UserAvatar';
 import { formatAxisTime, formatAxisTimeSecond } from '../../../utils/analyticsHelpers';
+function useScrollThumbs() {
+        const containerRef = useRef(null);
+        const vThumbRef = useRef(null);
+        const hThumbRef = useRef(null);
+        const timerRef = useRef(null);
 
+        const update = () => {
+            const el = containerRef.current;
+            if (!el) return;
+
+            const v = vThumbRef.current;
+            if (v) {
+                const { scrollTop, scrollHeight, clientHeight } = el;
+                if (scrollHeight > clientHeight) {
+                    const thumbH = Math.max(24, (clientHeight / scrollHeight) * clientHeight);
+                    const maxScrollTop = scrollHeight - clientHeight;
+                    const top = (scrollTop / maxScrollTop) * (clientHeight - thumbH);
+                    v.style.height = `${thumbH}px`;
+                    v.style.transform = `translateY(${top}px)`;
+                    v.style.opacity = '1';
+                } else {
+                    v.style.opacity = '0';
+                }
+            }
+
+            const h = hThumbRef.current;
+            if (h) {
+                const { scrollLeft, scrollWidth, clientWidth } = el;
+                if (scrollWidth > clientWidth) {
+                    const thumbW = Math.max(24, (clientWidth / scrollWidth) * clientWidth);
+                    const maxScrollLeft = scrollWidth - clientWidth;
+                    const left = (scrollLeft / maxScrollLeft) * (clientWidth - thumbW);
+                    h.style.width = `${thumbW}px`;
+                    h.style.transform = `translateX(${left}px)`;
+                    h.style.opacity = '1';
+                } else {
+                    h.style.opacity = '0';
+                }
+            }
+
+            clearTimeout(timerRef.current);
+            timerRef.current = setTimeout(() => {
+                if (vThumbRef.current) vThumbRef.current.style.opacity = '0';
+                if (hThumbRef.current) hThumbRef.current.style.opacity = '0';
+            }, 600);
+        };
+
+        useEffect(() => () => clearTimeout(timerRef.current), []);
+
+        return { containerRef, vThumbRef, hThumbRef, onScroll: update, refresh: update };
+    }
+    const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg', 'avif'];
+    function isValidImageUrl(url) {
+        if (!url || typeof url !== 'string') return false;
+
+        try {
+            const { pathname } = new URL(url);
+            const ext = pathname.split('.').pop()?.toLowerCase();
+            return IMAGE_EXTENSIONS.includes(ext);
+        } catch {
+            return false;
+        }
+    }
 export default function GiftDistributionCard({
     giftData,
     isLoading = false,
@@ -10,6 +72,14 @@ export default function GiftDistributionCard({
 }) {
     const [selectedSnapshot, setSelectedSnapshot] = useState(null)
     const [expandedGifts, setExpandedGift] = useState(new Set());
+
+    const topDonor = useScrollThumbs();
+    const topGift = useScrollThumbs();
+
+    useEffect(() => {
+        topDonor.refresh();
+        topGift.refresh();
+    }, [giftData]);
 
     const sortedGifters = useMemo(() => {
         const list = selectedSnapshot?.payload?.gifters ?? [];
@@ -38,20 +108,6 @@ export default function GiftDistributionCard({
             return next
         });
     };
-
-    const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg', 'avif'];
-
-    function isValidImageUrl(url) {
-        if (!url || typeof url !== 'string') return false;
-
-        try {
-            const { pathname } = new URL(url);
-            const ext = pathname.split('.').pop()?.toLowerCase();
-            return IMAGE_EXTENSIONS.includes(ext);
-        } catch {
-            return false;
-        }
-    }
 
     // Loading State
     if (isLoading) {
@@ -582,47 +638,64 @@ export default function GiftDistributionCard({
                             {(giftData?.topGifters || []).length} Donatur Teratas
                         </span>
                     </div>
+                    <div className='relative'>
+                        <div
+                            ref={topDonor.containerRef}
+                            onScroll={topDonor.onScroll}
+                            className="max-h-96 overflow-auto no-scrollbar"
+                        >
+                            {Array.isArray(giftData?.topGifters) && giftData.topGifters.length > 0 ? (
+                                <div className="space-y-2">
+                                    {giftData.topGifters.map((gifter, idx) => {
+                                        const rankBadge = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`;
+                                        return (
+                                            <div
+                                                key={gifter.userUuid}
+                                                className="bg-zinc-900/40 hover:bg-zinc-900/80 border border-zinc-800/40 rounded-xl p-2.5 flex items-center justify-between gap-3 transition"
+                                            >
+                                                <div className="flex items-center gap-2.5 min-w-0">
+                                                    <span className="text-sm font-bold w-5 text-center shrink-0 text-zinc-400">
+                                                        {rankBadge}
+                                                    </span>
+                                                    <UserAvatar user={gifter} sizeClass="w-8 h-8 text-xs" />
+                                                    <div className="min-w-0">
+                                                        <p className="text-xs font-semibold text-zinc-200 truncate">
+                                                            {gifter.userName}
+                                                        </p>
+                                                        <span className="text-[11px] text-zinc-500">
+                                                            {gifter.giftCount}x kirim gift
+                                                        </span>
+                                                    </div>
+                                                </div>
 
-                    {Array.isArray(giftData?.topGifters) && giftData.topGifters.length > 0 ? (
-                        <div className="space-y-2">
-                            {giftData.topGifters.map((gifter, idx) => {
-                                const rankBadge =
-                                    idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`;
-                                return (
-                                    <div
-                                        key={idx}
-                                        className="bg-zinc-900/40 hover:bg-zinc-900/80 border border-zinc-800/40 rounded-xl p-2.5 flex items-center justify-between gap-3 transition"
-                                    >
-                                        <div className="flex items-center gap-2.5 min-w-0">
-                                            <span className="text-sm font-bold w-5 text-center shrink-0 text-zinc-400">
-                                                {rankBadge}
-                                            </span>
-                                            <UserAvatar user={gifter} sizeClass="w-8 h-8 text-xs" />
-                                            <div className="min-w-0">
-                                                <p className="text-xs font-semibold text-zinc-200 truncate">
-                                                    {gifter.userName}
-                                                </p>
-                                                <span className="text-[11px] text-zinc-500">
-                                                    {gifter.giftCount}x kirim gift
-                                                </span>
+                                                <div className="text-right shrink-0">
+                                                    <span className="text-xs font-bold text-amber-400 block">
+                                                        {Number(gifter.totalGold || 0).toLocaleString('id-ID')} Gold
+                                                    </span>
+                                                    <span className="text-[11px] text-emerald-400/80">
+                                                        {formatIdr(gifter.totalIdr || (gifter.totalGold * 2500))}
+                                                    </span>
+                                                </div>
                                             </div>
-                                        </div>
-
-                                        <div className="text-right shrink-0">
-                                            <span className="text-xs font-bold text-amber-400 block">
-                                                {Number(gifter.totalGold || 0).toLocaleString('id-ID')} Gold
-                                            </span>
-                                            <span className="text-[11px] text-emerald-400/80">
-                                                {formatIdr(gifter.totalIdr || (gifter.totalGold * 2500))}
-                                            </span>
-                                        </div>
-                                    </div>
-                                );
-                            })}
+                                        );
+                                    })}
+                                </div>
+                            ) : (
+                                <p className="text-xs text-zinc-500 text-center py-4">Belum ada donatur yang tercatat.</p>
+                            )}
                         </div>
-                    ) : (
-                        <p className="text-xs text-zinc-500 text-center py-4">Belum ada donatur yang tercatat.</p>
-                    )}
+                        <div
+                            ref={topDonor.vThumbRef}
+                            className="absolute right-0 top-0 w-1 bg-zinc-700 rounded-full pointer-events-none opacity-0 transition-opacity duration-500 ease-out z-20"
+                            style={{ height: '0px' }}
+                        />
+
+                        <div
+                            ref={topDonor.hThumbRef}
+                            className="absolute bottom-0 left-0 h-1 bg-zinc-700 rounded-full pointer-events-none opacity-0 transition-opacity duration-500 ease-out z-20"
+                            style={{ width: '0px' }}
+                        />
+                    </div>
                 </div>
 
                 {/* Kolom Kanan: Gift Terpopuler (Katalog yang Dikirim) */}
@@ -637,88 +710,107 @@ export default function GiftDistributionCard({
                         </span>
                     </div>
 
-                    {Array.isArray(giftData?.topGifts) && giftData.topGifts.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 items-start">
-                            {giftData.topGifts.map((gift, idx) => {
-                                const isExpanded = expandedGifts.has(gift.giftName);
-                                return (
-                                    <div
-                                        key={gift.giftName || idx}
-                                        onClick={() => toggleGiftExpand(gift.giftName || idx)}
-                                        className={`flex flex-col rounded-xl p-3 cursor-pointer transition-all duration-200 border ${isExpanded
-                                            ? 'bg-zinc-900/90 border-amber-500/50 shadow-lg shadow-amber-500/5 ring-1 ring-amber-500/20'
-                                            : 'bg-zinc-900/40 hover:bg-zinc-900/80 border-zinc-800/60 hover:border-zinc-700/80'
-                                            }`}
-                                    >
-                                        {/* Baris Utama */}
-                                        <div className="flex justify-between w-full items-center gap-2">
-                                            <div className="flex items-center gap-2.5 min-w-0">
-                                                <div className={`w-9 h-9 rounded-lg border flex items-center justify-center p-1 shrink-0 transition ${isExpanded ? 'bg-amber-500/10 border-amber-500/30' : 'bg-zinc-800/80 border-zinc-700/40'
-                                                    }`}>
-                                                    {isValidImageUrl(gift.giftIconUrl) ? (
-                                                        <img
-                                                            src={gift.giftIconUrl}
-                                                            alt={gift.giftName}
-                                                            className="w-full h-full object-contain"
-                                                        />
-                                                    ) : (
-                                                        <span className="text-sm">🎁</span>
-                                                    )}
-                                                </div>
-                                                <div className="min-w-0">
-                                                    <p className={`text-xs font-semibold truncate transition ${isExpanded ? 'text-amber-200' : 'text-zinc-200'
-                                                        }`}>
-                                                        {gift.giftName}
-                                                    </p>
-                                                    <span className="text-[11px] text-zinc-500">
-                                                        {gift.totalCount.toLocaleString('id-ID')}x dikirim
-                                                    </span>
-                                                </div>
-                                            </div>
+                    <div className='relative'>
+                        <div
+                            ref={topGift.containerRef}
+                            onScroll={topGift.onScroll}
+                            className="max-h-96 overflow-auto no-scrollbar"
+                        >
+                            {Array.isArray(giftData?.topGifts) && giftData.topGifts.length > 0 ? (
+                                <div className="columns-1 sm:columns-2 gap-2.5">
+                                    {giftData.topGifts.map((gift) => {
+                                        const isExpanded = expandedGifts.has(gift.giftName);
+                                        return (
+                                            <div
+                                                key={gift.giftName}
+                                                onClick={() => { toggleGiftExpand(gift.giftName); requestAnimationFrame(topGift.refresh); }}
+                                                className={`mb-2.5 break-inside-avoid flex flex-col rounded-xl p-3 cursor-pointer transition-all duration-200 border ${isExpanded
+                                                    ? 'bg-zinc-900/90 border-amber-500/50 shadow-lg shadow-amber-500/5 ring-1 ring-amber-500/20'
+                                                    : 'bg-zinc-900/40 hover:bg-zinc-900/80 border-zinc-800/60 hover:border-zinc-700/80'
+                                                    }`}
+                                            >
+                                                {/* Baris Utama */}
+                                                <div className="flex justify-between w-full items-center gap-2">
+                                                    <div className="flex items-center gap-2.5 min-w-0">
+                                                        <div className={`w-9 h-9 rounded-lg border flex items-center justify-center p-1 shrink-0 transition ${isExpanded ? 'bg-amber-500/10 border-amber-500/30' : 'bg-zinc-800/80 border-zinc-700/40'
+                                                            }`}>
+                                                            {isValidImageUrl(gift.giftIconUrl) ? (
+                                                                <img
+                                                                    src={gift.giftIconUrl}
+                                                                    alt={gift.giftName}
+                                                                    className="w-full h-full object-contain"
+                                                                />
+                                                            ) : (
+                                                                <span className="text-sm">🎁</span>
+                                                            )}
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <p className={`text-xs font-semibold truncate transition ${isExpanded ? 'text-amber-200' : 'text-zinc-200'
+                                                                }`}>
+                                                                {gift.giftName}
+                                                            </p>
+                                                            <span className="text-[11px] text-zinc-500">
+                                                                {Number(gift.totalCount || 0).toLocaleString('id-ID')}x dikirim
+                                                            </span>
+                                                        </div>
+                                                    </div>
 
-                                            <div className="flex items-center gap-2 shrink-0">
-                                                <span className="text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md">
-                                                    {gift.goldPerItem.toLocaleString('id-ID')}g
-                                                </span>
-                                                <span className={`text-[10px] text-zinc-400 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-amber-400' : ''
-                                                    }`}>
-                                                    ▼
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        {/* Detail Melebar ke Bawah (Accordion) */}
-                                        {isExpanded && (
-                                            <div className="mt-3 pt-3 border-t border-zinc-800/80 space-y-2 text-xs animate-in fade-in duration-150">
-                                                <div className="grid grid-cols-2 gap-2 bg-zinc-950/60 p-2.5 rounded-lg border border-zinc-800/60">
-                                                    <div>
-                                                        <span className="text-[10px] uppercase font-medium text-zinc-500 block">Harga Satuan</span>
-                                                        <span className="text-xs font-semibold text-zinc-300">
-                                                            {formatIdr(gift.pricePerItemIdr)}
+                                                    <div className="flex items-center gap-2 shrink-0">
+                                                        <span className="text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md">
+                                                            {Number(gift.goldPerItem || 0).toLocaleString('id-ID')}g
                                                         </span>
-                                                    </div>
-                                                    <div>
-                                                        <span className="text-[10px] uppercase font-medium text-zinc-500 block">Total Koin</span>
-                                                        <span className="text-xs font-bold text-amber-400">
-                                                            {gift.totalGold.toLocaleString('id-ID')} Gold
-                                                        </span>
-                                                    </div>
-                                                    <div className="col-span-2 pt-1 border-t border-zinc-900">
-                                                        <span className="text-[10px] uppercase font-medium text-zinc-500 block">Total Perolehan IDR</span>
-                                                        <span className="text-xs font-bold text-emerald-400">
-                                                            {formatIdr(gift.totalIdr)}
+                                                        <span className={`text-[10px] text-zinc-400 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-amber-400' : ''
+                                                            }`}>
+                                                            ▼
                                                         </span>
                                                     </div>
                                                 </div>
+
+                                                {/* Detail Melebar ke Bawah (Accordion) */}
+                                                {isExpanded && (
+                                                    <div className="mt-3 pt-3 border-t border-zinc-800/80 space-y-2 text-xs animate-in fade-in duration-150">
+                                                        <div className="grid grid-cols-2 gap-2 bg-zinc-950/60 p-2.5 rounded-lg border border-zinc-800/60">
+                                                            <div>
+                                                                <span className="text-[10px] uppercase font-medium text-zinc-500 block">Harga Satuan</span>
+                                                                <span className="text-xs font-semibold text-zinc-300">
+                                                                    {formatIdr(gift.pricePerItemIdr)}
+                                                                </span>
+                                                            </div>
+                                                            <div>
+                                                                <span className="text-[10px] uppercase font-medium text-zinc-500 block">Total Koin</span>
+                                                                <span className="text-xs font-bold text-amber-400">
+                                                                    {Number(gift.totalGold || 0).toLocaleString('id-ID')} Gold
+                                                                </span>
+                                                            </div>
+                                                            <div className="col-span-2 pt-1 border-t border-zinc-900">
+                                                                <span className="text-[10px] uppercase font-medium text-zinc-500 block">Total Perolehan IDR</span>
+                                                                <span className="text-xs font-bold text-emerald-400">
+                                                                    {formatIdr(gift.totalIdr)}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
+                                        );
+                                    })}
+                                </div>
+                            ) : (
+                                <p className="text-xs text-zinc-500 text-center py-4">Belum ada item yang tercatat.</p>
+                            )}
                         </div>
-                    ) : (
-                        <p className="text-xs text-zinc-500 text-center py-4">Belum ada item yang tercatat.</p>
-                    )}
+                        <div
+                            ref={topGift.vThumbRef}
+                            className="absolute right-0 top-0 w-1 bg-zinc-700 rounded-full pointer-events-none opacity-0 transition-opacity duration-500 ease-out z-20"
+                            style={{ height: '0px' }}
+                        />
+
+                        <div
+                            ref={topGift.hThumbRef}
+                            className="absolute bottom-0 left-0 h-1 bg-zinc-700 rounded-full pointer-events-none opacity-0 transition-opacity duration-500 ease-out z-20"
+                            style={{ width: '0px' }}
+                        />
+                    </div>
                 </div>
             </div>
         </div>
