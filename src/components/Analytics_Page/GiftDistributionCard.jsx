@@ -16,10 +16,6 @@ export default function GiftDistributionCard({
         return [...list].sort((a, b) => b.gold - a.gold);
     }, [selectedSnapshot]);
 
-    const toggleGiftExpand = (giftName) => {
-        setExpandedGift(prev => prev === giftName ? null : giftName);
-    };
-
     // Format Rupiah
     const formatIdr = (val) => {
         return `Rp ${Number(val || 0).toLocaleString('id-ID')}`;
@@ -29,6 +25,24 @@ export default function GiftDistributionCard({
     const formatNumber = (val) => {
         return Number(val || 0).toLocaleString('id-ID');
     };
+
+    const toggleGiftExpand = (giftName) => {
+        setExpandedGift(prev => prev === giftName ? null : giftName);
+    };
+
+    const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg', 'avif'];
+
+    function isValidImageUrl(url) {
+        if (!url || typeof url !== 'string') return false;
+
+        try {
+            const { pathname } = new URL(url);
+            const ext = pathname.split('.').pop()?.toLowerCase();
+            return IMAGE_EXTENSIONS.includes(ext);
+        } catch {
+            return false;
+        }
+    }
 
     // Loading State
     if (isLoading) {
@@ -632,7 +646,7 @@ export default function GiftDistributionCard({
                                             <div className="flex items-center gap-2.5 min-w-0">
                                                 <div className={`w-9 h-9 rounded-lg border flex items-center justify-center p-1 shrink-0 transition ${isExpanded ? 'bg-amber-500/10 border-amber-500/30' : 'bg-zinc-800/80 border-zinc-700/40'
                                                     }`}>
-                                                    {gift.giftIconUrl ? (
+                                                    {isValidImageUrl(gift.giftIconUrl) ? (
                                                         <img
                                                             src={gift.giftIconUrl}
                                                             alt={gift.giftName}
@@ -648,14 +662,14 @@ export default function GiftDistributionCard({
                                                         {gift.giftName}
                                                     </p>
                                                     <span className="text-[11px] text-zinc-500">
-                                                        {Number(gift.totalCount || 0).toLocaleString('id-ID')}x dikirim
+                                                        {gift.totalCount.toLocaleString('id-ID')}x dikirim
                                                     </span>
                                                 </div>
                                             </div>
 
                                             <div className="flex items-center gap-2 shrink-0">
                                                 <span className="text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md">
-                                                    {Number(gift.goldPerItem || 0).toLocaleString('id-ID')}g
+                                                    {gift.goldPerItem.toLocaleString('id-ID')}g
                                                 </span>
                                                 <span className={`text-[10px] text-zinc-400 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-amber-400' : ''
                                                     }`}>
@@ -671,19 +685,19 @@ export default function GiftDistributionCard({
                                                     <div>
                                                         <span className="text-[10px] uppercase font-medium text-zinc-500 block">Harga Satuan</span>
                                                         <span className="text-xs font-semibold text-zinc-300">
-                                                            {formatIdr(gift.pricePerItemIdr || (gift.goldPerItem * 2500))}
+                                                            {formatIdr(gift.pricePerItemIdr)}
                                                         </span>
                                                     </div>
                                                     <div>
                                                         <span className="text-[10px] uppercase font-medium text-zinc-500 block">Total Koin</span>
                                                         <span className="text-xs font-bold text-amber-400">
-                                                            {Number(gift.totalGold || 0).toLocaleString('id-ID')} Gold
+                                                            {gift.totalGold.toLocaleString('id-ID')} Gold
                                                         </span>
                                                     </div>
                                                     <div className="col-span-2 pt-1 border-t border-zinc-900">
                                                         <span className="text-[10px] uppercase font-medium text-zinc-500 block">Total Perolehan IDR</span>
                                                         <span className="text-xs font-bold text-emerald-400">
-                                                            {formatIdr(gift.totalIdr || (gift.totalGold * 2500))}
+                                                            {formatIdr(gift.totalIdr)}
                                                         </span>
                                                     </div>
                                                 </div>
