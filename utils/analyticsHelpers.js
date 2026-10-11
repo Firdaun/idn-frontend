@@ -84,3 +84,10 @@ export const formatAxisTime = (rawTime) => {
     const date = d.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
     return `${time} ${date}`;
 }
+export const formatAxisTimeSecond = (rawTime) => {
+    if (!rawTime) return "";
+    const d = new Date(Number(rawTime) || rawTime);
+    if (isNaN(d.getTime())) return "";
+    const time = d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).replace(/\./g, ":");
+    return time
+}

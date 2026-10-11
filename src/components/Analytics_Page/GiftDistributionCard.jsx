@@ -1,16 +1,7 @@
 import { useState, useMemo } from 'react';
-import {
-    ResponsiveContainer,
-    ComposedChart,
-    Bar,
-    Line,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    Brush
-} from 'recharts';
+import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Brush } from 'recharts';
 import UserAvatar from './TopChatters/UserAvatar';
+import { formatAxisTime, formatAxisTimeSecond } from '../../../utils/analyticsHelpers';
 
 export default function GiftDistributionCard({
     giftData,
@@ -81,6 +72,11 @@ export default function GiftDistributionCard({
         peakMoment = null,
         timeline = []
     } = giftData;
+
+    const sortedGifters = useMemo(() => {
+        const list = selectedSnapshot?.payload?.gifters ?? [];
+        return [...list].sort((a, b) => b.gold - a.gold);
+    }, [selectedSnapshot]);
 
     return (
         <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-xl p-4 sm:p-5 lg:p-6 space-y-6">
@@ -340,11 +336,6 @@ export default function GiftDistributionCard({
                         <ComposedChart
                             data={timeline}
                             margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
-                            onClick={(e) => {
-                                if (e && e.activePayload && e.activePayload.length) {
-                                    setSelectedSnapshot(e.activePayload[0].payload);
-                                }
-                            }}
                         >
                             <defs>
                                 <linearGradient id="goldBarGradient" x1="0" y1="0" x2="0" y2="1">
@@ -354,9 +345,10 @@ export default function GiftDistributionCard({
                             </defs>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#27272a" opacity={0.4} />
                             <XAxis
-                                dataKey="timeLabel"
+                                dataKey="timestamp"
                                 tick={{ fill: '#a1a1aa', fontSize: 11 }}
                                 stroke="#27272a"
+                                tickFormatter={formatAxisTime}
                             />
                             {/* Y-Axis Kiri: Lonjakan Gold */}
                             <YAxis
@@ -378,14 +370,17 @@ export default function GiftDistributionCard({
 
                             <Tooltip
                                 isAnimationActive={false}
+                                offset={15}
+                                cursor={{ stroke: '#3f3f46', strokeWidth: 1, strokeDasharray: '3 3' }}
                                 content={({ active, payload, label }) => {
                                     if (!active || !payload || !payload.length) return null;
                                     const data = payload[0].payload;
+
                                     return (
                                         <div className="bg-zinc-900/95 border border-zinc-700/80 rounded-xl p-3 shadow-2xl backdrop-blur-md text-xs space-y-2 max-w-xs">
                                             <div className="flex items-center justify-between border-b border-zinc-800 pb-1.5">
                                                 <span className="font-bold text-zinc-100">
-                                                    Pukul {label}
+                                                    Pukul {formatAxisTimeSecond(label)}
                                                 </span>
                                                 <span className="text-[11px] text-zinc-400">
                                                     {data.messageCount} chat
@@ -508,7 +503,7 @@ export default function GiftDistributionCard({
 
                     {selectedSnapshot.payload.gifters && selectedSnapshot.payload.gifters.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-1">
-                            {selectedSnapshot.payload.gifters.map((g, idx) => (
+                            {sortedGifters.map((g, idx) => (
                                 <div
                                     key={idx}
                                     className="bg-zinc-900/80 border border-zinc-800 rounded-lg p-2.5 flex items-center gap-2.5"
@@ -530,6 +525,16 @@ export default function GiftDistributionCard({
                                             <span className="text-amber-400 font-semibold">{g.gold} Gold</span>
                                         </div>
                                     </div>
+                                    <span
+                                        className="shrink-0 self-center flex items-center gap-1 text-xs text-zinc-400 tabular-nums"
+                                        title="Waktu saweran"
+                                    >
+                                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                                            <line x1="22" y1="2" x2="11" y2="13" />
+                                            <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                                        </svg>
+                                        {formatAxisTimeSecond(g.createdAt)}
+                                    </span>
                                 </div>
                             ))}
                         </div>
@@ -617,18 +622,16 @@ export default function GiftDistributionCard({
                                     <div
                                         key={gift.giftName || idx}
                                         onClick={() => toggleGiftExpand(gift.giftName || idx)}
-                                        className={`flex flex-col rounded-xl p-3 cursor-pointer transition-all duration-200 border ${
-                                            isExpanded
-                                                ? 'bg-zinc-900/90 border-amber-500/50 shadow-lg shadow-amber-500/5 ring-1 ring-amber-500/20'
-                                                : 'bg-zinc-900/40 hover:bg-zinc-900/80 border-zinc-800/60 hover:border-zinc-700/80'
-                                        }`}
+                                        className={`flex flex-col rounded-xl p-3 cursor-pointer transition-all duration-200 border ${isExpanded
+                                            ? 'bg-zinc-900/90 border-amber-500/50 shadow-lg shadow-amber-500/5 ring-1 ring-amber-500/20'
+                                            : 'bg-zinc-900/40 hover:bg-zinc-900/80 border-zinc-800/60 hover:border-zinc-700/80'
+                                            }`}
                                     >
                                         {/* Baris Utama */}
                                         <div className="flex justify-between w-full items-center gap-2">
                                             <div className="flex items-center gap-2.5 min-w-0">
-                                                <div className={`w-9 h-9 rounded-lg border flex items-center justify-center p-1 shrink-0 transition ${
-                                                    isExpanded ? 'bg-amber-500/10 border-amber-500/30' : 'bg-zinc-800/80 border-zinc-700/40'
-                                                }`}>
+                                                <div className={`w-9 h-9 rounded-lg border flex items-center justify-center p-1 shrink-0 transition ${isExpanded ? 'bg-amber-500/10 border-amber-500/30' : 'bg-zinc-800/80 border-zinc-700/40'
+                                                    }`}>
                                                     {gift.giftIconUrl ? (
                                                         <img
                                                             src={gift.giftIconUrl}
@@ -640,9 +643,8 @@ export default function GiftDistributionCard({
                                                     )}
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <p className={`text-xs font-semibold truncate transition ${
-                                                        isExpanded ? 'text-amber-200' : 'text-zinc-200'
-                                                    }`}>
+                                                    <p className={`text-xs font-semibold truncate transition ${isExpanded ? 'text-amber-200' : 'text-zinc-200'
+                                                        }`}>
                                                         {gift.giftName}
                                                     </p>
                                                     <span className="text-[11px] text-zinc-500">
@@ -655,9 +657,8 @@ export default function GiftDistributionCard({
                                                 <span className="text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md">
                                                     {Number(gift.goldPerItem || 0).toLocaleString('id-ID')}g
                                                 </span>
-                                                <span className={`text-[10px] text-zinc-400 transition-transform duration-200 ${
-                                                    isExpanded ? 'rotate-180 text-amber-400' : ''
-                                                }`}>
+                                                <span className={`text-[10px] text-zinc-400 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-amber-400' : ''
+                                                    }`}>
                                                     ▼
                                                 </span>
                                             </div>
