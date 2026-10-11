@@ -11,6 +11,11 @@ export default function GiftDistributionCard({
     const [selectedSnapshot, setSelectedSnapshot] = useState(null)
     const [expandedGift, setExpandedGift] = useState(null);
 
+    const sortedGifters = useMemo(() => {
+        const list = selectedSnapshot?.payload?.gifters ?? [];
+        return [...list].sort((a, b) => b.gold - a.gold);
+    }, [selectedSnapshot]);
+
     const toggleGiftExpand = (giftName) => {
         setExpandedGift(prev => prev === giftName ? null : giftName);
     };
@@ -72,11 +77,6 @@ export default function GiftDistributionCard({
         peakMoment = null,
         timeline = []
     } = giftData;
-
-    const sortedGifters = useMemo(() => {
-        const list = selectedSnapshot?.payload?.gifters ?? [];
-        return [...list].sort((a, b) => b.gold - a.gold);
-    }, [selectedSnapshot]);
 
     return (
         <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-xl p-4 sm:p-5 lg:p-6 space-y-6">
