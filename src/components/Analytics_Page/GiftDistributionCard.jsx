@@ -9,7 +9,7 @@ export default function GiftDistributionCard({
     streamerName = ''
 }) {
     const [selectedSnapshot, setSelectedSnapshot] = useState(null)
-    const [expandedGift, setExpandedGift] = useState(null);
+    const [expandedGifts, setExpandedGift] = useState(new Set());
 
     const sortedGifters = useMemo(() => {
         const list = selectedSnapshot?.payload?.gifters ?? [];
@@ -27,7 +27,16 @@ export default function GiftDistributionCard({
     };
 
     const toggleGiftExpand = (giftName) => {
-        setExpandedGift(prev => prev === giftName ? null : giftName);
+        setExpandedGift((prev) => {
+            const next = new Set(prev)
+
+            if (next.has(giftName)) {
+                next.delete(giftName)
+            } else {
+                next.add(giftName)
+            }
+            return next
+        });
     };
 
     const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg', 'avif'];
@@ -631,7 +640,7 @@ export default function GiftDistributionCard({
                     {Array.isArray(giftData?.topGifts) && giftData.topGifts.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 items-start">
                             {giftData.topGifts.map((gift, idx) => {
-                                const isExpanded = expandedGift === (gift.giftName || idx);
+                                const isExpanded = expandedGifts.has(gift.giftName);
                                 return (
                                     <div
                                         key={gift.giftName || idx}
