@@ -171,7 +171,7 @@ export default function GiftDistributionCard({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800/60 pb-4">
                 <div className="flex items-center gap-2.5">
                     <span className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-lg flex items-center justify-center">
-                        🪙
+                        🎁
                     </span>
                     <div>
                         <h3 className="text-base sm:text-lg font-bold text-zinc-100 flex items-center gap-2">
@@ -462,6 +462,7 @@ export default function GiftDistributionCard({
                                 content={({ active, payload, label }) => {
                                     if (!active || !payload || !payload.length) return null;
                                     const data = payload[0].payload;
+                                    const sortedItems = [...data.gifters].sort((a, b) => Number(b.gold || 0) - Number(a.gold || 0))
 
                                     return (
                                         <div className="bg-zinc-900/95 border border-zinc-700/80 rounded-xl p-3 shadow-2xl backdrop-blur-md text-xs space-y-2 max-w-xs">
@@ -494,8 +495,8 @@ export default function GiftDistributionCard({
                                                     <span className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider block">
                                                         Gift Masuk ({data.gifters.length}):
                                                     </span>
-                                                    <div className="max-h-28 overflow-y-auto space-y-1.5 pr-1">
-                                                        {data.gifters.map((g, idx) => (
+                                                    <div className="space-y-1.5 pr-1">
+                                                        {sortedItems.map((g, idx) => (
                                                             <div key={idx} className="flex items-center justify-between gap-2">
                                                                 <div className="flex items-center gap-1.5 min-w-0">
                                                                     {g.giftIconUrl ? (
@@ -885,7 +886,7 @@ export default function GiftDistributionCard({
                                             <div
                                                 key={gift.giftName}
                                                 onClick={() => { toggleGiftExpand(gift.giftName); requestAnimationFrame(topGift.refresh); }}
-                                                className={`mb-2.5 break-inside-avoid flex flex-col rounded-xl p-3 cursor-pointer transition-all duration-200 border ${isExpanded
+                                                className={`mb-2 break-inside-avoid flex flex-col rounded-xl p-2.5 cursor-pointer transition-all duration-200 border ${isExpanded
                                                     ? 'bg-zinc-900/90 border-amber-500/50 shadow-lg shadow-amber-500/5 ring-1 ring-amber-500/20'
                                                     : 'bg-zinc-900/40 hover:bg-zinc-900/80 border-zinc-800/60 hover:border-zinc-700/80'
                                                     }`}
