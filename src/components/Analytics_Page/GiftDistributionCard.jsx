@@ -1,70 +1,70 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Brush } from 'recharts';
-import UserAvatar from './TopChatters/UserAvatar';
+import { UserAvatar, GiftItemsProfile } from './UserAvatar';
 import { formatAxisTime, formatAxisTimeSecond } from '../../../utils/analyticsHelpers';
 function useScrollThumbs() {
-        const containerRef = useRef(null);
-        const vThumbRef = useRef(null);
-        const hThumbRef = useRef(null);
-        const timerRef = useRef(null);
+    const containerRef = useRef(null);
+    const vThumbRef = useRef(null);
+    const hThumbRef = useRef(null);
+    const timerRef = useRef(null);
 
-        const update = () => {
-            const el = containerRef.current;
-            if (!el) return;
+    const update = () => {
+        const el = containerRef.current;
+        if (!el) return;
 
-            const v = vThumbRef.current;
-            if (v) {
-                const { scrollTop, scrollHeight, clientHeight } = el;
-                if (scrollHeight > clientHeight) {
-                    const thumbH = Math.max(24, (clientHeight / scrollHeight) * clientHeight);
-                    const maxScrollTop = scrollHeight - clientHeight;
-                    const top = (scrollTop / maxScrollTop) * (clientHeight - thumbH);
-                    v.style.height = `${thumbH}px`;
-                    v.style.transform = `translateY(${top}px)`;
-                    v.style.opacity = '1';
-                } else {
-                    v.style.opacity = '0';
-                }
+        const v = vThumbRef.current;
+        if (v) {
+            const { scrollTop, scrollHeight, clientHeight } = el;
+            if (scrollHeight > clientHeight) {
+                const thumbH = Math.max(24, (clientHeight / scrollHeight) * clientHeight);
+                const maxScrollTop = scrollHeight - clientHeight;
+                const top = (scrollTop / maxScrollTop) * (clientHeight - thumbH);
+                v.style.height = `${thumbH}px`;
+                v.style.transform = `translateY(${top}px)`;
+                v.style.opacity = '1';
+            } else {
+                v.style.opacity = '0';
             }
-
-            const h = hThumbRef.current;
-            if (h) {
-                const { scrollLeft, scrollWidth, clientWidth } = el;
-                if (scrollWidth > clientWidth) {
-                    const thumbW = Math.max(24, (clientWidth / scrollWidth) * clientWidth);
-                    const maxScrollLeft = scrollWidth - clientWidth;
-                    const left = (scrollLeft / maxScrollLeft) * (clientWidth - thumbW);
-                    h.style.width = `${thumbW}px`;
-                    h.style.transform = `translateX(${left}px)`;
-                    h.style.opacity = '1';
-                } else {
-                    h.style.opacity = '0';
-                }
-            }
-
-            clearTimeout(timerRef.current);
-            timerRef.current = setTimeout(() => {
-                if (vThumbRef.current) vThumbRef.current.style.opacity = '0';
-                if (hThumbRef.current) hThumbRef.current.style.opacity = '0';
-            }, 600);
-        };
-
-        useEffect(() => () => clearTimeout(timerRef.current), []);
-
-        return { containerRef, vThumbRef, hThumbRef, onScroll: update, refresh: update };
-    }
-    const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg', 'avif'];
-    function isValidImageUrl(url) {
-        if (!url || typeof url !== 'string') return false;
-
-        try {
-            const { pathname } = new URL(url);
-            const ext = pathname.split('.').pop()?.toLowerCase();
-            return IMAGE_EXTENSIONS.includes(ext);
-        } catch {
-            return false;
         }
+
+        const h = hThumbRef.current;
+        if (h) {
+            const { scrollLeft, scrollWidth, clientWidth } = el;
+            if (scrollWidth > clientWidth) {
+                const thumbW = Math.max(24, (clientWidth / scrollWidth) * clientWidth);
+                const maxScrollLeft = scrollWidth - clientWidth;
+                const left = (scrollLeft / maxScrollLeft) * (clientWidth - thumbW);
+                h.style.width = `${thumbW}px`;
+                h.style.transform = `translateX(${left}px)`;
+                h.style.opacity = '1';
+            } else {
+                h.style.opacity = '0';
+            }
+        }
+
+        clearTimeout(timerRef.current);
+        timerRef.current = setTimeout(() => {
+            if (vThumbRef.current) vThumbRef.current.style.opacity = '0';
+            if (hThumbRef.current) hThumbRef.current.style.opacity = '0';
+        }, 600);
+    };
+
+    useEffect(() => () => clearTimeout(timerRef.current), []);
+
+    return { containerRef, vThumbRef, hThumbRef, onScroll: update, refresh: update };
+}
+const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg', 'avif'];
+function isValidImageUrl(url) {
+    if (!url || typeof url !== 'string') return false;
+
+    try {
+        const { pathname } = new URL(url);
+        const ext = pathname.split('.').pop()?.toLowerCase();
+        return IMAGE_EXTENSIONS.includes(ext);
+    } catch {
+        return false;
     }
+}
 export default function GiftDistributionCard({
     giftData,
     isLoading = false,
@@ -108,6 +108,14 @@ export default function GiftDistributionCard({
             return next
         });
     };
+
+    const top1Gifter = giftData?.topGifters[0];
+    const top2Gifter = giftData?.topGifters[1];
+    const top3Gifter = giftData?.topGifters[2];
+
+    const top1Gift = giftData?.topGifts[0];
+    const top2Gift = giftData?.topGifts[1];
+    const top3Gift = giftData?.topGifts[2];
 
     // Loading State
     if (isLoading) {
@@ -300,7 +308,7 @@ export default function GiftDistributionCard({
                         {phases.opening && (
                             <div
                                 style={{ width: `${Math.max(4, phases.opening.percentage)}%` }}
-                                className="h-full bg-indigo-500 rounded-l-full transition-all duration-500 relative group"
+                                className="h-full bg-teal-500 rounded-l-full transition-all duration-500 relative group"
                                 title={`Awal: ${phases.opening.percentage}% (${phases.opening.gold} Gold)`}
                             />
                         )}
@@ -326,8 +334,8 @@ export default function GiftDistributionCard({
                         {phases.opening && (
                             <div className="bg-zinc-900/60 border border-indigo-500/20 rounded-xl p-3 flex flex-col justify-between">
                                 <div className="flex items-center justify-between mb-1">
-                                    <span className="text-xs font-semibold text-indigo-400 flex items-center gap-1.5">
-                                        <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
+                                    <span className="text-xs font-semibold text-teal-400 flex items-center gap-1.5">
+                                        <span className="w-2 h-2 rounded-full bg-teal-500"></span>
                                         Awal (0 - 25%)
                                     </span>
                                     <span className="text-xs font-bold text-zinc-200">
@@ -638,6 +646,83 @@ export default function GiftDistributionCard({
                             {(giftData?.topGifters || []).length} Donatur Teratas
                         </span>
                     </div>
+
+                    <div className="bg-zinc-950/40 border border-zinc-800/40 rounded-xl p-4 sm:p-5">
+                        <h4 className="text-xs uppercase tracking-wider text-zinc-400 font-semibold text-center mb-4 flex items-center justify-center gap-1.5">
+                            <span>👑</span>
+                            <span>Top 3 Donatur Gift</span>
+                        </h4>
+
+                        <div className="grid grid-cols-3 gap-2 sm:gap-4 items-end max-w-lg mx-auto pt-2">
+                            {/* Rank 2 (Silver) */}
+                            {top2Gifter ? (
+                                <div className="flex flex-col items-center text-center p-3 rounded-xl bg-zinc-900/60 border border-zinc-700/60 shadow-lg relative group">
+                                    <div className="absolute -top-3 px-2 py-0.5 rounded-full bg-zinc-800 border border-zinc-600 text-[11px] font-bold text-zinc-200 flex items-center gap-1 shadow">
+                                        <span>🥈</span> #2
+                                    </div>
+                                    <div className="mt-1">
+                                        <UserAvatar user={top2Gifter} sizeClass="w-12 h-12 sm:w-14 sm:h-14 text-sm" borderClass="border-zinc-400 shadow-zinc-400/20 shadow-md" />
+                                    </div>
+                                    <span className="font-semibold text-xs sm:text-sm text-zinc-100 mt-2 truncate max-w-full" title={top2Gifter.userName}>
+                                        {top2Gifter.userName}
+                                    </span>
+                                    <div className="text-xs sm:text-sm text-amber-300 font-bold mt-0.5 flex items-center justify-center gap-1">
+                                        <img className='w-5' src="https://connect.idn.media/my-account/assets/images/idn-gold/gold-card.svg" alt="GOLD" />
+                                        <span>{Number(top2Gifter.totalGold).toLocaleString('id-ID')}</span>
+                                        <span className="text-[11px] font-normal text-zinc-400">Gold</span>
+                                    </div>
+                                    <span className="text-[11px] text-zinc-400">
+                                        Rp {top2Gifter.totalIdr.toLocaleString('id-ID')}
+                                    </span>
+                                </div>
+                            ) : <div />}
+
+                            {/* Rank 1 (Gold - Taller) */}
+                            <div className="flex flex-col items-center text-center p-3.5 sm:p-4 rounded-xl bg-linear-to-b from-amber-500/15 via-zinc-900/80 to-zinc-900 border border-amber-500/40 shadow-amber-500/10 shadow-xl relative -translate-y-2 group">
+                                <div className="absolute -top-3.5 px-2.5 py-0.5 rounded-full bg-amber-500 text-zinc-950 text-[11px] font-extrabold flex items-center gap-1 shadow-lg">
+                                    <span>👑</span> #1
+                                </div>
+                                <div className="mt-1 relative">
+                                    <UserAvatar user={top1Gifter} sizeClass="w-14 h-14 sm:w-16 sm:h-16 text-base" borderClass="border-amber-400 shadow-amber-400/30 shadow-lg ring-2 ring-amber-400/30" />
+                                </div>
+                                <span className="font-bold text-xs sm:text-sm text-amber-200 mt-2 truncate max-w-full" title={top1Gifter.userName}>
+                                    {top1Gifter.userName}
+                                </span>
+                                <div className="text-xs sm:text-sm text-amber-400 font-extrabold mt-0.5 flex items-center justify-center gap-1">
+                                    <img className='w-5' src="https://connect.idn.media/my-account/assets/images/idn-gold/gold-card.svg" alt="GOLD" />
+                                    <span>{Number(top1Gifter.totalGold).toLocaleString('id-ID')}</span>
+                                    <span className="text-[11px] font-normal text-amber-300/80">Gold</span>
+                                </div>
+                                <span className="text-[11px] text-zinc-400">
+                                    Rp {top1Gifter.totalIdr.toLocaleString('id-ID')}
+                                </span>
+                            </div>
+
+                            {/* Rank 3 (Bronze) */}
+                            {top3Gifter ? (
+                                <div className="flex flex-col items-center text-center p-3 rounded-xl bg-zinc-900/60 border border-amber-800/40 shadow-lg relative group">
+                                    <div className="absolute -top-3 px-2 py-0.5 rounded-full bg-zinc-800 border border-amber-800/60 text-[11px] font-bold text-amber-300 flex items-center gap-1 shadow">
+                                        <span>🥉</span> #3
+                                    </div>
+                                    <div className="mt-1">
+                                        <UserAvatar user={top3Gifter} sizeClass="w-12 h-12 sm:w-14 sm:h-14 text-sm" borderClass="border-amber-700 shadow-amber-700/20 shadow-md" />
+                                    </div>
+                                    <span className="font-semibold text-xs sm:text-sm text-zinc-100 mt-2 truncate max-w-full" title={top3Gifter.userName}>
+                                        {top3Gifter.userName}
+                                    </span>
+                                    <div className="text-xs sm:text-sm text-amber-300 font-bold mt-0.5 flex items-center justify-center gap-1">
+                                        <img className='w-5' src="https://connect.idn.media/my-account/assets/images/idn-gold/gold-card.svg" alt="GOLD" />
+                                        <span>{Number(top3Gifter.totalGold).toLocaleString('id-ID')}</span>
+                                        <span className="text-[11px] font-normal text-zinc-400">Gold</span>
+                                    </div>
+                                    <span className="text-[11px] text-zinc-400">
+                                        Rp {top3Gifter.totalIdr.toLocaleString('id-ID')}
+                                    </span>
+                                </div>
+                            ) : <div />}
+                        </div>
+                    </div>
+
                     <div className='relative'>
                         <div
                             ref={topDonor.containerRef}
@@ -708,6 +793,82 @@ export default function GiftDistributionCard({
                         <span className="text-[11px] text-zinc-500">
                             {(giftData?.topGifts || []).length} Item
                         </span>
+                    </div>
+
+                    <div className="bg-zinc-950/40 border border-zinc-800/40 rounded-xl p-4 sm:p-5">
+                        <h4 className="text-xs uppercase tracking-wider text-zinc-400 font-semibold text-center mb-4 flex items-center justify-center gap-1.5">
+                            <span>👑</span>
+                            <span>Top 3 Gifts</span>
+                        </h4>
+
+                        <div className="grid grid-cols-3 gap-2 sm:gap-4 items-end max-w-lg mx-auto pt-2">
+                            {/* Rank 2 (Silver) */}
+                            {top2Gift ? (
+                                <div className="flex flex-col items-center text-center p-3 rounded-xl bg-zinc-900/60 border border-zinc-700/60 shadow-lg relative group">
+                                    <div className="absolute -top-3 px-2 py-0.5 rounded-full bg-zinc-800 border border-zinc-600 text-[11px] font-bold text-zinc-200 flex items-center gap-1 shadow">
+                                        <span>🥈</span> #2
+                                    </div>
+                                    <div className="mt-1">
+                                        <GiftItemsProfile user={top2Gift} sizeClass="w-12 h-12 sm:w-14 sm:h-14 text-sm" borderClass="border-zinc-400 shadow-zinc-400/20 shadow-md" />
+                                    </div>
+                                    <span className="font-semibold text-xs sm:text-sm text-zinc-100 mt-2 truncate max-w-full" title={top2Gift.giftName}>
+                                        {top2Gift.giftName}
+                                    </span>
+                                    <div className="text-xs sm:text-sm text-amber-300 font-bold mt-0.5 flex items-center justify-center gap-1">
+                                        <img className='w-5' src="https://connect.idn.media/my-account/assets/images/idn-gold/gold-card.svg" alt="GOLD" />
+                                        <span>{Number(top2Gift.totalGold).toLocaleString('id-ID')}</span>
+                                        <span className="text-[11px] font-normal text-zinc-400">Gold</span>
+                                    </div>
+                                    <span className="text-[11px] text-zinc-400">
+                                        Rp {top2Gift.totalIdr.toLocaleString('id-ID')}
+                                    </span>
+                                </div>
+                            ) : <div />}
+
+                            {/* Rank 1 (Gold - Taller) */}
+                            <div className="flex flex-col items-center text-center p-3.5 sm:p-4 rounded-xl bg-linear-to-b from-amber-500/15 via-zinc-900/80 to-zinc-900 border border-amber-500/40 shadow-amber-500/10 shadow-xl relative -translate-y-2 group">
+                                <div className="absolute -top-3.5 px-2.5 py-0.5 rounded-full bg-amber-500 text-zinc-950 text-[11px] font-extrabold flex items-center gap-1 shadow-lg">
+                                    <span>👑</span> #1
+                                </div>
+                                <div className="mt-1 relative">
+                                    <GiftItemsProfile user={top1Gift} sizeClass="w-14 h-14 sm:w-16 sm:h-16 text-base" borderClass="border-amber-400 shadow-amber-400/30 shadow-lg ring-2 ring-amber-400/30" />
+                                </div>
+                                <span className="font-bold text-xs sm:text-sm text-amber-200 mt-2 truncate max-w-full" title={top1Gift.giftName}>
+                                    {top1Gift.giftName}
+                                </span>
+                                <div className="text-xs sm:text-sm text-amber-400 font-extrabold mt-0.5 flex items-center justify-center gap-1">
+                                    <img className='w-5' src="https://connect.idn.media/my-account/assets/images/idn-gold/gold-card.svg" alt="GOLD" />
+                                    <span>{Number(top1Gift.goldPerItem || 0).toLocaleString('id-ID')}</span>
+                                    <span className="text-[11px] font-normal text-amber-300/80">Gold x{Number(top1Gift.totalCount || 0).toLocaleString('id-ID')}</span>
+                                </div>
+                                <span className="text-[11px] text-zinc-400">
+                                    Rp {top1Gift.totalIdr.toLocaleString('id-ID')}
+                                </span>
+                            </div>
+
+                            {/* Rank 3 (Bronze) */}
+                            {top3Gift ? (
+                                <div className="flex flex-col items-center text-center p-3 rounded-xl bg-zinc-900/60 border border-amber-800/40 shadow-lg relative group">
+                                    <div className="absolute -top-3 px-2 py-0.5 rounded-full bg-zinc-800 border border-amber-800/60 text-[11px] font-bold text-amber-300 flex items-center gap-1 shadow">
+                                        <span>🥉</span> #3
+                                    </div>
+                                    <div className="mt-1">
+                                        <GiftItemsProfile user={top3Gift} sizeClass="w-12 h-12 sm:w-14 sm:h-14 text-sm" borderClass="border-amber-700 shadow-amber-700/20 shadow-md" />
+                                    </div>
+                                    <span className="font-semibold text-xs sm:text-sm text-zinc-100 mt-2 truncate max-w-full" title={top3Gift.giftName}>
+                                        {top3Gift.giftName}
+                                    </span>
+                                    <div className="text-xs sm:text-sm text-amber-300 font-bold mt-0.5 flex items-center justify-center gap-1">
+                                        <img className='w-5' src="https://connect.idn.media/my-account/assets/images/idn-gold/gold-card.svg" alt="GOLD" />
+                                        <span>{Number(top3Gift.totalGold).toLocaleString('id-ID')}</span>
+                                        <span className="text-[11px] font-normal text-zinc-400">Gold</span>
+                                    </div>
+                                    <span className="text-[11px] text-zinc-400">
+                                        Rp {top3Gift.totalIdr.toLocaleString('id-ID')}
+                                    </span>
+                                </div>
+                            ) : <div />}
+                        </div>
                     </div>
 
                     <div className='relative'>
