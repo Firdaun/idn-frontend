@@ -68,6 +68,7 @@ function isValidImageUrl(url) {
 export default function GiftDistributionCard({
     giftData,
     isLoading = false,
+    isLive = false,
     streamerName = ''
 }) {
     const [selectedSnapshot, setSelectedSnapshot] = useState(null)
@@ -137,18 +138,26 @@ export default function GiftDistributionCard({
     }
 
     // Empty State
-    if (!giftData || !giftData.totalGiftCount) {
+    if (isLive) {
         return (
             <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-xl p-6 text-center text-zinc-400 space-y-3">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border bg-amber-500/10 border-amber-500/20 text-amber-400">
-                    <span>🪙 Distribusi Donasi & Pola Gift</span>
+                    <span>🎁 Distribusi Donasi & Pola Gift</span>
                 </div>
                 <div>
-                    <p className="text-zinc-200 font-medium text-sm">Belum Ada Riwayat Gift pada Sesi Ini</p>
-                    <p className="text-xs text-zinc-500 mt-1 max-w-md mx-auto">
-                        Data grafik distribusi gift dan pola donasi akan otomatis tercatat saat ada penonton yang mengirimkan virtual gift.
+                    <p className="text-zinc-200 font-medium text-sm">🔴 Siaran Sedang Berlangsung</p>
+                    <p className="text-xs text-zinc-400 mt-1 max-w-md mx-auto">
+                        Data distribusi donasi & pola gift sedang dikumpulkan secara langsung dan akan otomatis tersedia setelah sesi siaran ini selesai.
                     </p>
                 </div>
+                {!giftData || !giftData.totalGiftCount && (
+                    <div>
+                        <p className="text-zinc-200 font-medium text-sm">Belum Ada Riwayat Gift pada Sesi Ini</p>
+                        <p className="text-xs text-zinc-500 mt-1 max-w-md mx-auto">
+                            Data grafik distribusi gift dan pola donasi akan otomatis tercatat saat ada penonton yang mengirimkan virtual gift.
+                        </p>
+                    </div>
+                )}
             </div>
         );
     }

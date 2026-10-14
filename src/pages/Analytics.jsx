@@ -481,6 +481,7 @@ export default function Analytics() {
                     <GiftDistributionCard
                         giftData={giftDistributionData}
                         isLoading={isGiftDistributionLoading || isSessionTimeLoading}
+                        isLive={isCurrentSessionLive}
                         streamerName={sessionAnalyticsData?.name || selectedStreamer.fullName || selectedStreamer.name}
                     />
                 </div>
