@@ -5,7 +5,6 @@ import { getMemberColor } from '../../utils/color';
 import { useQuery } from '@tanstack/react-query';
 import SentimentCard from '../components/Analytics_Page/SentimentCard';
 import WordCloudCard from '../components/Analytics_Page/WordCloudCard';
-import TopChattersCard from '../components/Analytics_Page/TopChatters';
 import AnalyticsDetailHeader from '../components/Analytics_Page/AnalyticsDetailHeader';
 import StreamStatsCard from '../components/Analytics_Page/StreamStatsCard';
 import GiftDistributionCard from '../components/Analytics_Page/GiftDistributionCard';
@@ -443,7 +442,7 @@ export default function Analytics() {
             {/* Sentiment, Stream Stats & Word Cloud Section */}
             {selectedStreamer && (
                 <div className="space-y-3 lg:space-y-5">
-                    <div className="flex flex-col lg:flex-row gap-3 lg:gap-5 items-stretch">
+                    <div className="flex flex-col lg:flex-row gap-3 lg:gap-4 items-stretch">
                         {/* Kolom Kiri: Sentimen & Statistik Performa Siaran */}
                         <div className="w-full lg:w-[40%] flex flex-col gap-3 lg:gap-4 shrink-0">
                             {/* Card Sentimen */}
@@ -469,6 +468,7 @@ export default function Analytics() {
                         {/* Kolom Kanan: Word Cloud (Topik Hangat) */}
                         <div className="w-full lg:flex-1 flex flex-col min-w-0">
                             <WordCloudCard
+                                topChatters={activeTopChatters}
                                 wordCloud={activeWordCloud}
                                 isLoading={isSessionTimeLoading}
                                 streamerName={sessionAnalyticsData?.name || selectedStreamer.fullName || selectedStreamer.name}
@@ -476,16 +476,6 @@ export default function Analytics() {
                             />
                         </div>
                     </div>
-
-                    {/* Leaderboard Top 50 Chatters & Gifters */}
-                    <TopChattersCard
-                        topChatters={activeTopChatters}
-                        topGifters={activeTopGifters}
-                        topGifts={activeTopGifts}
-                        isLoading={isSessionTimeLoading}
-                        streamerName={selectedStreamer.fullName || selectedStreamer.name}
-                        isLive={isCurrentSessionLive}
-                    />
 
                     {/* Distribusi Donasi & Pola Gift */}
                     <GiftDistributionCard
