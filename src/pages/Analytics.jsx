@@ -12,16 +12,12 @@ import { formatAxisTime, getDaysAgoIsoRange, getTodayStartIso } from '../../util
 
 export default function Analytics() {
     const [selectedStreamer, setSelectedStreamer] = useState(null);
-
-    const [timeRange, setTimeRange] = useState(() => sessionStorage.getItem('analytics_timeRange') || 'today');
-    const [customStart, setCustomStart] = useState(() => sessionStorage.getItem('analytics_customStart') || '');
-    const [customEnd, setCustomEnd] = useState(() => sessionStorage.getItem('analytics_customEnd') || '');
-    const [appliedCustom, setAppliedCustom] = useState(() => {
-        const saved = sessionStorage.getItem('analytics_appliedCustom');
-        return saved ? JSON.parse(saved) : { start: getTodayStartIso(), end: null };
-    });
     const [metricType, setMetricType] = useState(() => sessionStorage.getItem('analytics_metricType') || 'viewers');
     const [isSnapshotHighlight, setIsSnapshotHighlight] = useState(false);
+    const [selectedDate, setSelectedDate] = useState(() => {
+        const savedDate = sessionStorage.getItem('analytics_dateRange')
+        return savedDate || getTodayStartIso()
+    })
 
     useEffect(() => {
         if (!isSnapshotHighlight) return;
@@ -32,37 +28,61 @@ export default function Analytics() {
     }, [isSnapshotHighlight]);
 
     useEffect(() => {
+        sessionStorage.setItem('analytics_dateRange', new Date(selectedDate).toDateString());
+    }, [selectedDate]);
+    useEffect(() => {
         sessionStorage.setItem('analytics_metricType', metricType);
     }, [metricType]);
-    useEffect(() => {
-        sessionStorage.setItem('analytics_timeRange', timeRange);
-        setSelectedStreamer(prev => prev ? ({
-            ...prev,
-            clickedTime: null,
-            clickedViewers: null,
-            clickedChat: null,
-            clickedPos: null,
-            clickedNeu: null,
-            clickedNeg: null
-        }) : null);
-    }, [timeRange]);
-    useEffect(() => {
-        sessionStorage.setItem('analytics_customStart', customStart);
-    }, [customStart]);
-    useEffect(() => {
-        sessionStorage.setItem('analytics_customEnd', customEnd);
-    }, [customEnd]);
-    useEffect(() => {
-        sessionStorage.setItem('analytics_appliedCustom', JSON.stringify(appliedCustom));
-    }, [appliedCustom]);
 
     const { start: activeStart, end: activeEnd } = useMemo(() => {
-        if (timeRange === 'today' || timeRange === '1h') return { start: getTodayStartIso(), end: null };
-        if (timeRange === '1d') return getDaysAgoIsoRange(1);
-        if (timeRange === '2d') return getDaysAgoIsoRange(2);
-        if (timeRange === 'custom') return appliedCustom;
-        return { start: null, end: null };
-    }, [timeRange, appliedCustom])
+        const start = new Date(selectedDate)
+        const isToday = start.toDateString() === new Date().toDateString()
+
+        if (isToday) return { start: start.toISOString(), end: null }
+        const end = new Date(selectedDate)
+        end.setHours(23, 59, 59, 999)
+
+        return { start: start.toISOString(), end: end.toISOString() };
+    }, [selectedDate])
+
+    const isToday = new Date(selectedDate).toDateString() === new Date().toDateString();
+    
+    const handlePrevDay = () => {
+        setSelectedDate(prev => {
+            const d = new Date(prev)
+            d.setDate(d.getDate() - 1)
+            return d
+        })  
+    }
+
+    const handleNextDay = () => {
+        setSelectedDate(prev => {
+            const d = new Date(prev);
+            d.setDate(d.getDate() + 1);
+            return d;
+        });
+    };
+    // Lompat langsung kembali ke hari ini
+    const handleGoToday = () => {
+        setSelectedDate(new Date());
+    };
+
+    const savedTime = new Date(selectedDate)
+    
+    const formattedDateLabel = useMemo(() => {
+        const isToday = savedTime.toDateString() === new Date().toDateString();
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const isYesterday = savedTime.toDateString() === yesterday.toDateString();
+        const dateStr = savedTime.toLocaleDateString('id-ID', {
+            weekday: 'short',
+            day: 'numeric',
+            month: 'short'
+        });
+        if (isToday) return `${dateStr}`;
+        if (isYesterday) return `${dateStr}`;
+        return dateStr;
+    }, [selectedDate]);
 
     const {
         data = { chartData: [], streamers: [] },
@@ -70,7 +90,7 @@ export default function Analytics() {
         isFetching: isAnalyticsFetching,
         refetch
     } = useQuery({
-        queryKey: ['multiLive', timeRange, activeStart, activeEnd],
+        queryKey: ['multiLive', activeStart, activeEnd],
         queryFn: () => getMultiLiveData(activeStart, activeEnd),
         staleTime: 1000 * 60 * 15,
         gcTime: 1000 * 60 * 30
@@ -96,8 +116,6 @@ export default function Analytics() {
     const activeSentiment = sessionAnalyticsData.sentiment;
     const activeWordCloud = sessionAnalyticsData.wordCloud;
     const activeTopChatters = sessionAnalyticsData.topChatters;
-    const activeTopGifters = sessionAnalyticsData.topGifters;
-    const activeTopGifts = sessionAnalyticsData.topGifts;
 
     const {
         data: giftDistributionData = null,
@@ -118,26 +136,6 @@ export default function Analytics() {
     const maxPeak = useMemo(() => {
         return streamers.reduce((max, s) => Math.max(max, s.peakViewers), 0);
     }, [streamers]);
-
-    const handleApplyCustomRange = () => {
-        if (!customStart || !customEnd) {
-            alert('Silakan pilih waktu mulai dan waktu selesai!');
-            return;
-        }
-        setAppliedCustom({
-            start: new Date(customStart).toISOString(),
-            end: new Date(customEnd).toISOString()
-        });
-        setSelectedStreamer(prev => prev ? ({
-            ...prev,
-            clickedTime: null,
-            clickedViewers: null,
-            clickedChat: null,
-            clickedPos: null,
-            clickedNeu: null,
-            clickedNeg: null
-        }) : null);
-    };
 
     const handleDotClick = (streamer, dotPayload) => {
         const dataPoint = dotPayload?.payload;
@@ -222,18 +220,8 @@ export default function Analytics() {
         }
     };
 
-    const filteredChartData = useMemo(() => {
-        if (!chartData.length || timeRange !== '1h') return chartData;
-
-        const lastItem = chartData[chartData.length - 1];
-        const lastTime = lastItem?.timeLabel
-
-        const threshold = lastTime - 60 * 60 * 1000;
-        return chartData.filter(d => d.timeLabel >= threshold);
-    }, [chartData, timeRange]);
-
     const sampledChartData = useMemo(() => {
-        const raw = filteredChartData;
+        const raw = chartData;
         if (!raw || raw.length <= 400) return raw;
 
         const step = Math.ceil(raw.length / 400);
@@ -246,13 +234,13 @@ export default function Analytics() {
             sampled.push(raw[raw.length - 1]);
         }
         return sampled;
-    }, [filteredChartData]);
+    }, [chartData]);
 
     const selectedMemberName = selectedStreamer?.name;
     const activeChartData = useMemo(() => {
         if (!selectedMemberName) return sampledChartData;
 
-        const memberPoints = filteredChartData.filter(
+        const memberPoints = chartData.filter(
             d => selectedMemberName in d
         );
 
@@ -263,7 +251,7 @@ export default function Analytics() {
         memberPoints.forEach(d => timeMap.set(Number(d.timeLabel), d));
 
         return [...timeMap.values()].sort((a, b) => Number(a.timeLabel) - Number(b.timeLabel));
-    }, [selectedMemberName, sampledChartData, filteredChartData]);
+    }, [selectedMemberName, sampledChartData, chartData]);
 
     const activeStreamers = useMemo(() => {
         if (!streamers.length) return []
@@ -278,13 +266,13 @@ export default function Analytics() {
 
     const memberSessionsMap = useMemo(() => {
         const map = new Map();
-        if (!filteredChartData.length || !activeStreamers.length) return map
+        if (!chartData.length || !activeStreamers.length) return map
 
         activeStreamers.forEach(s => {
             map.set(s.name, new Set());
         });
 
-        filteredChartData.forEach(d => {
+        chartData.forEach(d => {
             activeStreamers.forEach(s => {
                 const slug = d[`_${s.name}_slug`];
                 if (slug) {
@@ -294,7 +282,7 @@ export default function Analytics() {
         });
 
         return map;
-    }, [filteredChartData, activeStreamers]);
+    }, [chartData, activeStreamers]);
 
     useEffect(() => {
         if (isAnalyticsLoading || isAnalyticsFetching) return;
@@ -304,14 +292,6 @@ export default function Analytics() {
             if (!updated) {
                 setSelectedStreamer(null);
             } else {
-                if (timeRange === '1h') {
-                    const hasPointsIn1h = filteredChartData.some(d => selectedStreamer.name in d);
-                    if (!hasPointsIn1h) {
-                        setSelectedStreamer(null);
-                        return;
-                    }
-                }
-
                 const slugSet = memberSessionsMap.get(selectedStreamer.name);
                 
                 const isCurrentSlugValid = slugSet?.has(selectedStreamer.slug)
@@ -330,7 +310,7 @@ export default function Analytics() {
                 }
             }
         }
-    }, [data.streamers, isAnalyticsLoading, isAnalyticsFetching, memberSessionsMap, selectedStreamer?.name, selectedStreamer?.slug, timeRange, filteredChartData]);
+    }, [streamers, isAnalyticsLoading, isAnalyticsFetching, memberSessionsMap, selectedStreamer?.name, selectedStreamer?.slug]);
 
     const selectedMemberSlug = selectedStreamer?.slug;
     const streamerSessions = useMemo(() => {
@@ -347,8 +327,6 @@ export default function Analytics() {
     const activeSession = streamerSessions.length > 0 ? streamerSessions[currentSessionIndex] : null;
     const isSessionTimeLoading = isSessionLoading || !sessionAnalyticsData || !activeSession;
     const isCurrentSessionLive = Boolean(activeSession && !activeSession.endAt);
-
-    const activeRangeLabel = timeRange === 'all' ? 'Semua' : timeRange === 'today' ? 'Hari Ini' : timeRange === '1d' ? '1 Hari Lalu' : timeRange === '2d' ? '2 Hari Lalu' : timeRange === '1h' ? '1 Jam' : timeRange === 'custom' ? 'Kustom' : timeRange;
 
     return (
         <div className="space-y-3 lg:space-y-5 pb-20">
@@ -394,17 +372,17 @@ export default function Analytics() {
                 <div className="bg-zinc-900/30 hidden lg:block border border-zinc-800/40 rounded-lg lg:rounded-xl p-3 lg:p-5">
                     <div className="flex items-center justify-between gap-2">
                         <span className="text-xs text-zinc-400 font-medium">Total Cuplikan Waktu</span>
-                        <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium border ${filteredChartData.length > 400
+                        <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium border ${chartData.length > 400
                             ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
                             : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                             }`}>
-                            {filteredChartData.length > 400 ? '> 400 (Disampel)' : '≤ 400 (Lengkap)'}
+                            {chartData.length > 400 ? '> 400 (Disampel)' : '≤ 400 (Lengkap)'}
                         </span>
                     </div>
                     <p className="text-2xl lg:text-3xl font-semibold text-zinc-100 mt-1">
                         {sampledChartData.length.toLocaleString()}{' '}
                         <span className="text-xs sm:text-sm font-normal text-zinc-400">
-                            titik (dari {filteredChartData.length.toLocaleString()} asli • {activeRangeLabel})
+                            titik (dari {chartData.length.toLocaleString()} asli • {formattedDateLabel})
                         </span>
                     </p>
                 </div>
@@ -413,17 +391,17 @@ export default function Analytics() {
             <div className="bg-zinc-900/30 block lg:hidden border text-center border-zinc-800/40 rounded-lg p-3">
                 <div className="flex items-center justify-center gap-2">
                     <span className="text-xs text-zinc-400 font-medium">Total Cuplikan Waktu</span>
-                    <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium border ${filteredChartData.length > 400
+                    <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium border ${chartData.length > 400
                         ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
                         : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                         }`}>
-                        {filteredChartData.length > 400 ? '> 400 (Disampel)' : '≤ 400 (Lengkap)'}
+                        {chartData.length > 400 ? '> 400 (Disampel)' : '≤ 400 (Lengkap)'}
                     </span>
                 </div>
                 <p className="text-2xl lg:text-3xl font-semibold text-zinc-100 mt-1">
                     {sampledChartData.length.toLocaleString()}{' '}
                     <span className="text-xs sm:text-sm font-normal text-zinc-400">
-                        titik (dari {filteredChartData.length.toLocaleString()} asli • {activeRangeLabel})
+                        titik (dari {chartData.length.toLocaleString()} asli • {formattedDateLabel})
                     </span>
                 </p>
             </div>
@@ -456,7 +434,7 @@ export default function Analytics() {
                             <StreamStatsCard
                                 isLoading={isSessionTimeLoading}
                                 isCurrentSessionLive={isCurrentSessionLive}
-                                filteredChartData={filteredChartData}
+                                chartData={chartData}
                                 selectedStreamer={selectedStreamer}
                                 setSelectedStreamer={setSelectedStreamer}
                                 activeSession={activeSession}
@@ -516,57 +494,46 @@ export default function Analytics() {
                     <div className="flex rounded-md lg:rounded-lg overflow-hidden md:h-9.5 bg-zinc-900/80 border w-[427.9px] md:w-[calc(50%-4px)] lg:w-[calc(50%-37px)] xl:w-[calc(30%-9.4px)] border-zinc-800/80">
                         <div className='overflow-x-auto'>
                             <div className='flex h-full'>
-                                {[
-                                    { id: 'today', label: 'Hari Ini' },
-                                    { id: '1d', label: '1 Hari Lalu' },
-                                    { id: '2d', label: '2 Hari Lalu' },
-                                    { id: '1h', label: '1 Jam' },
-                                    { id: 'all', label: 'Semua' },
-                                    { id: 'custom', label: '⚙️ Kustom' }
-                                ].map((tab) => (
-                                    <button
-                                        key={tab.id}
-                                        onClick={() => setTimeRange(tab.id)}
-                                        className={`shrink-0 px-3 py-1.5 text-xs font-medium transition cursor-pointer ${timeRange === tab.id
-                                            ? 'bg-zinc-800 text-white shadow-sm'
-                                            : 'text-zinc-400 hover:text-zinc-200'
-                                            }`}
-                                    >
-                                        {tab.label}
-                                    </button>
-                                ))}
+                                <button
+                                    onClick={handlePrevDay}
+                                    title="Hari Sebelumnya"
+                                    className="p-1.5 rounded-md hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 transition cursor-pointer"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                    </svg>
+                                </button>
+
+                                <div className="relative px-3 py-1 flex items-center gap-2 text-xs font-semibold text-zinc-200">
+                                    <input
+                                        type="date"
+                                        value={savedTime.toLocaleDateString('ja-JP').replaceAll("/", "-")}
+                                        max={new Date().toISOString().slice(0, 10)}
+                                        onChange={(e) => {
+                                            if (e.target.value) {
+                                                const [y, m, d] = e.target.value.split('-').map(Number);
+                                                setSelectedDate(new Date(y, m - 1, d));
+                                            }
+                                        }}
+                                        className="absolute opacity-0 inset-0 cursor-pointer"
+                                        title="Klik untuk memilih tanggal langsung"
+                                    />
+                                    <span>{formattedDateLabel}</span>
+                                </div>
+                                {/* Tombol Maju (Hari Berikutnya) */}
+                                <button
+                                    onClick={handleNextDay}
+                                    disabled={isToday}
+                                    title={isToday ? "Sudah hari terbaru" : "Hari Berikutnya"}
+                                    className="p-1.5 rounded-md hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 transition cursor-pointer disabled:opacity-30"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                    </svg>
+                                </button>
                             </div>
                         </div>
                     </div>
-                    {timeRange === 'custom' && (
-                        <div className="flex flex-wrap md:mt-3 lg:mt-5 xl:mt-0 items-center gap-3 bg-zinc-900/80 p-2 py-1 rounded-md lg:rounded-lg border border-zinc-800/80">
-                            <div className="flex items-center gap-2 text-xs text-zinc-300">
-                                <span>Dari:</span>
-                                <input
-                                    type="datetime-local"
-                                    value={customStart}
-                                    onChange={(e) => setCustomStart(e.target.value)}
-                                    className="bg-zinc-900 border border-zinc-800/80 rounded-sm lg:rounded-md px-1 py-1 text-xs text-zinc-100 focus:outline-none focus:ring-zinc-500"
-                                />
-                            </div>
-                            <div className="flex items-center gap-2 text-xs text-zinc-300">
-                                <span>Sampai:</span>
-                                <input
-                                    type="datetime-local"
-                                    value={customEnd}
-                                    onChange={(e) => setCustomEnd(e.target.value)}
-                                    className="bg-zinc-900 border border-zinc-800/80 rounded-sm lg:rounded-md px-1 py-1 text-xs text-zinc-100 focus:outline-none focus:ring-zinc-500"
-                                />
-                            </div>
-                            <button
-                                onClick={handleApplyCustomRange}
-                                disabled={refreshing}
-                                className="px-3 py-1.5 bg-zinc-100 hover:bg-white text-zinc-900 text-xs font-semibold rounded-sm lg:rounded-md transition cursor-pointer disabled:opacity-50"
-                            >
-                                {refreshing ? "Menerapkan..." : "Terapkan"}
-                            </button>
-                        </div>
-                    )}
                 </div>
 
                 {loading ? (
@@ -574,7 +541,7 @@ export default function Analytics() {
                         <div className="w-6 h-6 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin"></div>
                         <span>Memuat data analitik...</span>
                     </div>
-                ) : !filteredChartData.length ? (
+                ) : !chartData.length ? (
                     <div className="h-72 flex flex-col items-center justify-center text-center p-6 text-zinc-400 space-y-1.5 text-sm">
                         <p className="text-zinc-200 font-semibold text-base">Belum ada riwayat cuplikan</p>
                         <p>Data grafik akan tampil saat ada perekaman siaran langsung aktif.</p>
@@ -820,7 +787,7 @@ export default function Analytics() {
             </div>
 
             {/* Tip banner when no streamer is selected */}
-            {!selectedStreamer && !loading && filteredChartData.length > 0 && (
+            {!selectedStreamer && !loading && chartData.length > 0 && (
                 <div className="bg-zinc-900/20 border border-zinc-800/40 rounded-xl p-3.5 sm:p-4 text-center text-xs text-zinc-400 flex items-center justify-center gap-2">
                     <span>💡</span>
                     <span>

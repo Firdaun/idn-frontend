@@ -3,7 +3,7 @@ import { countMemberSnapshots, formatLiveTime, calculateDurationAtTime } from '.
 export default function StreamStatsCard({
     isLoading = false,
     isCurrentSessionLive = false,
-    filteredChartData = [],
+    chartData = [],
     selectedStreamer = null,
     setSelectedStreamer,
     activeSession = null,
@@ -90,7 +90,7 @@ export default function StreamStatsCard({
                     <span>📊 Statistik Siaran</span>
                 </span>
                 <span className="text-xs text-zinc-400">
-                    {`${countMemberSnapshots(filteredChartData, selectedStreamer?.name, activeSession?.slug)}x cuplikan`}
+                    {`${countMemberSnapshots(chartData, selectedStreamer?.name, activeSession?.slug)}x cuplikan`}
                 </span>
             </div>
 
