@@ -72,6 +72,12 @@ export default function WordCloudCard({ topChatters = [], wordCloud = [], isLoad
         }, 600);
     };
 
+    useEffect(() => {
+        return () => {
+            clearTimeout(scrollTimerRef.current);
+        };
+    }, [viewMode]);
+
     const filteredWords = useMemo(() => {
         if (!wordCloud || !wordCloud.length) return [];
         if (!searchQuery.trim()) return wordCloud;
@@ -489,8 +495,9 @@ export default function WordCloudCard({ topChatters = [], wordCloud = [], isLoad
                 </ul>
             </div>
 
-            {viewMode === 'cloud' ? (
+            {viewMode === 'cloud' && (
                 <div
+                    key="wordcloud-view"
                     ref={containerRef}
                     className="relative w-full flex-1 min-h-105 rounded-xl bg-linear-to-b from-zinc-900/50 via-zinc-950/80 to-zinc-950 border border-zinc-800/60 overflow-hidden flex flex-col select-none"
                 >
@@ -582,8 +589,13 @@ export default function WordCloudCard({ topChatters = [], wordCloud = [], isLoad
                         </div>
                     )}
                 </div>
-            ) : viewMode === "list" ? (
-                <div className="relative w-full flex-1 min-h-105 rounded-xl border border-zinc-800/60 bg-zinc-950/30 overflow-hidden">
+            )}
+
+            {viewMode === 'list' && (
+                <div
+                    key="list-view"
+                    className="relative w-full flex-1 min-h-105 rounded-xl border border-zinc-800/60 bg-zinc-950/30 overflow-hidden"
+                >
                     <div
                         ref={tableContainerRef}
                         onScroll={handleTableScroll}
@@ -667,9 +679,16 @@ export default function WordCloudCard({ topChatters = [], wordCloud = [], isLoad
                         style={{ width: '0px' }}
                     />
                 </div>
-            ) : (
-                <div className='flex flex-col gap-3'>
-                    <div className="bg-zinc-950/40 border border-zinc-800/40 rounded-xl p-4 sm:p-5">
+            )}
+
+            {viewMode === 'chatters' && (
+                <div
+                    key="chatters-view"
+                    className="flex flex-col gap-3 flex-1 min-h-0"
+                >
+                    <div
+                        className="bg-zinc-950/40 border border-zinc-800/40 rounded-xl p-4 sm:p-5"
+                    >
                         <h4 className="text-xs uppercase tracking-wider text-zinc-400 font-semibold text-center mb-4 flex items-center justify-center gap-1.5">
                             <span>👑</span>
                             <span>Top 3 Pengirim Chat</span>
@@ -729,7 +748,7 @@ export default function WordCloudCard({ topChatters = [], wordCloud = [], isLoad
                             ) : <div />}
                         </div>
                     </div>
-                    <div className="relative flex-1 min-h-92.75 rounded-xl border border-zinc-800/60 bg-zinc-950/30 overflow-hidden">
+                    <div className="relative flex-1 rounded-xl border border-zinc-800/60 bg-zinc-950/30 overflow-hidden">
                         <div
                             ref={tableContainerRef}
                             onScroll={handleTableScroll}
