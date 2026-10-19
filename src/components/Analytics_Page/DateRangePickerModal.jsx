@@ -30,9 +30,7 @@ export default function DateRangePickerModal({
 
     // Internal navigation month
     const [navDate, setNavDate] = useState(() => {
-        const base = initialStartDate
-
-        return new Date(base.getFullYear(), base.getMonth(), 1);
+        return new Date(initialStartDate.getFullYear(), initialStartDate.getMonth(), 1);
     });
 
     // Draft selection states
@@ -75,19 +73,15 @@ export default function DateRangePickerModal({
         setNavDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
     };
 
-    // Calendar Grid Days Calculation
-    const year = navDate.getFullYear();
-    const month = navDate.getMonth();
-
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const firstDayIdx = (new Date(year, month, 1).getDay() + 6) % 7;
-    const daysInPrevMonth = new Date(year, month, 0).getDate();
+    const daysInMonth = new Date(navDate.getFullYear(), navDate.getMonth() + 1, 0).getDate();
+    const firstDayIdx = (new Date(navDate.getFullYear(), navDate.getMonth(), 1).getDay() + 6) % 7;
+    const daysInPrevMonth = new Date(navDate.getFullYear(), navDate.getMonth(), 0).getDate();
 
     const calendarCells = [];
 
     // Prev month padding
     for (let i = firstDayIdx - 1; i >= 0; i--) {
-        const d = new Date(year, month - 1, daysInPrevMonth - i);
+        const d = new Date(navDate.getFullYear(), navDate.getMonth() - 1, daysInPrevMonth - i);
         calendarCells.push({
             date: d,
             isCurrentMonth: false,
@@ -97,7 +91,7 @@ export default function DateRangePickerModal({
 
     // Current month days
     for (let i = 1; i <= daysInMonth; i++) {
-        const d = new Date(year, month, i);
+        const d = new Date(navDate.getFullYear(), navDate.getMonth(), i);
         calendarCells.push({
             date: d,
             isCurrentMonth: true,
@@ -108,7 +102,7 @@ export default function DateRangePickerModal({
     // Next month padding to fill grid
     const remaining = (7 - (calendarCells.length % 7)) % 7;
     for (let i = 1; i <= remaining; i++) {
-        const d = new Date(year, month + 1, i);
+        const d = new Date(navDate.getFullYear(), navDate.getMonth() + 1, i);
         calendarCells.push({
             date: d,
             isCurrentMonth: false,
@@ -191,11 +185,10 @@ export default function DateRangePickerModal({
     const handleApply = () => {
         if (!tempStart) return;
 
-        const isRange = Boolean(tempEnd && toDateKey(tempStart) !== toDateKey(tempEnd));
         onApply({
             startDate: tempStart,
-            endDate: isRange ? tempEnd : null,
-            isRange
+            endDate: tempEnd,
+            isRange: tempEnd
         });
         onClose();
     };
@@ -303,7 +296,7 @@ export default function DateRangePickerModal({
                         </button>
 
                         <div className="text-sm font-semibold text-zinc-100 tracking-wide">
-                            {MONTH_NAMES[month]} {year}
+                            {MONTH_NAMES[navDate.getMonth()]} {navDate.getFullYear()}
                         </div>
 
                         <button
@@ -358,7 +351,7 @@ export default function DateRangePickerModal({
 
                             if (isStart || isEnd) {
                                 buttonStyle = 'relative z-10 h-9 w-9 rounded-full bg-sky-500 text-white font-bold shadow-md shadow-sky-500/30 flex flex-col items-center justify-center text-xs transition cursor-pointer select-none scale-102';
-                            } else if (inRange && endKey) {
+                            } else if (inRange) {
                                 buttonStyle = 'relative z-10 h-9 w-9 rounded-full text-sky-200 font-medium flex flex-col items-center justify-center text-xs transition cursor-pointer select-none hover:bg-sky-500/30';
                             }
 

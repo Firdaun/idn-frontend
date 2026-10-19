@@ -27,7 +27,7 @@ export default function Analytics() {
                     return {
                         startDate: new Date(parsed.startDate),
                         endDate: parsed.endDate ? new Date(parsed.endDate) : null,
-                        isRange: Boolean(parsed.isRange)
+                        isRange: parsed.isRange
                     };
                 }
             } catch {console.warn('JANGAN UBAH2 SESSIONSTORAGE!!!')}
@@ -172,7 +172,9 @@ export default function Analytics() {
     };
 
     const handleGoToday = () => {
-        setDateRange({ startDate: new Date(), endDate: null, isRange: false });
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        setDateRange({ startDate: today, endDate: null, isRange: false });
     };
 
     const formattedDateLabel = useMemo(() => {
