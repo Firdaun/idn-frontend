@@ -1,15 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 
-// Format helper YYYY-MM-DD for reliable day-only comparison
-const toDateKey = (d) => {
-    if (!d) return '';
-    const date = new Date(d);
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
-};
-
 const MONTH_NAMES = [
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
@@ -25,8 +15,7 @@ export default function DateRangePickerModal({
     initialIsRange = false,
     onApply
 }) {
-    const today = useMemo(() => new Date(), []);
-    const todayKey = useMemo(() => toDateKey(today), [today]);
+    const today = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d }, []);
 
     // Internal navigation month
     const [navDate, setNavDate] = useState(() => {
@@ -61,9 +50,6 @@ export default function DateRangePickerModal({
 
     if (!isOpen) return null;
 
-    const startKey = toDateKey(tempStart);
-    const endKey = toDateKey(tempEnd);
-
     // Month Navigation
     const handlePrevMonth = () => {
         setNavDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
@@ -85,7 +71,7 @@ export default function DateRangePickerModal({
         calendarCells.push({
             date: d,
             isCurrentMonth: false,
-            key: toDateKey(d)
+            key: d.getTime()
         });
     }
 
@@ -95,7 +81,7 @@ export default function DateRangePickerModal({
         calendarCells.push({
             date: d,
             isCurrentMonth: true,
-            key: toDateKey(d)
+            key: d.getTime()
         });
     }
 
@@ -106,79 +92,81 @@ export default function DateRangePickerModal({
         calendarCells.push({
             date: d,
             isCurrentMonth: false,
-            key: toDateKey(d)
+            key: d.getTime()
         });
     }
 
     // Handle date click
     const handleDateClick = (clickedDate) => {
-        const clickedKey = toDateKey(clickedDate);
-        if (clickedKey > todayKey) return; // Future date blocked
+        const clickedKey = new Date(clickedDate);
+        if (clickedKey.getTime() > today.getTime()) return;
 
         // If currently both start and end exist: start new selection
         if (tempStart && tempEnd) {
-            setTempStart(clickedDate);
+            setTempStart(clickedKey);
             setTempEnd(null);
             return;
         }
 
         // If only start exists
         if (tempStart && !tempEnd) {
-            if (clickedKey === startKey) {
+            if (clickedKey.getTime() === tempStart.getTime()) {
                 // Clicked same date: keep as single day selection
                 setTempEnd(null);
-            } else if (clickedDate < tempStart) {
+            } else if (clickedKey < tempStart) {
                 // Clicked earlier date: set clicked as start, previous start as end
                 setTempEnd(tempStart);
-                setTempStart(clickedDate);
+                setTempStart(clickedKey);
             } else {
                 // Clicked later date: set as end date
-                setTempEnd(clickedDate);
+                setTempEnd(clickedKey);
             }
         }
     };
 
     // Quick Presets
     const handlePresetToday = () => {
-        setTempStart(new Date());
+        const date = new Date(today)
+
+        setTempStart(date);
         setTempEnd(null);
-        setNavDate(new Date(today.getFullYear(), today.getMonth(), 1));
+        setNavDate(new Date(date.getFullYear(), date.getMonth(), 1));
     };
 
     const handlePresetYesterday = () => {
-        const y = new Date();
-        y.setDate(y.getDate() - 1);
-        setTempStart(y);
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        setTempStart(yesterday);
         setTempEnd(null);
-        setNavDate(new Date(y.getFullYear(), y.getMonth(), 1));
+        setNavDate(new Date(yesterday.getFullYear(), yesterday.getMonth(), 1));
     };
 
     const handlePresetLast7Days = () => {
-        const s = new Date();
-        s.setDate(s.getDate() - 6);
-        setTempStart(s);
-        setTempEnd(new Date());
-        setNavDate(new Date(today.getFullYear(), today.getMonth(), 1));
+        const start = new Date(today)
+        const end = new Date(today)
+        start.setDate(start.getDate() - 6)
+
+        setTempStart(start);
+        setTempEnd(end);
+        setNavDate(new Date(start.getFullYear(), start.getMonth(), 1));
     };
 
     const handlePresetLast30Days = () => {
-        const s = new Date();
-        s.setDate(s.getDate() - 29);
-        setTempStart(s);
-        setTempEnd(new Date());
-        setNavDate(new Date(today.getFullYear(), today.getMonth(), 1));
+        const start = new Date(today)
+        const end = new Date(today)
+        start.setDate(start.getDate() - 29)
+
+        setTempStart(start);
+        setTempEnd(end);
+        setNavDate(new Date(start.getFullYear(), start.getMonth(), 1));
     };
 
     // Range preview check
     const isDateInRange = (cellKey) => {
-        if (!tempStart) return false;
+        if (!tempStart || !tempEnd) return false;
 
-        // When both start and end are set
-        if (tempEnd) {
-            return cellKey >= startKey && cellKey <= endKey;
-        }
-
-        return false;
+        return cellKey >= tempStart.getTime() && cellKey <= tempEnd.getTime()
     };
 
     // Apply action
@@ -188,7 +176,7 @@ export default function DateRangePickerModal({
         onApply({
             startDate: tempStart,
             endDate: tempEnd,
-            isRange: tempEnd
+            isRange: Boolean(tempEnd)
         });
         onClose();
     };
@@ -203,7 +191,7 @@ export default function DateRangePickerModal({
             year: 'numeric'
         });
 
-        if (tempEnd && toDateKey(tempStart) !== toDateKey(tempEnd)) {
+        if (tempEnd) {
             const diffDays = Math.round((tempEnd - tempStart) / (1000 * 60 * 60 * 24)) + 1;
             return (
                 <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
@@ -215,7 +203,8 @@ export default function DateRangePickerModal({
             );
         }
 
-        const isTodaySelected = startKey === todayKey;
+        const isTodaySelected = tempStart.getTime() === today.getTime()
+
         return (
             <div className="flex items-center gap-2">
                 <span className="text-sky-400 font-semibold">{fmt(tempStart)}</span>
@@ -322,15 +311,15 @@ export default function DateRangePickerModal({
                     {/* Days Cells Grid */}
                     <div className="grid grid-cols-7 gap-y-1">
                         {calendarCells.map((cell) => {
-                            const isFuture = cell.key > todayKey;
-                            const isCurrentDay = cell.key === todayKey;
-                            const isStart = cell.key === startKey;
-                            const isEnd = cell.key === endKey;
+                            const isFuture = cell.key > today.getTime()
+                            const isCurrentDay = cell.key === today.getTime()
+                            const isStart = cell.key === tempStart.getTime()
+                            const isEnd = cell.key === tempEnd?.getTime()
                             const inRange = isDateInRange(cell.key);
 
                             // 1. Atur Background Strip Rentang agar pas di tengah lingkaran
                             let rangeBg = null;
-                            if (endKey) {
+                            if (tempEnd) {
                                 if (isStart) {
                                     rangeBg = <div className="absolute top-1/2 -translate-y-1/2 left-1/2 right-0 h-9 bg-sky-500/20 z-0" />;
                                 } else if (isEnd) {
@@ -362,7 +351,6 @@ export default function DateRangePickerModal({
                                         type="button"
                                         disabled={isFuture}
                                         onClick={() => handleDateClick(cell.date)}
-                                        onMouseEnter={() => !isFuture}
                                         className={buttonStyle}
                                     >
                                         <span>{cell.date.getDate()}</span>

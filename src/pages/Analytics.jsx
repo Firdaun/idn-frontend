@@ -65,8 +65,7 @@ export default function Analytics() {
     }, [metricType]);
 
     const { start: activeStart, end: activeEnd } = useMemo(() => {
-        const start = new Date(dateRange.startDate);
-        start.setHours(0, 0, 0, 0);
+        const start = new Date(dateRange.startDate)
 
         if (dateRange.isRange && dateRange.endDate) {
             const end = new Date(dateRange.endDate);
@@ -99,11 +98,9 @@ export default function Analytics() {
     const handlePrevDay = () => {
         setDateRange(prev => {
             const start = new Date(prev.startDate);
-            start.setHours(0, 0, 0, 0);
 
             if (prev.isRange && prev.endDate) {
                 const end = new Date(prev.endDate);
-                end.setHours(0, 0, 0, 0);
 
                 const diffTime = end.getTime() - start.getTime();
                 const diffDays = Math.max(1, Math.round(diffTime / (1000 * 60 * 60 * 24)));
@@ -111,7 +108,6 @@ export default function Analytics() {
                 start.setDate(start.getDate() - diffDays);
                 end.setDate(end.getDate() - diffDays);
 
-                end.setHours(23, 59, 59, 999);
                 return {
                     startDate: start,
                     endDate: end,
@@ -132,13 +128,10 @@ export default function Analytics() {
         setDateRange(prev => {
             const start = new Date(prev.startDate);
             const today = new Date();
-
-            start.setHours(0, 0, 0, 0);
             today.setHours(0, 0, 0, 0)
 
             if (prev.isRange && prev.endDate) {
                 const end = new Date(prev.endDate);
-                end.setHours(0, 0, 0, 0);
 
                 const diffTime = end.getTime() - start.getTime();
                 const diffDays = Math.max(1, Math.round(diffTime / (1000 * 60 * 60 * 24)));
@@ -152,7 +145,6 @@ export default function Analytics() {
                     start.setDate(start.getDate() - shift);
                 }
 
-                end.setHours(23, 59, 59, 999)
                 return {
                     startDate: start,
                     endDate: end,
