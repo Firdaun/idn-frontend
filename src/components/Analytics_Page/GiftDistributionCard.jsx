@@ -928,7 +928,7 @@ export default function GiftDistributionCard({
 
                                                     <div className="flex items-center gap-2 shrink-0">
                                                         <span className="text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md">
-                                                            {Number(gift.goldPerItem || 0).toLocaleString('id-ID')}g
+                                                            {Number(gift.totalGold || 0).toLocaleString('id-ID')}g
                                                         </span>
                                                         <span className={`text-[10px] text-zinc-400 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-amber-400' : ''
                                                             }`}>
@@ -948,16 +948,25 @@ export default function GiftDistributionCard({
                                                                 </span>
                                                             </div>
                                                             <div>
-                                                                <span className="text-[10px] uppercase font-medium text-zinc-500 block">Total Koin</span>
+                                                                <span className="text-[10px] uppercase font-medium text-zinc-500 block">Gold Satuan</span>
                                                                 <span className="text-xs font-bold text-amber-400">
-                                                                    {Number(gift.totalGold || 0).toLocaleString('id-ID')} Gold
+                                                                    {Number(gift.goldPerItem || 0).toLocaleString('id-ID')} Gold
                                                                 </span>
                                                             </div>
-                                                            <div className="col-span-2 pt-1 border-t border-zinc-900">
-                                                                <span className="text-[10px] uppercase font-medium text-zinc-500 block">Total Perolehan IDR</span>
-                                                                <span className="text-xs font-bold text-emerald-400">
-                                                                    {formatIdr(gift.totalIdr)}
-                                                                </span>
+
+                                                            <div className='col-span-2 pt-1.5 border-t border-zinc-900 gap-2 grid grid-cols-2'>
+                                                                <div>
+                                                                    <span className="text-[10px] uppercase font-medium text-zinc-500 block">Total Perolehan IDR</span>
+                                                                    <span className="text-xs font-bold text-emerald-400">
+                                                                        {formatIdr(gift.totalIdr)}
+                                                                    </span>
+                                                                </div>
+                                                                <div>
+                                                                    <span className="text-[10px] uppercase font-medium text-zinc-500 block">Total Gold</span>
+                                                                    <span className="text-xs font-bold text-amber-400">
+                                                                        {Number(gift.totalGold || 0).toLocaleString('id-ID')} Gold
+                                                                    </span>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
