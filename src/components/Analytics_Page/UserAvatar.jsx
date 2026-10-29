@@ -43,7 +43,6 @@ export function UserAvatar({
 export function GiftItemsProfile({
     user,
     sizeClass = 'w-9 h-9 text-xs',
-    borderClass = 'border-zinc-800'
 }) {
     const [imgFailed, setImgFailed] = useState(false);
     const initial = (user?.giftName || '?').charAt(0).toUpperCase();
@@ -54,7 +53,7 @@ export function GiftItemsProfile({
                 src={user.giftIconUrl}
                 alt={user.giftName || 'User'}
                 onError={() => setImgFailed(true)}
-                className={`${sizeClass} rounded-full object-cover border shrink-0 bg-zinc-800`}
+                className={`${sizeClass} object-cover shrink-0`}
                 loading="lazy"
             />
         );
@@ -73,7 +72,7 @@ export function GiftItemsProfile({
 
     return (
         <div
-            className={`${sizeClass} rounded-full bg-linear-to-br ${colorClass} border ${borderClass} flex items-center justify-center font-bold text-white shrink-0 shadow-inner`}
+            className={`${sizeClass} rounded-full bg-linear-to-br ${colorClass} flex items-center justify-center font-bold text-white shrink-0 shadow-inner`}
         >
             {initial}
         </div>

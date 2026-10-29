@@ -65,6 +65,60 @@ function isValidImageUrl(url) {
         return false;
     }
 }
+
+function normalizeGifterGifts(rawGifts) {
+    if (!Array.isArray(rawGifts) || rawGifts.length === 0) return [];
+    return rawGifts.map((g) => ({
+        name: g.name || g.giftName || 'Gift',
+        iconUrl: g.iconUrl || g.giftIconUrl || '',
+        count: Number(g.count || g.totalCount || g.quantity || 1),
+        totalGold: Number(g.totalGold || g.gold || 0),
+        totalIdr: Number(g.totalIdr || g.idr || 0)
+    }));
+}
+
+const handleGiftsWheel = (e) => {
+    const el = e.currentTarget;
+    if (el.scrollWidth > el.clientWidth) {
+        if (Math.abs(e.deltaX) === 0 && Math.abs(e.deltaY) > 0) {
+            const atStart = el.scrollLeft <= 0 && e.deltaY < 0;
+            const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 1 && e.deltaY > 0;
+            if (!atStart && !atEnd) {
+                el.scrollLeft += e.deltaY;
+            }
+        }
+    }
+};
+
+function GiftItemBadge({ gift }) {
+    const [imgFailed, setImgFailed] = useState(false);
+    const hasValidUrl = isValidImageUrl(gift.iconUrl) && !imgFailed;
+    const count = Number(gift.count || 1);
+
+    const tooltip = `${gift.name}${count > 1 ? ` (${count}x)` : ''}${gift.totalGold ? ` • ${Number(gift.totalGold).toLocaleString('id-ID')} Gold` : ''}`;
+
+    return (
+        <div
+            title={tooltip}
+            className="h-6.25 flex items-center gap-1.5 bg-zinc-950/80 hover:bg-zinc-800/90 border border-zinc-800/80 hover:border-zinc-700/80 rounded-md px-1.5 shrink-0 transition select-none group/item shadow-sm cursor-pointer"
+        >
+            {hasValidUrl ? (
+                <img
+                    src={gift.iconUrl}
+                    alt={gift.name}
+                    className="w-5.5 h-5.5 object-contain shrink-0"
+                    loading="lazy"
+                    onError={() => setImgFailed(true)}
+                />
+            ) : (
+                <span className="text-sm leading-none">🎁</span>
+            )}
+            <span className="text-[10px] font-bold text-amber-400 bg-amber-400/10 px-1 py-0.5 rounded leading-none shrink-0">
+                x{count}
+            </span>
+        </div>
+    );
+}
 export default function GiftDistributionCard({
     giftData,
     isLoading = false,
@@ -743,26 +797,51 @@ export default function GiftDistributionCard({
                                 <div className="space-y-2">
                                     {giftData.topGifters.map((gifter, idx) => {
                                         const rankBadge = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`;
+                                        const gifts = normalizeGifterGifts(gifter.gifts);
+
                                         return (
                                             <div
-                                                key={gifter.userUuid}
-                                                className="bg-zinc-900/40 hover:bg-zinc-900/80 border border-zinc-800/40 rounded-xl p-2.5 flex items-center justify-between gap-3 transition"
+                                                key={gifter.userUuid || idx}
+                                                className="h-15.5 bg-zinc-900/40 hover:bg-zinc-900/80 border border-zinc-800/40 rounded-xl px-2.5 flex items-center justify-between gap-2.5 sm:gap-3 transition"
                                             >
-                                                <div className="flex items-center gap-2.5 min-w-0">
+                                                {/* Kolom Kiri: Profil & Peringkat Donatur */}
+                                                <div className="flex items-center gap-2.5 min-w-0 w-32 sm:w-40 md:w-44 shrink-0">
                                                     <span className="text-sm font-bold w-5 text-center shrink-0 text-zinc-400">
                                                         {rankBadge}
                                                     </span>
                                                     <UserAvatar user={gifter} sizeClass="w-8 h-8 text-xs" />
-                                                    <div className="min-w-0">
-                                                        <p className="text-xs font-semibold text-zinc-200 truncate">
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="text-xs font-semibold text-zinc-200 truncate" title={gifter.userName}>
                                                             {gifter.userName}
                                                         </p>
-                                                        <span className="text-[11px] text-zinc-500">
+                                                        <span className="text-[11px] text-zinc-500 block truncate">
                                                             {gifter.giftCount}x kirim gift
                                                         </span>
                                                     </div>
                                                 </div>
 
+                                                {/* Kolom Tengah: List Item Gift yang Dikirim (Maks 2 Baris, Scroll Horizontal) */}
+                                                <div
+                                                    className="flex-1 min-w-0 overflow-x-auto custom-scrollbar py-0.5 px-1"
+                                                    onWheel={handleGiftsWheel}
+                                                >
+                                                    {gifts.length > 0 ? (
+                                                        <div
+                                                            className="grid gap-1 items-center w-max"
+                                                            style={{
+                                                                gridAutoFlow: 'column',
+                                                                gridTemplateRows: gifts.length > 2 ? 'repeat(2, 25px)' : '25px',
+                                                                gridAutoColumns: 'max-content'
+                                                            }}
+                                                        >
+                                                            {gifts.map((gift, gIdx) => (
+                                                                <GiftItemBadge key={`${gift.name}-${gIdx}`} gift={gift} />
+                                                            ))}
+                                                        </div>
+                                                    ) : null}
+                                                </div>
+
+                                                {/* Kolom Kanan: Total Donasi (Gold & Rupiah) */}
                                                 <div className="text-right shrink-0">
                                                     <span className="text-xs font-bold text-amber-400 block">
                                                         {Number(gifter.totalGold || 0).toLocaleString('id-ID')} Gold
@@ -841,15 +920,15 @@ export default function GiftDistributionCard({
                                     <span>👑</span> #1
                                 </div>
                                 <div className="mt-1 relative">
-                                    <GiftItemsProfile user={top1Gift} sizeClass="w-14 h-14 sm:w-16 sm:h-16 text-base" borderClass="border-amber-400 shadow-amber-400/30 shadow-lg ring-2 ring-amber-400/30" />
+                                    <GiftItemsProfile user={top1Gift} sizeClass="w-16 h-16 text-base"/>
                                 </div>
-                                <span className="font-bold text-xs sm:text-sm text-amber-200 mt-2 truncate max-w-full" title={top1Gift.giftName}>
+                                <span className="font-bold text-sm text-amber-200 mt-2 truncate max-w-full" title={top1Gift.giftName}>
                                     {top1Gift.giftName}
                                 </span>
                                 <div className="text-xs sm:text-sm text-amber-400 font-extrabold mt-0.5 flex items-center justify-center gap-1">
-                                    <img className='w-5' src="https://connect.idn.media/my-account/assets/images/idn-gold/gold-card.svg" alt="GOLD" />
-                                    <span>{Number(top1Gift.goldPerItem || 0).toLocaleString('id-ID')}</span>
-                                    <span className="text-[11px] font-normal text-amber-300/80">Gold x{Number(top1Gift.totalCount || 0).toLocaleString('id-ID')}</span>
+                                    <img loading="lazy" className='w-5' src="https://connect.idn.media/my-account/assets/images/idn-gold/gold-card.svg" alt="GOLD" />
+                                    <span>{Number(top1Gift.totalGold || 0).toLocaleString('id-ID')}</span>
+                                    <span className="text-[11px] font-normal text-amber-300/80">Gold</span>
                                 </div>
                                 <span className="text-[11px] text-zinc-400">
                                     Rp {top1Gift.totalIdr.toLocaleString('id-ID')}
